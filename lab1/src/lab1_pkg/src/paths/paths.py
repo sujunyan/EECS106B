@@ -1,20 +1,21 @@
 #!/usr/bin/env python
 
 """
-Starter script for lab1. 
+Starter script for lab1.
 Author: Chris Correa
 """
 import numpy as np
 import math
 import matplotlib.pyplot as plt
-
 from utils.utils import *
 
 try:
     import rospy
     from moveit_msgs.msg import RobotTrajectory
     from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
+    from geometry_msgs.msg import Point
 except:
+    print("Try to import ROS failed!")
     pass
 
 class MotionPath:
@@ -38,7 +39,7 @@ class MotionPath:
 
         Parameters
         ----------
-        time : float        
+        time : float
 
         Returns
         -------
@@ -94,7 +95,7 @@ class MotionPath:
         plt.plot(times, target_velocities[:,0], label='Desired')
         plt.xlabel("Time (t)")
         plt.ylabel("X Velocity")
-            
+
         plt.subplot(3,2,3)
         plt.plot(times, target_positions[:,1], label='Desired')
         plt.xlabel("time (t)")
@@ -104,7 +105,7 @@ class MotionPath:
         plt.plot(times, target_velocities[:,1], label='Desired')
         plt.xlabel("Time (t)")
         plt.ylabel("Y Velocity")
-            
+
         plt.subplot(3,2,5)
         plt.plot(times, target_positions[:,2], label='Desired')
         plt.xlabel("time (t)")
@@ -126,16 +127,16 @@ class MotionPath:
         jointspace : bool
             What kind of trajectory.  Joint space points are 7x' and describe the
             angle of each arm.  Workspace points are 3x', and describe the x,y,z
-            position of the end effector.  
+            position of the end effector.
         """
         traj = JointTrajectory()
-        traj.joint_names = self.limb.joint_names()    
+        traj.joint_names = self.limb.joint_names()
         points = []
         for t in np.linspace(0, self.total_time, num=num_waypoints):
             point = self.trajectory_point(t, jointspace)
             points.append(point)
 
-        # We want to make a final point at the end of the trajectory so that the 
+        # We want to make a final point at the end of the trajectory so that the
         # controller has time to converge to the final point.
         extra_point = self.trajectory_point(self.total_time, jointspace)
         extra_point.time_from_start = rospy.Duration.from_sec(self.total_time + 1)
@@ -150,16 +151,16 @@ class MotionPath:
     def trajectory_point(self, t, jointspace):
         """
         takes a discrete point in time, and puts the position, velocity, and
-        acceleration into a ROS JointTrajectoryPoint() to be put into a 
-        RobotTrajectory.  
-        
+        acceleration into a ROS JointTrajectoryPoint() to be put into a
+        RobotTrajectory.
+
         Parameters
         ----------
         t : float
         jointspace : bool
             What kind of trajectory.  Joint space points are 7x' and describe the
             angle of each arm.  Workspace points are 3x', and describe the x,y,z
-            position of the end effector.  
+            position of the end effector.
 
         Returns
         -------
@@ -173,7 +174,7 @@ class MotionPath:
             theta_t_2 = self.get_ik(self.target_position(t-2*delta_t))
             theta_t_1 = self.get_ik(self.target_position(t-delta_t))
             theta_t   = self.get_ik(self.target_position(t))
-            
+
             # we said you shouldn't simply take a finite difference when creating
             # the path, why do you think we're doing that here?
             point.positions = theta_t
@@ -189,7 +190,7 @@ class MotionPath:
     def get_ik(self, x, max_ik_attempts=10):
         """
         gets ik
-        
+
         Parameters
         ----------
         x : 3x' :obj:`numpy.ndarray`
@@ -215,16 +216,28 @@ class MotionPath:
                 )
         return theta
 
-class LinearPath(MotionPath):
-    def __init__(self):
+    def get_tag_pos(self):
         """
-        Remember to call the constructor of MotionPath
+        set time out to 10s
+        if specified timeout is exceeded, raise an exception
+        store self.tag as 3x np.array vector
+        """
+        p = rospy.wait_for_message('tag_talk', Point, timeout = 10)
+        self.tag_pos = np.array([p.x,p.y,p.z])
 
-        Parameters
-        ----------
-        ????? You're going to have to fill these in how you see fit
+class LinearPath(MotionPath):
+    def __init__(self,limb,kin,total_time):
         """
-        raise NotImplementedError
+        Construnction function for Motion Path
+        Get the ar_tag position from the node "tag_pub.py"
+        The path goes from current position to an ar_tag
+        """
+        super().__init__(self,limb,kin,total_time)
+        self.get_tag_pos()
+        self._final_pos = self.tag_pos # 3x vector np.array
+        self._start_pos = self.kin.forward_position_kinematics() # 7x vector [position orientation(Quaternion)]
+        self._start_pos = self._start_pos[0:3] # change it to 3x vector np.array
+        self._path_length = self._final_pos - self._start_pos
 
     def target_position(self, time):
         """
@@ -232,14 +245,15 @@ class LinearPath(MotionPath):
 
         Parameters
         ----------
-        time : float        
-    
+        time : float
+
         Returns
         -------
         3x' :obj:`numpy.ndarray`
             desired x,y,z position in workspace coordinates of the end effector
         """
-        raise NotImplementedError       
+        ratio = time / self.total_time
+        return self._start_pos + ratio *  self._path_length
 
     def target_velocity(self, time):
         """
@@ -292,7 +306,7 @@ class CircularPath(MotionPath):
 
         Parameters
         ----------
-        time : float        
+        time : float
 
         Returns
         -------
@@ -339,9 +353,9 @@ class CircularPath(MotionPath):
 class MultiplePaths(MotionPath):
     """
     Remember to call the constructor of MotionPath
-    
+
     You can implement multiple paths a couple ways.  The way I chose when I took
-    the class was to create several different paths and pass those into the 
+    the class was to create several different paths and pass those into the
     MultiplePaths object, which would determine when to go onto the next path.
     """
     def __init__(self, paths):
@@ -356,7 +370,7 @@ class MultiplePaths(MotionPath):
 
         Parameters
         ----------
-        time : float        
+        time : float
 
         Returns
         -------
