@@ -16,7 +16,7 @@ from utils.utils import *
     roslaunch yumi_moveit_config real_demo.launch
 """
 class MoveitIK(object):
-    def __init__(self, group, ik_timeout=1.0, ik_attempts=0,
+    def __init__(self, group, ik_timeout=1.0, ik_attempts=10,
                  avoid_collisions=False):
         """
         A class to do IK calls thru the MoveIt!'s /compute_ik service.
@@ -103,12 +103,12 @@ class MoveitIK(object):
             return resp
 
 if __name__ == "__main__":
-    group = "right_arm"
+    group = "left_arm"
     ik_srv = MoveitIK(group)
 
-    pos = [.5, 0, .5]
+    pos = [1, 0, .5]
     quat = [0,0,1,0]
-    pose = create_pose_stamped_from_pos_quat(pos, quat)
+    pose = create_pose_stamped_from_pos_quat(pos, quat,"base")
     res = ik_srv.get_ik(pose, avoid_collisions=True)
     print res
 

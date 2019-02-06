@@ -18,8 +18,8 @@ except:
     print("Try to import ROS failed!")
     pass
 
-class MotionPath:
-    def __init__(self, limb, kin, total_time):
+class MotionPath(object):
+    def __init__(self, limb, kin, total_time,tag_pos):
         """
         Parameters
         ----------
@@ -32,6 +32,7 @@ class MotionPath:
         self.limb = limb
         self.kin = kin
         self.total_time = total_time
+        self.tag_pos = tag_pos
 
     def target_position(self, time):
         """
@@ -226,18 +227,28 @@ class MotionPath:
         self.tag_pos = np.array([p.x,p.y,p.z])
 
 class LinearPath(MotionPath):
-    def __init__(self,limb,kin,total_time):
+    def __init__(self,limb,kin,total_time,tag_pos):
         """
         Construnction function for Motion Path
         Get the ar_tag position from the node "tag_pub.py"
         The path goes from current position to an ar_tag
         """
-        super().__init__(self,limb,kin,total_time)
-        self.get_tag_pos()
-        self._final_pos = self.tag_pos # 3x vector np.array
-        self._start_pos = self.kin.forward_position_kinematics() # 7x vector [position orientation(Quaternion)]
-        self._start_pos = self._start_pos[0:3] # change it to 3x vector np.array
-        self._path_length = self._final_pos - self._start_pos
+        super(LinearPath,self).__init__(limb,kin,total_time,tag_pos)
+        #self.get_tag_pos()
+        assert(len(tag_pos) >= 2)
+        print tag_pos
+        self._final_pos = self.tag_pos[0][0] # 3x vector np.array
+        self._start_pos = self.tag_pos[1][0]
+        h = 0.2
+        self._start_pos[2] +=h
+        self._final_pos[2] +=h
+        self._path_diff = self._final_pos - self._start_pos
+
+        self.delta_t = 0.01
+        print("\nLinearPath Created with start_pos,final_pos,path_diff")
+        print(self._start_pos)
+        print(self._final_pos)
+        print(self._path_diff)
 
     def target_position(self, time):
         """
@@ -253,7 +264,7 @@ class LinearPath(MotionPath):
             desired x,y,z position in workspace coordinates of the end effector
         """
         ratio = time / self.total_time
-        return self._start_pos + ratio *  self._path_length
+        return self._start_pos + ratio *  self._path_diff
 
     def target_velocity(self, time):
         """
@@ -270,7 +281,11 @@ class LinearPath(MotionPath):
         3x' :obj:`numpy.ndarray`
             desired velocity in workspace coordinates of the end effector
         """
-        raise NotImplementedError
+        t = time
+        delta_t = self.delta_t
+        pos_t_1 = self.target_position(t-delta_t)
+        pos_t   = self.target_position(t)
+        return (pos_t - pos_t_1) / delta_t
 
     def target_acceleration(self, time):
         """
@@ -287,7 +302,12 @@ class LinearPath(MotionPath):
         3x' :obj:`numpy.ndarray`
             desired acceleration in workspace coordinates of the end effector
         """
-        raise NotImplementedError
+        t = time
+        delta_t = self.delta_t
+        pos_t_2 = self.target_position(t-2*delta_t)
+        pos_t_1 = self.target_position(t-delta_t)
+        pos_t   = self.target_position(t)
+        return (pos_t - 2*pos_t_1 + pos_t_2) / (2*delta_t)
 
 class CircularPath(MotionPath):
     def __init__(self):

@@ -143,7 +143,8 @@ class baxter_kinematics(object):
         result_angles = PyKDL.JntArray(self._num_jnts)
 
         if self._ik_p_kdl.CartToJnt(seed_array, goal_pose, result_angles) >= 0:
-            result = np.array(result_angles)
+            #result = np.array(result_angles)
+            result = np.array([float(angle) for angle in result_angles])
             return result
         else:
             print 'No IK Solution Found'

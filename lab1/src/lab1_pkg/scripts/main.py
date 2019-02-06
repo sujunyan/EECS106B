@@ -136,6 +136,7 @@ if __name__ == "__main__":
     parser.add_argument('-task', '-t', type=str, default='line', help=
         'Options: line, circle, square.  Default: line'
     )
+    ## We may not use it since we are using tag_pub.py
     parser.add_argument('-ar_marker', '-ar', nargs='+', help=
         'Which AR marker to use.  Default: 1'
     )
@@ -176,19 +177,23 @@ if __name__ == "__main__":
     # https://github.com/valmik/baxter_pykdl/blob/master/src/baxter_pykdl/baxter_pykdl.py
     # for info on how to use each method
     kin = baxter_kinematics(args.arm)
-
+    total_time = 10 # seconds
     # ADD COMMENT EHRE
     tag_pos = [lookup_tag(marker) for marker in args.ar_marker]
+    #tag_pos = None
+
     # Get an appropriate RobotTrajectory for the task (circular, linear, or square)
     # If the controller is a workspace controller, this should return a trajectory where the
     # positions and velocities are workspace positions and velocities.  If the controller
     # is a jointspace or torque controller, it should return a trajectory where the positions
     # and velocities are the positions and velocities of each joint.
-    robot_trajectory = get_trajectory(args.task, tag_pos, args.num_way, args.controller_name)
 
+    planner = PathPlanner('{}_arm'.format(args.arm))
+    robot_trajectory = get_trajectory(args.task, tag_pos, args.num_way, args.controller_name)
+    #print(robot_trajectory)
     # This is a wrapper around MoveIt! for you to use.  We use MoveIt! to go to the start position
     # of the trajectory
-    planner = PathPlanner('{}_arm'.format(args.arm))
+    
     if args.controller_name == "workspace":
         pose = create_pose_stamped_from_pos_quat(
             robot_trajectory.joint_trajectory.points[0].positions,
@@ -207,6 +212,7 @@ if __name__ == "__main__":
         # the planned path section of MoveIt! in the menu on the left side of the screen.
         pub = rospy.Publisher('move_group/display_planned_path', DisplayTrajectory, queue_size=10)
         disp_traj = DisplayTrajectory()
+        #print(robot_trajectory)
         disp_traj.trajectory.append(robot_trajectory)
         # disp_traj.trajectory_start = planner._group.get_current_joint_values()
         disp_traj.trajectory_start = RobotState()
