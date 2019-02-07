@@ -71,7 +71,7 @@ def get_trajectory(task, ar_marker_num, num_way, controller_name):
     ----------
     task : string
         name of the task.  Options: line, circle, square
-    ar_marker_num : nx1' : list of ar_marker numbers ; 
+    ar_marker_num : nx1' : list of ar_marker numbers ;
 
     Returns
     -------
@@ -108,9 +108,8 @@ def get_controller(controller_name):
     :obj:`Controller`
     """
     if controller_name == 'workspace':
-        # YOUR CODE HERE
-        Kp = None
-        Kv = None
+        Kp = np.array([0,0,0,0,0,0]) # 6x array
+        Kv = np.array([0,0,0,0,0,0])
         controller = PDWorkspaceVelocityController(limb, kin, Kp, Kv)
     elif controller_name == 'jointspace':
         # YOUR CODE HERE
@@ -199,7 +198,7 @@ if __name__ == "__main__":
     #print(robot_trajectory)
     # This is a wrapper around MoveIt! for you to use.  We use MoveIt! to go to the start position
     # of the trajectory
-    
+
     if args.controller_name == "workspace":
         pose = create_pose_stamped_from_pos_quat(
             robot_trajectory.joint_trajectory.points[0].positions,

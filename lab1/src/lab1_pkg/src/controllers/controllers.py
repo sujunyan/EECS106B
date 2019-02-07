@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-Starter script for lab1. 
+Starter script for lab1.
 Author: Chris Correa, Valmik Prabhu
 """
 
@@ -47,17 +47,17 @@ class Controller:
 
     def step_control(self, target_position, target_velocity, target_acceleration):
         """
-        makes a call to the robot to move according to it's current position and the desired position 
-        according to the input path and the current time. Each Controller below extends this 
-        class, and implements this accordingly.  
+        makes a call to the robot to move according to it's current position and the desired position
+        according to the input path and the current time. Each Controller below extends this
+        class, and implements this accordingly.
 
         Parameters
         ----------
-        target_position : 7x' or 6x' :obj:`numpy.ndarray` 
+        target_position : 7x' or 6x' :obj:`numpy.ndarray`
             desired positions
-        target_velocity : 7x' or 6x' :obj:`numpy.ndarray` 
+        target_velocity : 7x' or 6x' :obj:`numpy.ndarray`
             desired velocities
-        target_acceleration : 7x' or 6x' :obj:`numpy.ndarray` 
+        target_acceleration : 7x' or 6x' :obj:`numpy.ndarray`
             desired accelerations
         """
         pass
@@ -77,14 +77,14 @@ class Controller:
 
         Returns
         -------
-        target_position : 7x' or 6x' :obj:`numpy.ndarray` 
+        target_position : 7x' or 6x' :obj:`numpy.ndarray`
             desired positions
-        target_velocity : 7x' or 6x' :obj:`numpy.ndarray` 
+        target_velocity : 7x' or 6x' :obj:`numpy.ndarray`
             desired velocities
-        target_acceleration : 7x' or 6x' :obj:`numpy.ndarray` 
+        target_acceleration : 7x' or 6x' :obj:`numpy.ndarray`
             desired accelerations
         current_index : int
-            waypoint index at which search was terminated 
+            waypoint index at which search was terminated
         """
 
         # a very small number (should be much smaller than rate)
@@ -168,9 +168,9 @@ class Controller:
     def plot_results(
         self,
         times,
-        actual_positions, 
-        actual_velocities, 
-        target_positions, 
+        actual_positions,
+        actual_velocities,
+        target_positions,
         target_velocities
     ):
         """
@@ -270,7 +270,7 @@ class Controller:
 
     def execute_path(self, path, rate=200, timeout=None, log=False):
         """
-        takes in a path and moves the baxter in order to follow the path.  
+        takes in a path and moves the baxter in order to follow the path.
 
         Parameters
         ----------
@@ -323,9 +323,9 @@ class Controller:
 
             # Get the desired position, velocity, and effort
             (
-                target_position, 
-                target_velocity, 
-                target_acceleration, 
+                target_position,
+                target_velocity,
+                target_acceleration,
                 current_index
             ) = self.interpolate_path(path, t, current_index)
 
@@ -350,17 +350,17 @@ class Controller:
         if log:
             self.plot_results(
                 times,
-                actual_positions, 
-                actual_velocities, 
-                target_positions, 
+                actual_positions,
+                actual_velocities,
+                target_positions,
                 target_velocities
             )
         return True
 
     def follow_ar_tag(self, tag, rate=200, timeout=None, log=False):
         """
-        takes in an AR tag number and follows it with the baxter's arm.  You 
-        should look at execute_path() for inspiration on how to write this. 
+        takes in an AR tag number and follows it with the baxter's arm.  You
+        should look at execute_path() for inspiration on how to write this.
 
         Parameters
         ----------
@@ -418,20 +418,20 @@ class PDWorkspaceVelocityController(Controller):
 
     def step_control(self, target_position, target_velocity, target_acceleration):
         """
-        makes a call to the robot to move according to it's current position and the desired position 
-        according to the input path and the current time. Each Controller below extends this 
+        makes a call to the robot to move according to it's current position and the desired position
+        according to the input path and the current time. Each Controller below extends this
         class, and implements this accordingly. This method should call
-        self._kin.forward_psition_kinematics() and self._kin.forward_velocity_kinematics() to get 
-        the current workspace position and velocity and self._limb.set_joint_velocities() to set 
-        the joint velocity to something.  you may have to look at 
-        http://docs.ros.org/diamondback/api/kdl/html/python/geometric_primitives.html to convert the 
-        output of forward_velocity_kinematics() to a numpy array.  You may find joint_array_to_dict() 
-        in utils.py useful 
+        self._kin.forward_psition_kinematics() and self._kin.forward_velocity_kinematics() to get
+        the current workspace position and velocity and self._limb.set_joint_velocities() to set
+        the joint velocity to something.  you may have to look at
+        http://docs.ros.org/diamondback/api/kdl/html/python/geometric_primitives.html to convert the
+        output of forward_velocity_kinematics() to a numpy array.  You may find joint_array_to_dict()
+        in utils.py useful
 
-        MAKE SURE TO CONVERT QUATERNIONS TO EULER IN forward_position_kinematics().  
+        MAKE SURE TO CONVERT QUATERNIONS TO EULER IN forward_position_kinematics().
         you can use tf.transformations.euler_from_quaternion()
 
-        your target orientation should be (0,0,0) in euler angles and (0,1,0,0) as a quaternion.  
+        your target orientation should be (0,0,0) in euler angles and (0,1,0,0) as a quaternion.
 
         Parameters
         ----------
@@ -441,13 +441,28 @@ class PDWorkspaceVelocityController(Controller):
         """
         Kp = self.Kp
         Kv = self.Kv
-        raise NotImplementedError
+
+        current_velocity = self._kin.forward_velocity_kinematics() # PyKDL.Twist
+        (vel,rot) = (current_velocity.vel,current_velocity.rot)
+        current_velocity = np.array([vel[0],vel[1],vel[2], rot[0],rot[1],rot[2]] )
+
+        current_position = self._kin.forward_position_kinematics() # 7x vector
+        pos = current_position[0:3]
+        rot_in_quat = current_position[3:7]
+        rot = tf.transformations.euler_from_quaternion(rot_in_quat)
+        current_position = np.array([pos[0],pos[1],pos[2],rot[0],rot[1],rot[2]])
+
+        err = target_position - current_position
+        err_d = target_velocity - current_velocity
+        output_vel = target_velocity + Kp.dot(err) + Kv.dot(err_d) # Note that Kp, Kv are 6x6 diagnol matrixes
+        #self._limb.set_joint_velocities(joint_array_to_dict(output_vel, self._limb))
+
 
 class PDJointVelocityController(Controller):
     """
-    Look at the comments on the Controller class above.  The difference between this controller and the 
+    Look at the comments on the Controller class above.  The difference between this controller and the
     PDJointVelocityController is that this controller turns the desired workspace position and velocity
-    into desired JOINT position and velocity.  Then it compares the difference between the baxter's 
+    into desired JOINT position and velocity.  Then it compares the difference between the baxter's
     current JOINT position and velocity and desired JOINT position and velocity to come up with a
     joint velocity command and sends that to the baxter.  notice the shape of Kp and Kv
     """
@@ -466,8 +481,8 @@ class PDJointVelocityController(Controller):
 
     def step_control(self, target_position, target_velocity, target_acceleration):
         """
-        makes a call to the robot to move according to it's current position and the desired position 
-        according to the input path and the current time. Each Controller below extends this 
+        makes a call to the robot to move according to it's current position and the desired position
+        according to the input path and the current time. Each Controller below extends this
         class, and implements this accordingly. This method should call
         self._limb.joint_angle and self._limb.joint_velocity to get the current joint position and velocity
         and self._limb.set_joint_velocities() to set the joint velocity to something.  You may find
@@ -497,8 +512,8 @@ class PDJointTorqueController(Controller):
 
     def step_control(self, target_position, target_velocity, target_acceleration):
         """
-        makes a call to the robot to move according to it's current position and the desired position 
-        according to the input path and the current time. Each Controller below extends this 
+        makes a call to the robot to move according to it's current position and the desired position
+        according to the input path and the current time. Each Controller below extends this
         class, and implements this accordingly. This method should call
         self._limb.joint_angle and self._limb.joint_velocity to get the current joint position and velocity
         and self._limb.set_joint_velocities() to set the joint velocity to something.  You may find
