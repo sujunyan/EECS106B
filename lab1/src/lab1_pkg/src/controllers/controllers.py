@@ -439,6 +439,8 @@ class PDWorkspaceVelocityController(Controller):
         target_velocity: 6x' ndarray of desired velocities
         target_acceleration: 6x' ndarray of desired accelerations
         """
+        Kp = self.Kp
+        Kv = self.Kv
         raise NotImplementedError
 
 class PDJointVelocityController(Controller):
