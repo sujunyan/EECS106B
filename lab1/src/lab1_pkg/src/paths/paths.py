@@ -235,20 +235,23 @@ class LinearPath(MotionPath):
         """
         super(LinearPath,self).__init__(limb,kin,total_time,tag_pos)
         #self.get_tag_pos()
-        assert(len(tag_pos) >= 2)
-        print tag_pos
-        self._final_pos = self.tag_pos[0][0] # 3x vector np.array
-        self._start_pos = self.tag_pos[1][0]
-        h = 0.2
+        #assert(len(tag_pos) >= 2)
+        #print tag_pos
+        #self._final_pos = self.tag_pos[0][0] # 3x vector np.array
+        #self._start_pos = self.tag_pos[1][0]
+        self._final_pos = np.array([0.774,0.529,0])
+        self._start_pos = np.array([0.760,0.119,0])
+        h = - 0.1
         self._start_pos[2] +=h
         self._final_pos[2] +=h
         self._path_diff = self._final_pos - self._start_pos
-
         self.delta_t = 0.01
+        """
         print("\nLinearPath Created with start_pos,final_pos,path_diff")
         print(self._start_pos)
         print(self._final_pos)
         print(self._path_diff)
+        """
 
     def target_position(self, time):
         """

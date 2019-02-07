@@ -177,10 +177,10 @@ if __name__ == "__main__":
     # https://github.com/valmik/baxter_pykdl/blob/master/src/baxter_pykdl/baxter_pykdl.py
     # for info on how to use each method
     kin = baxter_kinematics(args.arm)
-    total_time = 10 # seconds
+    total_time = 5 # seconds
     # ADD COMMENT EHRE
-    tag_pos = [lookup_tag(marker) for marker in args.ar_marker]
-    #tag_pos = None
+    #tag_pos = [lookup_tag(marker) for marker in args.ar_marker]
+    tag_pos = None
 
     # Get an appropriate RobotTrajectory for the task (circular, linear, or square)
     # If the controller is a workspace controller, this should return a trajectory where the
