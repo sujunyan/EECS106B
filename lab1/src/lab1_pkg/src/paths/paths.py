@@ -273,8 +273,8 @@ class LinearPath(MotionPath):
         #print tag_pos
         #self._final_pos = self.tag_pos[0][0] # 3x vector np.array
         #self._start_pos = self.tag_pos[1][0]
-        self._final_pos = start_pos
-        self._start_pos = final_pos
+        self._final_pos = final_pos
+        self._start_pos = start_pos
         h = - 0.0
         self._start_pos[2] +=h
         self._final_pos[2] +=h
@@ -437,13 +437,15 @@ class MultiplePaths(MotionPath):
 
         returns
         ------
-        :path: `MotionPath`
+        time : float; reduced time in correspoding path
+        path : MotionPath
         """
-        acc_time = 0
         for path in self.paths:
-            acc_time += path.total_time
-            if(time <= acc_time):
-                return path
+            if (time > path.total_time):
+                time -= path.total_time
+                continue
+            else:
+                return (time,path)
 
 
     def target_position(self, time):
@@ -459,7 +461,8 @@ class MultiplePaths(MotionPath):
         3x' :obj:`numpy.ndarray`
             desired position in workspace coordinates of the end effector
         """
-        return self.get_current_path(time).target_position(time)
+        (t,path) = self.get_current_path(time)
+        return path.target_position(t)
 
     def target_velocity(self, time):
         """
@@ -475,7 +478,8 @@ class MultiplePaths(MotionPath):
         3x' :obj:`numpy.ndarray`
             desired velocity in workspace coordinates of the end effector
         """
-        return self.get_current_path(time).target_velocity(time)
+        (t,path) = self.get_current_path(time)
+        return path.target_velocity(t)
 
     def target_acceleration(self, time):
         """
@@ -491,4 +495,5 @@ class MultiplePaths(MotionPath):
         3x' :obj:`numpy.ndarray`
             desired acceleration in workspace coordinates of the end effector
         """
-        return self.get_current_path(time).target_acceleration(time)
+        (t,path) = self.get_current_path(time)
+        return path.target_acceleration(t)

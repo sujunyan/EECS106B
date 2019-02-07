@@ -86,8 +86,8 @@ def get_trajectory(task, ar_marker_num, num_way, controller_name):
     elif task == 'square':
         #tag_pos = [lookup_tag(num) for num in ar_marker_num]
         #assert(len(tag_pos) == 4)
-        corners = [np.array([0.760,0.529,0]), np.array([0.760,0.119,0])]
-                #np.array([0.570, 0.495, -0.139]), np.array([0.751, 0.433, 0.003])]
+        corners = [np.array([0.73,0.47,0]), np.array([0.73,0.25,-0.1])
+                ,np.array([0.55, 0.25, 0]), np.array([0.53, 0.47, 0.1])]
         length = len(corners)
         paths = [LinearPath(limb,kin,total_time,ar_marker_num,corners[i],corners[(i+1)%length]) for i in range(length)]
         path = MultiplePaths(paths)
