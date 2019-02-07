@@ -19,7 +19,7 @@ except:
     pass
 
 class MotionPath(object):
-    def __init__(self, limb, kin, total_time,tag_pos):
+    def __init__(self, limb, kin, total_time,ar_marker_num):
         """
         Parameters
         ----------
@@ -32,7 +32,7 @@ class MotionPath(object):
         self.limb = limb
         self.kin = kin
         self.total_time = total_time
-        self.tag_pos = tag_pos
+        self.ar_marker_num = ar_marker_num
 
     def target_position(self, time):
         """
@@ -212,6 +212,8 @@ class MotionPath(object):
             )
             ik_attempts += 1
             if ik_attempts > max_ik_attempts:
+                print("\n IK failed with point")
+                print(x)
                 rospy.signal_shutdown(
                     'MAX IK ATTEMPTS EXCEEDED AT x(t)={}'.format(x)
                 )
@@ -226,22 +228,54 @@ class MotionPath(object):
         p = rospy.wait_for_message('tag_talk', Point, timeout = 10)
         self.tag_pos = np.array([p.x,p.y,p.z])
 
+    def lookup_tag(tag_number):
+        """
+        Given an AR tag number, this returns the position of the AR tag in the robot's base frame.
+        You can use either this function or try starting the scripts/tag_pub.py script.  More info
+        about that script is in that file.  
+
+        Parameters
+        ----------
+        tag_number : int    
+
+        Returns
+        -------
+        3x' :obj:`numpy.ndarray`
+            tag position
+        """
+        listener = tf.TransformListener()
+        from_frame = 'base'
+        to_frame = 'ar_marker_{}'.format(tag_number)    
+
+        r = rospy.Rate(200)
+        while (
+            not listener.frameExists(from_frame) or not listener.frameExists(to_frame)
+        ) and (
+            not rospy.is_shutdown()
+        ):
+            print 'Cannot find AR marker {}, retrying'.format(tag_number)
+            r.sleep()   
+
+        t = listener.getLatestCommonTime(from_frame, to_frame)
+        tag_pos, _ = listener.lookupTransform(from_frame, to_frame, t)
+        return vec(tag_pos)
+
 class LinearPath(MotionPath):
-    def __init__(self,limb,kin,total_time,tag_pos):
+    def __init__(self,limb,kin,total_time,ar_marker_num,start_pos,final_pos):
         """
         Construnction function for Motion Path
         Get the ar_tag position from the node "tag_pub.py"
         The path goes from current position to an ar_tag
         """
-        super(LinearPath,self).__init__(limb,kin,total_time,tag_pos)
+        super(LinearPath,self).__init__(limb,kin,total_time,ar_marker_num)
         #self.get_tag_pos()
         #assert(len(tag_pos) >= 2)
         #print tag_pos
         #self._final_pos = self.tag_pos[0][0] # 3x vector np.array
         #self._start_pos = self.tag_pos[1][0]
-        self._final_pos = np.array([0.774,0.529,0])
-        self._start_pos = np.array([0.760,0.119,0])
-        h = - 0.1
+        self._final_pos = start_pos
+        self._start_pos = final_pos
+        h = - 0.0
         self._start_pos[2] +=h
         self._final_pos[2] +=h
         self._path_diff = self._final_pos - self._start_pos
@@ -382,10 +416,35 @@ class MultiplePaths(MotionPath):
     MultiplePaths object, which would determine when to go onto the next path.
     """
     def __init__(self, paths):
-        raise NotImplementedError
+        """
+        parameter
+        ---------
+        paths: list of path (MotionPath)
+        """
+        self.paths = paths
+        self.total_time = 0
+        for path in paths:
+            self.total_time += path.total_time
+        path = paths[0]
+        super(MultiplePaths,self).__init__(path.limb,path.kin,self.total_time,path.ar_marker_num)
+
 
     def get_current_path(self, time):
-        raise NotImplementedError
+        """
+        parameter
+        -------
+        time : float
+
+        returns
+        ------
+        :path: `MotionPath`
+        """
+        acc_time = 0
+        for path in self.paths:
+            acc_time += path.total_time
+            if(time <= acc_time):
+                return path
+
 
     def target_position(self, time):
         """
@@ -400,7 +459,7 @@ class MultiplePaths(MotionPath):
         3x' :obj:`numpy.ndarray`
             desired position in workspace coordinates of the end effector
         """
-        raise NotImplementedError
+        return self.get_current_path(time).target_position(time)
 
     def target_velocity(self, time):
         """
@@ -416,7 +475,7 @@ class MultiplePaths(MotionPath):
         3x' :obj:`numpy.ndarray`
             desired velocity in workspace coordinates of the end effector
         """
-        raise NotImplementedError
+        return self.get_current_path(time).target_velocity(time)
 
     def target_acceleration(self, time):
         """
@@ -432,4 +491,4 @@ class MultiplePaths(MotionPath):
         3x' :obj:`numpy.ndarray`
             desired acceleration in workspace coordinates of the end effector
         """
-        raise NotImplementedError
+        return self.get_current_path(time).target_acceleration(time)

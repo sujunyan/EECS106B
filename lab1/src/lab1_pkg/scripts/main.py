@@ -62,7 +62,7 @@ def lookup_tag(tag_number):
     tag_pos, _ = listener.lookupTransform(from_frame, to_frame, t)
     return vec(tag_pos)
 
-def get_trajectory(task, tag_pos, num_way, controller_name):
+def get_trajectory(task, ar_marker_num, num_way, controller_name):
     """
     Returns an appropriate robot trajectory for the specified task.  You should
     be implementing the path functions in paths.py and call them here
@@ -71,18 +71,26 @@ def get_trajectory(task, tag_pos, num_way, controller_name):
     ----------
     task : string
         name of the task.  Options: line, circle, square
-    tag_pos : 3x' :obj:`numpy.ndarray`
+    ar_marker_num : nx1' : list of ar_marker numbers ; 
 
     Returns
     -------
     :obj:`moveit_msgs.msg.RobotTrajectory`
     """
     if task == 'line':
-        path = LinearPath(limb,kin,total_time,tag_pos)
+        final_pos = np.array([0.774,0.529,0])
+        start_pos = np.array([0.760,0.119,0])
+        path = LinearPath(limb,kin,total_time,ar_marker_num,start_pos,final_pos) # ar_marker_num might be redundent
     elif task == 'circle':
         path = None
     elif task == 'square':
-        path = None
+        #tag_pos = [lookup_tag(num) for num in ar_marker_num]
+        #assert(len(tag_pos) == 4)
+        corners = [np.array([0.760,0.529,0]), np.array([0.760,0.119,0])]
+                #np.array([0.570, 0.495, -0.139]), np.array([0.751, 0.433, 0.003])]
+        length = len(corners)
+        paths = [LinearPath(limb,kin,total_time,ar_marker_num,corners[i],corners[(i+1)%length]) for i in range(length)]
+        path = MultiplePaths(paths)
     else:
         raise ValueError('task {} not recognized'.format(task))
     return path.to_robot_trajectory(num_way, controller_name!='workspace')
@@ -178,9 +186,7 @@ if __name__ == "__main__":
     # for info on how to use each method
     kin = baxter_kinematics(args.arm)
     total_time = 5 # seconds
-    # ADD COMMENT EHRE
-    #tag_pos = [lookup_tag(marker) for marker in args.ar_marker]
-    tag_pos = None
+
 
     # Get an appropriate RobotTrajectory for the task (circular, linear, or square)
     # If the controller is a workspace controller, this should return a trajectory where the
@@ -189,7 +195,7 @@ if __name__ == "__main__":
     # and velocities are the positions and velocities of each joint.
 
     planner = PathPlanner('{}_arm'.format(args.arm))
-    robot_trajectory = get_trajectory(args.task, tag_pos, args.num_way, args.controller_name)
+    robot_trajectory = get_trajectory(args.task, args.ar_marker, args.num_way, args.controller_name)
     #print(robot_trajectory)
     # This is a wrapper around MoveIt! for you to use.  We use MoveIt! to go to the start position
     # of the trajectory
