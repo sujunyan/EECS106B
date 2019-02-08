@@ -77,11 +77,12 @@ def get_trajectory(task, ar_marker_num, num_way, controller_name):
     :obj:`moveit_msgs.msg.RobotTrajectory`
     """
     if task == 'line':
-        final_pos = np.array([0.774,0.529,0])
-        start_pos = np.array([0.760,0.119,0])
+        final_pos = np.array([0.751, 0.336, 0.234])
+        start_pos = np.array([0.726, 0.028, 0.226])
         path = LinearPath(limb,kin,total_time,ar_marker_num,start_pos,final_pos) # ar_marker_num might be redundent
     elif task == 'circle':
-        path = None
+        center_pos = np.array([0.751, 0.336, 0.234])
+        path = CircularPath(limb,kin,total_time,ar_marker_num,center_pos)
     elif task == 'square':
         #tag_pos = [lookup_tag(num) for num in ar_marker_num]
         #assert(len(tag_pos) == 4)
