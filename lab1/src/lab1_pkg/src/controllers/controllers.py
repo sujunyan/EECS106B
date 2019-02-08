@@ -463,8 +463,13 @@ class PDWorkspaceVelocityController(Controller):
         err = target_position - current_position
         err_d = target_velocity - current_velocity
         output_vel = target_velocity + Kp.dot(err) + Kv.dot(err_d) # Note that Kp, Kv are 6x6 diagnol matrixes
-        #print "",output_vel
-        #self._limb.set_joint_velocities(joint_array_to_dict(output_vel, self._limb))
+        J_inv = self._kin.jacobian_pseudo_inverse()
+
+        output_vel = J_inv.dot(output_vel) # change from workspace vel to joint space 
+        output_vel = output_vel.A1 # change from matrix to a vector
+        print "\n",output_vel
+        print joint_array_to_dict(output_vel, self._limb), "\n"
+        self._limb.set_joint_velocities(joint_array_to_dict(output_vel, self._limb))
 
 
 class PDJointVelocityController(Controller):

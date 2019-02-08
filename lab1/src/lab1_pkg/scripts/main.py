@@ -107,7 +107,7 @@ def get_controller(controller_name):
     :obj:`Controller`
     """
     if controller_name == 'workspace':
-        Kp = np.array([0,0,0,0,0,0]) # 6x array
+        Kp = np.array([0.2,0,0.1,0,0,0]) # 6x array
         Kv = np.array([0,0,0,0,0,0])
         controller = PDWorkspaceVelocityController(limb, kin, Kp, Kv)
     elif controller_name == 'jointspace':
