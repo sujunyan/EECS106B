@@ -435,9 +435,9 @@ class PDWorkspaceVelocityController(Controller):
 
         Parameters
         ----------
-        target_position: 6x' ndarray of desired positions
-        target_velocity: 6x' ndarray of desired velocities
-        target_acceleration: 6x' ndarray of desired accelerations
+        target_position: 3x' ndarray of desired positions
+        target_velocity: 3x' ndarray of desired velocities
+        target_acceleration: 3x' ndarray of desired accelerations
         """
         Kp = self.Kp
         Kv = self.Kv
@@ -452,9 +452,18 @@ class PDWorkspaceVelocityController(Controller):
         rot = tf.transformations.euler_from_quaternion(rot_in_quat)
         current_position = np.array([pos[0],pos[1],pos[2],rot[0],rot[1],rot[2]])
 
+        """
+        print "target_pos",target_position
+        print "current pos",current_position
+        print "target vel",target_velocity
+        """
+        target_position = np.append(target_position,np.zeros(3)) # add orientation 
+        target_velocity = np.append(target_velocity,np.zeros(3)) # add angular velocity
+
         err = target_position - current_position
         err_d = target_velocity - current_velocity
         output_vel = target_velocity + Kp.dot(err) + Kv.dot(err_d) # Note that Kp, Kv are 6x6 diagnol matrixes
+        #print "",output_vel
         #self._limb.set_joint_velocities(joint_array_to_dict(output_vel, self._limb))
 
 

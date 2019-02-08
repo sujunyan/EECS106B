@@ -103,10 +103,30 @@ class baxter_kinematics(object):
                 mat[i,j] = data[i,j]
         return mat
 
-    def forward_position_kinematics(self):
+    def dict_to_JntArray(self,joint_values):
+        """
+        Convert a ditc to JntArray
+
+        parameters
+        --------
+        joint_values: dict
+
+        return 
+        kdl_array: PyKDL.JntArray
+        """
+        kdl_array = PyKDL.JntArray(self._num_jnts)
+        for idx, name in enumerate(self._joint_names):
+            kdl_array[idx] = joint_values[name]
+        return kdl_array
+
+    def forward_position_kinematics(self,joint_values = None):
         end_frame = PyKDL.Frame()
-        self._fk_p_kdl.JntToCart(self.joints_to_kdl('positions'),
-                                 end_frame)
+        if not (joint_values):
+            joint_values = self.joints_to_kdl('positions')
+        else:
+            joint_values = self.dict_to_JntArray(joint_values)
+
+        self._fk_p_kdl.JntToCart(joint_values,end_frame)
         pos = end_frame.p
         rot = PyKDL.Rotation(end_frame.M)
         rot = rot.GetQuaternion()
@@ -150,9 +170,14 @@ class baxter_kinematics(object):
             print 'No IK Solution Found'
             return None
 
-    def jacobian(self):
+    def jacobian(self,joint_values = None):
+        if not (joint_values):
+            joint_values = self.joints_to_kdl('positions')
+        else:
+            joint_values = self.dict_to_JntArray(joint_values)
+            
         jacobian = PyKDL.Jacobian(self._num_jnts)
-        self._jac_kdl.JntToJac(self.joints_to_kdl('positions'), jacobian)
+        self._jac_kdl.JntToJac(joint_values, jacobian)
         return self.kdl_to_mat(jacobian)
 
     def jacobian_transpose(self):

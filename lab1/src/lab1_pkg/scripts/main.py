@@ -20,15 +20,14 @@ from controllers.controllers import (
 from utils.utils import *
 from path_planner import PathPlanner
 
-try:
-    import rospy
-    import tf
-    import baxter_interface
-    import moveit_commander
-    from moveit_msgs.msg import DisplayTrajectory, RobotState
-    from baxter_pykdl import baxter_kinematics
-except:
-    print 'Couldn\'t import ROS, I assume you\'re working on just the paths on your own computer'
+
+import rospy
+import tf
+import baxter_interface
+import moveit_commander
+from moveit_msgs.msg import DisplayTrajectory, RobotState
+from baxter_pykdl import baxter_kinematics
+#print 'Couldn\'t import ROS, I assume you\'re working on just the paths on your own computer'
 
 def lookup_tag(tag_number):
     """
@@ -148,7 +147,7 @@ if __name__ == "__main__":
         'Which AR marker to use.  Default: 1'
     )
     parser.add_argument('-controller_name', '-c', type=str, default='workspace',
-        help='Options: workspace, jointspace, or torque.  Default: workspace'
+        help='Options: workspace, jointspace, torque or open_loop.  Default: workspace'
     )
     parser.add_argument('-arm', '-a', type=str, default='left', help=
         'Options: left, right.  Default: left'
@@ -197,7 +196,7 @@ if __name__ == "__main__":
     robot_trajectory = get_trajectory(args.task, args.ar_marker, args.num_way, args.controller_name)
     #print(robot_trajectory)
     # This is a wrapper around MoveIt! for you to use.  We use MoveIt! to go to the start position
-    # of the trajectory
+    # of the trajectoryrget_veloci
 
     if args.controller_name == "workspace":
         pose = create_pose_stamped_from_pos_quat(
