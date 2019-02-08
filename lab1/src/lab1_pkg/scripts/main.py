@@ -9,7 +9,7 @@ import argparse
 import time
 import numpy as np
 import signal
-
+import time
 from paths.paths import LinearPath, CircularPath, MultiplePaths
 from controllers.controllers import (
     PDWorkspaceVelocityController,
@@ -228,7 +228,10 @@ if __name__ == "__main__":
             sys.exit()
         # uses MoveIt! to execute the trajectory.  make sure to view it in RViz before running this.
         # the lines above will display the trajectory in RViz
+        start_time = time.time()
         planner.execute_plan(robot_trajectory)
+        time_used = time.time() - start_time
+        print("In Moveit, total_time used is %f s\n."%(time_used,))
     else:
         # LAB 1 PART B
         controller = get_controller(args.controller_name)
