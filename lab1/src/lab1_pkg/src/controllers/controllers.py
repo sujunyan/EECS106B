@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 
 # Lab imports
 from utils.utils import *
-
+import time
 # ROS imports
 try:
     import tf
@@ -307,6 +307,7 @@ class Controller:
         # For timing
         start_t = rospy.Time.now()
         r = rospy.Rate(rate)
+        start_time = time.time()
 
         while not rospy.is_shutdown():
             # Find the time from start
@@ -346,7 +347,8 @@ class Controller:
             if current_index >= max_index:
                 self.stop_moving()
                 break
-
+        time_used = time.time() - start_time
+        print("In controller, time used %f s."%(time_used,))
         if log:
             self.plot_results(
                 times,
@@ -442,6 +444,7 @@ class PDWorkspaceVelocityController(Controller):
         Kp = self.Kp
         Kv = self.Kv
 
+
         current_velocity = self._kin.forward_velocity_kinematics() # PyKDL.Twist
         (vel,rot) = (current_velocity.vel,current_velocity.rot)
         current_velocity = np.array([vel[0],vel[1],vel[2], rot[0],rot[1],rot[2]] )
@@ -462,13 +465,14 @@ class PDWorkspaceVelocityController(Controller):
 
         err = target_position - current_position
         err_d = target_velocity - current_velocity
+
         output_vel = target_velocity + Kp.dot(err) + Kv.dot(err_d) # Note that Kp, Kv are 6x6 diagnol matrixes
         J_inv = self._kin.jacobian_pseudo_inverse()
 
         output_vel = J_inv.dot(output_vel) # change from workspace vel to joint space 
         output_vel = output_vel.A1 # change from matrix to a vector
-        print "\n",output_vel
-        print joint_array_to_dict(output_vel, self._limb), "\n"
+        #print "\n",output_vel,"\n",target_velocity
+        #print joint_array_to_dict(output_vel, self._limb), "\n"
         self._limb.set_joint_velocities(joint_array_to_dict(output_vel, self._limb))
 
 

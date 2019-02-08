@@ -3,3 +3,4 @@ devel
 *.pyc
 ar_track_alvar
 *.swp
+.nfs*

@@ -347,7 +347,7 @@ class LinearPath(MotionPath):
         return (pos_t - 2*pos_t_1 + pos_t_2) / (2*delta_t)
 
 class CircularPath(MotionPath):
-    def __init__(self,limb,kin,total_time,ar_marker_num,center_pos):
+    def __init__(self,limb,kin,total_time,ar_marker_num,center_pos,r):
         """
         Remember to call the constructor of MotionPath
 
@@ -362,9 +362,8 @@ class CircularPath(MotionPath):
         h = - 0.0
         
         self._center_pos[2]+=h
-
-
         self.delta_t = 0.01
+        self.r = r
 
 
 
@@ -386,14 +385,14 @@ class CircularPath(MotionPath):
         3x' :obj:`numpy.ndarray`
            desired x,y,z position in workspace coordinates of the end effector
         """
-        r = 0.05
+        r = self.r
 
-        target_pos = np.array([0.726, 0.028, 0.226])
+        target_pos = np.array(self._center_pos)
         ratio = time / self.total_time
 
-        target_pos[0] = self._center_pos[0] + r * math.cos(ratio * 2 * math.pi) 
-        target_pos[1] = self._center_pos[1] + r * math.sin(ratio * 2 * math.pi)
-
+        target_pos[0] = self._center_pos[0] + r * math.cos(ratio * 2 * math.pi + math.pi/4) 
+        target_pos[1] = self._center_pos[1] + r * math.sin(ratio * 2 * math.pi + math.pi/4)
+        #print target_pos, r, ratio, self._center_pos[0], r * math.cos(ratio * 2 * math.pi)
         return target_pos   
 
 
