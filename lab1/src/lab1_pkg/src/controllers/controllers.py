@@ -508,7 +508,21 @@ class PDJointVelocityController(Controller):
         target_velocity: 7x' :obj:`numpy.ndarray` of desired velocities
         target_acceleration: 7x' :obj:`numpy.ndarray` of desired accelerations
         """
-        raise NotImplementedError
+        Kp = self.Kp
+        Kv = self.Kv
+
+        current_position = np.array([self._limb.joint_angle(joint) for joint in self._limb.joint_names()])
+        current_velocity = np.array([self._limb.joint_velocity(joint) for joint in self._limb.joint_names()])
+
+        err = target_position - current_position
+        err_d = target_velocity - current_velocity
+
+        output_vel = target_velocity + Kp.dot(err) + Kv.dot(err_d) # Note that Kp, Kv are 7x7 diagnol matrixes
+        
+        print "\n",output_vel
+        print joint_array_to_dict(output_vel, self._limb), "\n"
+        self._limb.set_joint_velocities(joint_array_to_dict(output_vel, self._limb))
+
 
 class PDJointTorqueController(Controller):
     def __init__(self, limb, kin, Kp, Kv):

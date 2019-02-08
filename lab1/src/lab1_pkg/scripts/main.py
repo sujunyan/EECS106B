@@ -112,9 +112,8 @@ def get_controller(controller_name):
         Kv = np.array([0,0,0,0,0,0])
         controller = PDWorkspaceVelocityController(limb, kin, Kp, Kv)
     elif controller_name == 'jointspace':
-        # YOUR CODE HERE
-        Kp = None
-        Kv = None
+        Kp = np.array([0,4,12,0,10,0,0])   # 7x array
+        Kv = np.array([0,0.2,0,0,0,0,0])
         controller = PDJointVelocityController(limb, kin, Kp, Kv)
     elif controller_name == 'torque':
         # YOUR CODE HERE
