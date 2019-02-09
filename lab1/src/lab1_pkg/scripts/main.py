@@ -112,8 +112,8 @@ def get_controller(controller_name):
         ## for line
         #Kp = np.array([2 , 1 , 1,0,0,0]) # 6x array
         #Kv = np.array([1, 0.5 , 1,0,0,0])
-        Kp = np.array([5, 2 , 4,0,0,0]) # 6x array
-        Kv = np.array([-0.1, -0 , 0,0,0,0])
+        Kp = np.array([2, 1 , 4,0,0,0]) # 6x array
+        Kv = np.array([2, 1 , 0,0,0,0])
         controller = PDWorkspaceVelocityController(limb, kin, Kp, Kv)
     elif controller_name == 'jointspace':
         # YOUR CODE HERE
