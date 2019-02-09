@@ -257,7 +257,7 @@ class Controller:
             plt.ylabel(workspace_joints[joint] + " Position Error")
 
             plt.subplot(joint_num,2,2*joint+2)
-            plt.plot(times, actual_velocities[:,joint], label='Actual')
+            plt.plot(times, actual_workspace_velocities[:,joint], label='Actual')
             plt.plot(times, target_velocities[:,joint], label='Desired')
             plt.xlabel("Time (t)")
             plt.ylabel(workspace_joints[joint] + " Velocity Error")
@@ -444,10 +444,17 @@ class PDWorkspaceVelocityController(Controller):
         Kp = self.Kp
         Kv = self.Kv
 
-
+        """
         current_velocity = self._kin.forward_velocity_kinematics() # PyKDL.Twist
         (vel,rot) = (current_velocity.vel,current_velocity.rot)
+        print "current_velocity from origin", current_velocity
         current_velocity = np.array([vel[0],vel[1],vel[2], rot[0],rot[1],rot[2]] )
+        """
+        J = self._kin.jacobian()
+        joint_vel = get_joint_velocities(self._limb)
+        current_velocity = J.dot(joint_vel)
+        current_velocity = current_velocity.A1
+        #print "current_velocity from origin", current_velocity
 
         current_position = self._kin.forward_position_kinematics() # 7x vector
         pos = current_position[0:3]
@@ -465,7 +472,13 @@ class PDWorkspaceVelocityController(Controller):
 
         err = target_position - current_position
         err_d = target_velocity - current_velocity
-
+        
+        print "pos err,", err
+        print "vel err",err_d
+        #print "target vel",target_velocity
+        #print "cur vel",current_velocity
+        print "\n"
+        
         output_vel = target_velocity + Kp.dot(err) + Kv.dot(err_d) # Note that Kp, Kv are 6x6 diagnol matrixes
         J_inv = self._kin.jacobian_pseudo_inverse()
 

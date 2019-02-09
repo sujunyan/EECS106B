@@ -77,11 +77,17 @@ def get_trajectory(task, ar_marker_num, num_way, controller_name):
     :obj:`moveit_msgs.msg.RobotTrajectory`
     """
     if task == 'line':
-        start_pos = np.array([0.6, 0.147, 0])
-        final_pos = np.array([0.8, 0.30 , 0])
+        # left_hand
+        #start_pos = np.array([0.6, 0.147, 0])
+        #final_pos = np.array([0.8, 0.30 , 0])
+        #right
+        start_pos = np.array([0.555, -0.37, 0])
+        final_pos = np.array([0.76, -0.1 , 0])
+
         path = LinearPath(limb,kin,total_time,ar_marker_num,start_pos,final_pos) # ar_marker_num might be redundent
     elif task == 'circle':
-        center_pos = np.array([0.7, 0.23, 0])
+        center_pos = np.array([0.583, -0.16, 0.09]) # right_hand
+        #center_pos = np.array([0.7, 0.23, 0]) # left_hand
         r = 0.08
         path = CircularPath(limb,kin,total_time,ar_marker_num,center_pos,r)
     elif task == 'square':
@@ -109,11 +115,15 @@ def get_controller(controller_name):
     :obj:`Controller`
     """
     if controller_name == 'workspace':
-        ## for line
-        #Kp = np.array([2 , 1 , 1,0,0,0]) # 6x array
-        #Kv = np.array([1, 0.5 , 1,0,0,0])
-        Kp = np.array([2, 1 , 4,0,0,0]) # 6x array
-        Kv = np.array([2, 1 , 0,0,0,0])
+        ## for circle
+        #Kp = np.array([4 , 3 , 4,0,0,0]) # 6x array
+        #Kv = np.array([0, 0.02 , 0,0,0,0])
+        #for line 
+        #Kp = np.array([1, 1 , 4,0,0,0]) # 6x array
+        #Kv = np.array([0, 0 , 0,0,0,0])
+        ## for square
+        Kp = np.array([1 , 1 , 4,0,0,0]) # 6x array
+        Kv = np.array([0, 0.0 , 0,0,0,0])
         controller = PDWorkspaceVelocityController(limb, kin, Kp, Kv)
     elif controller_name == 'jointspace':
         # YOUR CODE HERE
