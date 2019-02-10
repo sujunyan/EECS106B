@@ -44,6 +44,7 @@ class Controller:
         rospy.on_shutdown(self.shutdown)
         self._limb = limb
         self._kin = kin
+        self.name = 'Controller'
 
     def step_control(self, target_position, target_velocity, target_acceleration):
         """
@@ -162,8 +163,6 @@ class Controller:
         """
         zero_vel_dict = joint_array_to_dict(np.zeros(NUM_JOINTS), self._limb)
         self._limb.set_joint_velocities(zero_vel_dict)
-
-
 
     def plot_results(
         self,
@@ -384,7 +383,146 @@ class Controller:
         bool
             whether the controller completes the path or not
         """
-        raise NotImplementedError
+                # For plotting
+        if log:
+            times = list()
+            actual_positions = list()
+            actual_velocities = list()
+            target_positions = list()
+            target_velocities = list()
+
+
+        # For timing
+        start_t = rospy.Time.now()
+        r = rospy.Rate(rate)
+        start_time = time.time()
+
+        while not rospy.is_shutdown():
+            # Find the time from start
+            t = (rospy.Time.now() - start_t).to_sec()
+
+            # If the controller has timed out, stop moving and return false
+            if timeout is not None and t >= timeout:
+                # Set velocities to zero
+                self.stop_moving()
+                return False
+
+            current_position = get_joint_positions(self._limb)
+            current_velocity = get_joint_velocities(self._limb)
+
+            # Get the desired position, velocity, and effort
+            tag_pos = rospy.wait_for_message('tag_talk', Point)
+            (target_position,
+            target_velocity,
+            target_acceleration) = self.get_ar_target(tag_pos)
+
+            # For plotting
+            if log:
+                times.append(t)
+                actual_positions.append(current_position)
+                actual_velocities.append(current_velocity)
+                target_positions.append(target_position)
+                target_velocities.append(target_velocity)
+
+            # Run controller
+            self.step_control(target_position, target_velocity, target_acceleration)
+
+            # Sleep for a bit (to let robot move)
+            r.sleep()
+
+            if current_index >= max_index:
+                self.stop_moving()
+                break
+
+        time_used = time.time() - start_time
+        print("In controller, time used %f s."%(time_used,))
+        if log:
+            self.plot_results(
+                times,
+                actual_positions,
+                actual_velocities,
+                target_positions,
+                target_velocities
+            )
+        return True
+
+    def get_ar_target(self,tag_pos):
+        """
+        get target position, velocity and acceleration for the follow_ar_tag task.
+
+        Parameters
+        ----------
+        tag_pos : :obj:`Point`
+
+        Returns
+        -------
+        target_position : 7x' or 6x' :obj:`numpy.ndarray`
+            desired positions
+        target_velocity : 7x' or 6x' :obj:`numpy.ndarray`
+            desired velocities
+        target_acceleration : 7x' or 6x' :obj:`numpy.ndarray`
+            desired accelerations
+        """
+
+        J_inv = self._kin.jacobian_pseudo_inverse()
+        J = self._kin.jacobian()
+        h_offset = 0.2
+        target_position = np.array([tag_pos.x,tag_pos.y,tag_pos.z + h_offset ,0,0,0]) #6x np array
+        current_position = self.get_current_position()
+        speed = 0.5
+        target_velocity = (target_position - current_position ) * speed
+        target_acceleration = np.zeros(6) # might not be correct
+
+        if self.name != 'workspace':
+            target_position = self.get_ik(target_position[:3])
+            target_velocity = J_inv.dot(target_velocity).A1
+            target_acceleration = J_inv.dot(target_acceleration).A1
+
+        return (target_position,target_velocity,target_acceleration)
+
+    def get_current_position(self):
+        """
+        returns
+        --------
+        current_position: 6x numpy.ndarray ([3x position, 3x rotation])
+        """
+        current_position = self._kin.forward_position_kinematics() # 7x vector
+        pos = current_position[0:3]
+        rot_in_quat = current_position[3:7]
+        rot = tf.transformations.euler_from_quaternion(rot_in_quat)
+        current_position = np.array([pos[0],pos[1],pos[2],rot[0],rot[1],rot[2]])
+
+    def get_ik(self, x, max_ik_attempts=10):
+        """
+        gets ik
+
+        Parameters
+        ----------
+        x : 3x' :obj:`numpy.ndarray`
+            workspace position of the end effector
+        max_ik_attempts : int
+            number of attempts before short circuiting
+
+        Returns
+        -------
+        7x' :obj:`numpy.ndarray`
+            joint values to achieve the passed in workspace position
+        """
+        ik_attempts, theta = 0, None
+        while theta is None and not rospy.is_shutdown():
+            theta = self._kin.inverse_kinematics(
+                position=x,
+                orientation=[0, 1, 0, 0]
+            )
+            ik_attempts += 1
+            if ik_attempts > max_ik_attempts:
+                print("\n IK failed with point")
+                print(x)
+                rospy.signal_shutdown(
+                    'MAX IK ATTEMPTS EXCEEDED AT x(t)={}'.format(x)
+                )
+        return theta
+
 
 class FeedforwardJointVelocityController(Controller):
     def step_control(self, target_position, target_velocity, target_acceleration):
@@ -415,6 +553,7 @@ class PDWorkspaceVelocityController(Controller):
         Kv : 6x' :obj:`numpy.ndarray`
         """
         Controller.__init__(self, limb, kin)
+        self.name = 'workspace'
         self.Kp = np.diag(Kp)
         self.Kv = np.diag(Kv)
 
@@ -456,33 +595,35 @@ class PDWorkspaceVelocityController(Controller):
         current_velocity = current_velocity.A1
         #print "current_velocity from origin", current_velocity
 
+        current_position = self.get_current_position()
+
+        """
         current_position = self._kin.forward_position_kinematics() # 7x vector
         pos = current_position[0:3]
         rot_in_quat = current_position[3:7]
         rot = tf.transformations.euler_from_quaternion(rot_in_quat)
         current_position = np.array([pos[0],pos[1],pos[2],rot[0],rot[1],rot[2]])
 
-        """
         print "target_pos",target_position
         print "current pos",current_position
         print "target vel",target_velocity
         """
-        target_position = np.append(target_position,np.zeros(3)) # add orientation 
+        target_position = np.append(target_position,np.zeros(3)) # add orientation
         target_velocity = np.append(target_velocity,np.zeros(3)) # add angular velocity
 
         err = target_position - current_position
         err_d = target_velocity - current_velocity
-        
+
         print "pos err,", err
         print "vel err",err_d
         #print "target vel",target_velocity
         #print "cur vel",current_velocity
         print "\n"
-        
+
         output_vel = target_velocity + Kp.dot(err) + Kv.dot(err_d) # Note that Kp, Kv are 6x6 diagnol matrixes
         J_inv = self._kin.jacobian_pseudo_inverse()
 
-        output_vel = J_inv.dot(output_vel) # change from workspace vel to joint space 
+        output_vel = J_inv.dot(output_vel) # change from workspace vel to joint space
         output_vel = output_vel.A1 # change from matrix to a vector
         #print "\n",output_vel,"\n",target_velocity
         #print joint_array_to_dict(output_vel, self._limb), "\n"
@@ -507,6 +648,7 @@ class PDJointVelocityController(Controller):
         Kv : 7x' :obj:`numpy.ndarray`
         """
         Controller.__init__(self, limb, kin)
+        self.name = 'jointspace'
         self.Kp = np.diag(Kp)
         self.Kv = np.diag(Kv)
 
@@ -538,6 +680,7 @@ class PDJointTorqueController(Controller):
         Kv : 7x' :obj:`numpy.ndarray`
         """
         Controller.__init__(self, limb, kin)
+        self.name = 'torque'
         self.Kp = np.diag(Kp)
         self.Kv = np.diag(Kv)
 
@@ -591,9 +734,9 @@ class WorkspaceImpedanceController(Controller):
 
         Parameters
         ----------
-        target_position: 7x' ndarray of desired positions
-        target_velocity: 7x' ndarray of desired velocities
-        target_acceleration: 7x' ndarray of desired accelerations
+        target_position: 3x' ndarray of desired positions
+        target_velocity: 3x' ndarray of desired velocities
+        target_acceleration: 3x' ndarray of desired accelerations
         """
         raise NotImplementedError
 

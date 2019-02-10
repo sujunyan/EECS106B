@@ -118,7 +118,7 @@ def get_controller(controller_name):
         ## for circle
         #Kp = np.array([4 , 3 , 4,0,0,0]) # 6x array
         #Kv = np.array([0, 0.02 , 0,0,0,0])
-        #for line 
+        #for line
         #Kp = np.array([1, 1 , 4,0,0,0]) # 6x array
         #Kv = np.array([0, 0 , 0,0,0,0])
         ## for square
@@ -147,7 +147,7 @@ if __name__ == "__main__":
     python scripts/main.py --help <------This prints out all the help messages
     and describes what each parameter is
     python scripts/main.py -t 1 -ar 1 -c workspace -a left --log
-    python scripts/main.py -t 2 -ar 2 -c velocity -a left --log
+    python scripts/main.py -t 2 -ar 2 -c jointspace -a left --log
     python scripts/main.py -t 3 -ar 3 -c torque -a right --log
     python scripts/main.py -t 1 -ar 4 5 --path_only --log
 
