@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-Starter script for lab1. 
+Starter script for lab1.
 Author: Ivan Xia, Richard Cai, Adarsh Karnati, Chris Correa
 """
 import rospy
@@ -14,21 +14,21 @@ def tag_pub(tags):
     Separate script that constantly searches for the AR tag position and publishes
     it to a separate topic.  If you don't use this and the transform listener cannot
     find the AR tag, then your program will hang until the transform listener finds
-    the tag.  To get the latest tag position, you'll have to subscribe to the 
+    the tag.  To get the latest tag position, you'll have to subscribe to the
     tag_talk topic using the following:
 
     from geometry_msgs.msg import Point
     tag_pos = rospy.wait_for_message('tag_talk', Point)
     OR
     rospy.Subscriber('tag_talk', Point, callback_fn)
-    
+
     Parameters
     ----------
     tag_number : int
         AR tag number
     """
     rospy.init_node('tag_pub', anonymous=True)
-    pub = rospy.Publisher('tag_talk', PoseArray, queue_size=10)
+    pub = rospy.Publisher('tag_talk', Point, queue_size=10)
     r = rospy.Rate(100) # 10hz
 
     listener = tf.TransformListener()
@@ -50,7 +50,7 @@ def tag_pub(tags):
             pub.publish(pose_array)
             br.sendTransform(pos, quat, rospy.Time.now(), from_frame, to_frame)
         r.sleep()
-            
+
 if __name__ == '__main__':
     # How to run: python src/tag_pub.py -tag 4 6 3
     #  python src/tag_pub.py -tag 4

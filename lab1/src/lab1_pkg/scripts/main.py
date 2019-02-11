@@ -9,7 +9,7 @@ import argparse
 import time
 import numpy as np
 import signal
-
+import time
 from paths.paths import LinearPath, CircularPath, MultiplePaths
 from controllers.controllers import (
     PDWorkspaceVelocityController,
@@ -77,12 +77,19 @@ def get_trajectory(task, ar_marker_num, num_way, controller_name):
     :obj:`moveit_msgs.msg.RobotTrajectory`
     """
     if task == 'line':
-        final_pos = np.array([0.751, 0.336, 0.234])
-        start_pos = np.array([0.726, 0.028, 0.226])
+        # left_hand
+        #start_pos = np.array([0.6, 0.147, 0])
+        #final_pos = np.array([0.8, 0.30 , 0])
+        #right
+        start_pos = np.array([0.555, -0.37, 0])
+        final_pos = np.array([0.76, -0.1 , 0])
+
         path = LinearPath(limb,kin,total_time,ar_marker_num,start_pos,final_pos) # ar_marker_num might be redundent
     elif task == 'circle':
-        center_pos = np.array([0.751, 0.336, 0.234])
-        path = CircularPath(limb,kin,total_time,ar_marker_num,center_pos)
+        center_pos = np.array([0.583, -0.16, 0.09]) # right_hand
+        #center_pos = np.array([0.7, 0.23, 0]) # left_hand
+        r = 0.08
+        path = CircularPath(limb,kin,total_time,ar_marker_num,center_pos,r)
     elif task == 'square':
         #tag_pos = [lookup_tag(num) for num in ar_marker_num]
         #assert(len(tag_pos) == 4)
@@ -108,8 +115,15 @@ def get_controller(controller_name):
     :obj:`Controller`
     """
     if controller_name == 'workspace':
-        Kp = np.array([0.2,0,0.1,0,0,0]) # 6x array
-        Kv = np.array([0,0,0,0,0,0])
+        ## for circle
+        #Kp = np.array([4 , 3 , 4,0,0,0]) # 6x array
+        #Kv = np.array([0, 0.02 , 0,0,0,0])
+        #for line
+        #Kp = np.array([1, 1 , 4,0,0,0]) # 6x array
+        #Kv = np.array([0, 0 , 0,0,0,0])
+        ## for square
+        Kp = np.array([1 , 1 , 4,0,0,0]) # 6x array
+        Kv = np.array([0, 0.0 , 0,0,0,0])
         controller = PDWorkspaceVelocityController(limb, kin, Kp, Kv)
     elif controller_name == 'jointspace':
         Kp = np.array([0,4,12,0,10,0,0])   # 7x array
@@ -132,7 +146,7 @@ if __name__ == "__main__":
     python scripts/main.py --help <------This prints out all the help messages
     and describes what each parameter is
     python scripts/main.py -t 1 -ar 1 -c workspace -a left --log
-    python scripts/main.py -t 2 -ar 2 -c velocity -a left --log
+    python scripts/main.py -t 2 -ar 2 -c jointspace -a left --log
     python scripts/main.py -t 3 -ar 3 -c torque -a right --log
     python scripts/main.py -t 1 -ar 4 5 --path_only --log
 
@@ -228,7 +242,10 @@ if __name__ == "__main__":
             sys.exit()
         # uses MoveIt! to execute the trajectory.  make sure to view it in RViz before running this.
         # the lines above will display the trajectory in RViz
+        start_time = time.time()
         planner.execute_plan(robot_trajectory)
+        time_used = time.time() - start_time
+        print("In Moveit, total_time used is %f s\n."%(time_used,))
     else:
         # LAB 1 PART B
         controller = get_controller(args.controller_name)
