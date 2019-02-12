@@ -10,10 +10,12 @@ import sys
 import numpy as np
 import itertools
 import matplotlib.pyplot as plt
-
+import traceback
+import inspect
 # Lab imports
 from utils.utils import *
 import time
+import math
 # ROS imports
 try:
     import tf
@@ -254,13 +256,14 @@ class Controller:
             plt.plot(times, target_workspace_positions[:,joint], label='Desired')
             plt.xlabel("Time (t)")
             plt.ylabel(workspace_joints[joint] + " Position Error")
+            #plt.legend()
 
             plt.subplot(joint_num,2,2*joint+2)
             plt.plot(times, actual_workspace_velocities[:,joint], label='Actual')
             plt.plot(times, target_velocities[:,joint], label='Desired')
             plt.xlabel("Time (t)")
             plt.ylabel(workspace_joints[joint] + " Velocity Error")
-
+            #plt.legend()
         print "Close the plot window to continue"
         plt.show()
 
@@ -470,12 +473,32 @@ class Controller:
         h_offset = 0.1
         target_position = np.array([tag_pos.x,tag_pos.y,tag_pos.z + h_offset ,0,0,0]) #6x np array
         current_position = self.get_current_position()
-        speed = 0.5
+        speed = 0.3
         target_velocity = (target_position - current_position ) * speed
+        target_position = current_position + target_velocity # take a small step ahead
         target_acceleration = np.zeros(6) # might not be correct
 
         if self.name != 'workspace':
-            target_position = self.get_ik(target_position[:3])
+            pos = target_position[:3]
+            target_position = self.get_ik(pos)
+            """
+            delta_t = 0.01
+            print("pos ",target_position)
+            print("vel ",target_velocity)
+            
+            pos1 = target_position[:3] + delta_t*target_velocity[:3]
+            pos2 = target_position[:3] + 2*delta_t*target_velocity[:3]
+            print("pos1 ",pos1)
+            print("pos2 ",pos2)
+            target_position = self.get_ik(target_position[:3])   
+            target_position_delta1 = self.get_ik(pos1)
+            target_position_delta2 = self.get_ik(pos2)
+
+            target_velocity = (target_position_delta1 - target_position)/delta_t
+            target_acceleration = (target_position_delta1 - target_position) - (target_position_delta2 - target_position_delta1)
+            target_acceleration /= delta_t*delta_t
+            """
+            #print(target_position)
             target_velocity = J_inv.dot(target_velocity).A1
             target_acceleration = J_inv.dot(target_acceleration).A1
         else : # This might be redundent
@@ -513,14 +536,18 @@ class Controller:
         Returns
         -------
         7x' :obj:`numpy.ndarray`
-            joint values to achieve the passed in workspace position
+            joint values to achieve the passed in workspace position (in radians)
         """
         ik_attempts, theta = 0, None
+        orien = [0,1,0,0]
         while theta is None and not rospy.is_shutdown():
             theta = self._kin.inverse_kinematics(
                 position=x,
-                orientation=[0, 1, 0, 0]
+                orientation=orien
             )
+            #print(x)
+            #traceback.print_exc()
+            #print(inspect.stack())
             ik_attempts += 1
             if ik_attempts > max_ik_attempts:
                 print("\n IK failed with point")
@@ -528,6 +555,12 @@ class Controller:
                 rospy.signal_shutdown(
                     'MAX IK ATTEMPTS EXCEEDED AT x(t)={}'.format(x)
                 )
+        """
+        if theta.any() != None:
+            print(theta)
+            for i in range(len(theta)):
+                theta[i] %= 2*math.pi
+        """
         return theta
 
 
@@ -540,7 +573,8 @@ class FeedforwardJointVelocityController(Controller):
         target_velocity: 7x' ndarray of desired velocities
         target_acceleration: 7x' ndarray of desired accelerations
         """
-        self._limb.set_joint_velocities(joint_array_to_dict(target_velocity, self._limb))
+        self._limb.set_joint_positions(joint_array_to_dict(target_position, self._limb))
+        #self._limb.set_joint_velocities(joint_array_to_dict(target_velocity, self._limb))
 
 class PDWorkspaceVelocityController(Controller):
     """

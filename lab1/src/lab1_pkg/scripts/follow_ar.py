@@ -76,8 +76,8 @@ def get_controller(controller_name):
         controller = PDWorkspaceVelocityController(limb, kin, Kp, Kv)
     elif controller_name == 'jointspace':
         # YOUR CODE HERE
-        Kp = vec(5,   10,  2.5, 7.5, 1.5,  4,   3)
-        Kv = vec(0.4, 1.6, 0.2, 1.2, .12, .32, .24)
+        Kp = vec(0,   0, 0, 0., 0., 0., 0.) 
+        Kv = vec(0,   0, 0, 0., 0., 0., 0.)
         controller = PDJointVelocityController(limb, kin, Kp, Kv)
     elif controller_name == 'torque':
         # YOUR CODE HERE
@@ -104,7 +104,7 @@ if __name__ == "__main__":
         'Which AR marker to use.  Default: 1'
     )
     parser.add_argument('-controller_name', '-c', type=str, default='workspace',
-        help='Options: workspace, jointspace, or torque.  Default: workspace'
+        help='Options: workspace, jointspace, or torque or open_loop.  Default: workspace'
     )
     parser.add_argument('-arm', '-a', type=str, default='left', help=
         'Options: left, right.  Default: left'
@@ -133,7 +133,7 @@ if __name__ == "__main__":
 
     controller = get_controller(args.controller_name)
     try:
-        raw_input('Press <Enter> to execute the trajectory using YOUR OWN controller')
+        raw_input('\nPress <Enter> to execute the trajectory using YOUR OWN controller')
     except KeyboardInterrupt:
         sys.exit()
     controller.follow_ar_tag(

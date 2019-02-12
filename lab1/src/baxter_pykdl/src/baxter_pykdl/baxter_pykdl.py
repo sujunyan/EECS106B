@@ -159,7 +159,8 @@ class baxter_kinematics(object):
         if orientation:
             goal_pose = PyKDL.Frame(rot, pos)
         else:
-            goal_pose = PyKDL.Frame(pos)
+            raise ROSException
+            #goal_pose = PyKDL.Frame(pos)
         result_angles = PyKDL.JntArray(self._num_jnts)
 
         if self._ik_p_kdl.CartToJnt(seed_array, goal_pose, result_angles) >= 0:
