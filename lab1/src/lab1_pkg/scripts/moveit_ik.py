@@ -103,13 +103,13 @@ class MoveitIK(object):
             return resp
 
 if __name__ == "__main__":
-    group = "left_arm"
+    group = "right_arm"
     ik_srv = MoveitIK(group)
 
     pos = [1, 0, .5]
-    quat = [0,0,1,0]
+    quat = [0,1,0,0]
     pose = create_pose_stamped_from_pos_quat(pos, quat,"base")
-    res = ik_srv.get_ik(pose, avoid_collisions=True)
+    res = ik_srv.get_ik(pose)
     print res
 
     print "ending\n\n\n\n"
