@@ -86,15 +86,22 @@ def get_trajectory(task, ar_marker_num, num_way, controller_name):
 
         path = LinearPath(limb,kin,total_time,ar_marker_num,start_pos,final_pos) # ar_marker_num might be redundent
     elif task == 'circle':
-        center_pos = np.array([0.583, -0.16, 0.09]) # right_hand
+        h_offset = 0.1
+        center_pos = lookup_tag(ar_marker_num[0])
+        center_pos[2] += h_offset
+        #center_pos = np.array([0.583, -0.16, 0.09]) # right_hand
         #center_pos = np.array([0.7, 0.23, 0]) # left_hand
         r = 0.08
         path = CircularPath(limb,kin,total_time,ar_marker_num,center_pos,r)
     elif task == 'square':
-        #tag_pos = [lookup_tag(num) for num in ar_marker_num]
+        tag_pos = [lookup_tag(num) for num in ar_marker_num]
+        h_offset = 0.1
+        for i in range(len(tag_pos)):
+            tag_pos[i] += h_offset
         #assert(len(tag_pos) == 4)
-        corners = [np.array([0.73,0.47,0]), np.array([0.73,0.25,-0.1])
-                ,np.array([0.55, 0.25, 0]), np.array([0.53, 0.47, 0.1])]
+        #corners = [np.array([0.73,0.47,0]), np.array([0.73,0.25,-0.1])
+                #,np.array([0.55, 0.25, 0]), np.array([0.53, 0.47, 0.1])]
+        corners = tag_pos
         length = len(corners)
         paths = [LinearPath(limb,kin,total_time,ar_marker_num,corners[i],corners[(i+1)%length]) for i in range(length)]
         path = MultiplePaths(paths)
