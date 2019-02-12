@@ -405,7 +405,8 @@ class Controller:
             if timeout is not None and t >= timeout:
                 # Set velocities to zero
                 self.stop_moving()
-                return False
+                break
+                #return False
 
             current_position = get_joint_positions(self._limb)
             current_velocity = get_joint_velocities(self._limb)
@@ -429,11 +430,11 @@ class Controller:
 
             # Sleep for a bit (to let robot move)
             r.sleep()
-
+            """
             if current_index >= max_index:
                 self.stop_moving()
                 break
-
+            """
         time_used = time.time() - start_time
         print("In controller, time used %f s."%(time_used,))
         if log:
@@ -466,7 +467,7 @@ class Controller:
 
         J_inv = self._kin.jacobian_pseudo_inverse()
         J = self._kin.jacobian()
-        h_offset = 0.2
+        h_offset = 0.1
         target_position = np.array([tag_pos.x,tag_pos.y,tag_pos.z + h_offset ,0,0,0]) #6x np array
         current_position = self.get_current_position()
         speed = 0.5
@@ -477,6 +478,11 @@ class Controller:
             target_position = self.get_ik(target_position[:3])
             target_velocity = J_inv.dot(target_velocity).A1
             target_acceleration = J_inv.dot(target_acceleration).A1
+        else : # This might be redundent
+            target_position = target_position[:3]
+            target_velocity = target_velocity[:3]
+            target_acceleration = target_acceleration[:3]
+
 
         return (target_position,target_velocity,target_acceleration)
 
@@ -491,6 +497,7 @@ class Controller:
         rot_in_quat = current_position[3:7]
         rot = tf.transformations.euler_from_quaternion(rot_in_quat)
         current_position = np.array([pos[0],pos[1],pos[2],rot[0],rot[1],rot[2]])
+        return current_position
 
     def get_ik(self, x, max_ik_attempts=10):
         """

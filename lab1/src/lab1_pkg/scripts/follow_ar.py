@@ -70,8 +70,9 @@ def get_controller(controller_name):
     """
     if controller_name == 'workspace':
         # YOUR CODE HERE
-        Kp = vec(0, 0, 0, 0, 0, 0)
-        Kv = vec(.5, .5, .5, 2, 2, 2)
+        Kp = vec(3, 3, 3, 0, 0, 0)
+        #Kv = vec(.5, .5, .5, 2, 2, 2)
+        Kv = vec(0, 0, 0, 0, 0, 0)
         controller = PDWorkspaceVelocityController(limb, kin, Kp, Kv)
     elif controller_name == 'jointspace':
         # YOUR CODE HERE
@@ -93,7 +94,7 @@ if __name__ == "__main__":
     """
     Examples of how to run me:
     python scripts/follow_ar.py -ar 1 -c workspace -a left --log
-    python scripts/follow_ar.py -ar 2 -c velocity -a left --log
+    python scripts/follow_ar.py -ar 2 -c jointspce -a left --log
     python scripts/follow_ar.py -ar 3 -c torque -a right --log
 
     You can also change the rate, timeout if you want

@@ -35,7 +35,6 @@ def tag_pub(tags):
     br = tf.TransformBroadcaster()
     from_frame = 'base'
     pos, quat = None, None
-    pose_array = PoseArray()
     while not rospy.is_shutdown():
         for i in range(len(tags)):
             to_frame = 'ar_marker_{}'.format(tags[i])
@@ -47,7 +46,7 @@ def tag_pub(tags):
                 print 'Could not find marker {}'.format(tags[i])
                 continue
         if pos is not None:
-            pub.publish(pose_array)
+            pub.publish(*pos)
             br.sendTransform(pos, quat, rospy.Time.now(), from_frame, to_frame)
         r.sleep()
 
