@@ -17,21 +17,18 @@ from utils.utils import *
 import time
 import math
 # ROS imports
-try:
-    import tf
-    import rospy
-    import baxter_interface
-    import intera_interface
-    from geometry_msgs.msg import PoseStamped
-    from moveit_msgs.msg import RobotTrajectory
-except:
-    pass
-
+import tf
+import rospy
+import baxter_interface
+import intera_interface
+from geometry_msgs.msg import PoseStamped
+from moveit_msgs.msg import RobotTrajectory
+import moveit_ik
 NUM_JOINTS = 7
 
 class Controller:
 
-    def __init__(self, limb, kin):
+    def __init__(self, limb, kin, ik_srv = None):
         """
         Constructor for the superclass. All subclasses should call the superconstructor
 
@@ -47,6 +44,7 @@ class Controller:
         self._limb = limb
         self._kin = kin
         self.name = 'Controller'
+        self.ik_srv = ik_srv
 
     def step_control(self, target_position, target_velocity, target_acceleration):
         """
@@ -485,12 +483,12 @@ class Controller:
             delta_t = 0.01
             print("pos ",target_position)
             print("vel ",target_velocity)
-            
+
             pos1 = target_position[:3] + delta_t*target_velocity[:3]
             pos2 = target_position[:3] + 2*delta_t*target_velocity[:3]
             print("pos1 ",pos1)
             print("pos2 ",pos2)
-            target_position = self.get_ik(target_position[:3])   
+            target_position = self.get_ik(target_position[:3])
             target_position_delta1 = self.get_ik(pos1)
             target_position_delta2 = self.get_ik(pos2)
 
@@ -541,10 +539,16 @@ class Controller:
         ik_attempts, theta = 0, None
         orien = [0,1,0,0]
         while theta is None and not rospy.is_shutdown():
-            theta = self._kin.inverse_kinematics(
-                position=x,
-                orientation=orien
-            )
+            if self.ik_srv:
+                pose = create_pose_stamped_from_pos_quat(x, orien,"base")
+                res = ik_srv.get_ik(pose)
+                theta = res.joint_state.position #TODO
+                print(theta)
+            else:
+                theta = self._kin.inverse_kinematics(
+                    position=x,
+                    orientation=orien
+                    )
             #print(x)
             #traceback.print_exc()
             #print(inspect.stack())
@@ -679,7 +683,7 @@ class PDJointVelocityController(Controller):
     current JOINT position and velocity and desired JOINT position and velocity to come up with a
     joint velocity command and sends that to the baxter.  notice the shape of Kp and Kv
     """
-    def __init__(self, limb, kin, Kp, Kv):
+    def __init__(self, limb, kin, Kp, Kv, ik_srv = None):
         """
         Parameters
         ----------
@@ -687,8 +691,9 @@ class PDJointVelocityController(Controller):
         kin : :obj:`BaxterKinematics`
         Kp : 7x' :obj:`numpy.ndarray`
         Kv : 7x' :obj:`numpy.ndarray`
+        ik_srv : obj:` MoveitIk
         """
-        Controller.__init__(self, limb, kin)
+        Controller.__init__(self, limb, kin, ik_srv = ik_srv)
         self.name = 'jointspace'
         self.Kp = np.diag(Kp)
         self.Kv = np.diag(Kv)
@@ -718,14 +723,14 @@ class PDJointVelocityController(Controller):
         err_d = target_velocity - current_velocity
 
         output_vel = target_velocity + Kp.dot(err) + Kv.dot(err_d) # Note that Kp, Kv are 7x7 diagnol matrixes
-        
+
         print "\n",output_vel
         print joint_array_to_dict(output_vel, self._limb), "\n"
         self._limb.set_joint_velocities(joint_array_to_dict(output_vel, self._limb))
 
 
 class PDJointTorqueController(Controller):
-    def __init__(self, limb, kin, Kp, Kv):
+    def __init__(self, limb, kin, Kp, Kv, ik_srv = None):
         """
         Parameters
         ----------
@@ -733,8 +738,9 @@ class PDJointTorqueController(Controller):
         kin : :obj:`BaxterKinematics`
         Kp : 7x' :obj:`numpy.ndarray`
         Kv : 7x' :obj:`numpy.ndarray`
+        ik_srv : obj:` MoveitIk
         """
-        Controller.__init__(self, limb, kin)
+        Controller.__init__(self, limb, kin, ik_srv = ik_srv)
         self.name = 'torque'
         self.Kp = np.diag(Kp)
         self.Kv = np.diag(Kv)
