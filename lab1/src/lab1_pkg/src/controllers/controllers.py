@@ -572,7 +572,7 @@ class PDJointTorqueController(Controller):
         # G = J_T * M_cart * [0,0,0.981,0,0,0]
         J_T = self._kin.jacobian_transpose()
         M_car = self._kin.cart_inertia()
-        gravity = np.array([0, 0, 0.981, 0, 0, 0]) 
+        gravity = np.array([0,0,0.981,0,0,0]) 
         G = J_T.dot(M_car)
         G = G.dot(gravity)
         
@@ -580,12 +580,13 @@ class PDJointTorqueController(Controller):
         M = self._kin.inertia()
         M = M.dot(target_acceleration)
 
+        
+        print(G)
 
         C = self._kin.coriolis()
         
 
-
-        output_vel = M + G + C     
+        output_vel = M + G + Kp.dot(err) + Kv.dot(err_d)     
         output_vel = output_vel.A1
         print "\n",output_vel
 
