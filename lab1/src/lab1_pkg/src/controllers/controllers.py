@@ -555,9 +555,43 @@ class PDJointTorqueController(Controller):
         target_velocity: 7x' :obj:`numpy.ndarray` of desired velocities
         target_acceleration: 7x' :obj:`numpy.ndarray` of desired accelerations
         """
-        raise NotImplementedError
+        Kp = self.Kp
+        Kv = self.Kv
+
+        current_position = np.array([self._limb.joint_angle(joint) for joint in self._limb.joint_names()])
+        current_velocity = np.array([self._limb.joint_velocity(joint) for joint in self._limb.joint_names()])
+        
+        err = target_position - current_position
+        err_d = target_velocity - current_velocity
 
 
+        
+        
+        
+
+        # G = J_T * M_cart * [0,0,0.981,0,0,0]
+        J_T = self._kin.jacobian_transpose()
+        M_car = self._kin.cart_inertia()
+        gravity = np.array([0, 0, 0.981, 0, 0, 0]) 
+        G = J_T.dot(M_car)
+        G = G.dot(gravity)
+        
+        # M 
+        M = self._kin.inertia()
+        M = M.dot(target_acceleration)
+
+
+        C = self._kin.coriolis()
+        
+
+
+        output_vel = M + G + C     
+        output_vel = output_vel.A1
+        print "\n",output_vel
+
+        print joint_array_to_dict(output_vel, self._limb), "\n"
+
+        self._limb.set_joint_torques(joint_array_to_dict(output_vel, self._limb))
 
 
 
