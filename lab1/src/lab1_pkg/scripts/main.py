@@ -56,9 +56,13 @@ def lookup_tag(tag_number):
     ):
         print 'Cannot find AR marker {}, retrying'.format(tag_number)
         r.sleep()
-
-    t = listener.getLatestCommonTime(from_frame, to_frame)
-    tag_pos, _ = listener.lookupTransform(from_frame, to_frame, t)
+    while (True):
+        try:
+            t = listener.getLatestCommonTime(from_frame, to_frame)
+            tag_pos, _ = listener.lookupTransform(from_frame, to_frame, t)
+            break
+        except:
+            continue
     return vec(tag_pos)
 
 def get_trajectory(task, ar_marker_num, num_way, controller_name):
@@ -100,8 +104,10 @@ def get_trajectory(task, ar_marker_num, num_way, controller_name):
     elif task == 'square':
         tag_pos = [lookup_tag(num) for num in ar_marker_num]
         h_offset = 0.1
+        print(tag_pos)
         for i in range(len(tag_pos)):
-            tag_pos[i] += h_offset
+            tag_pos[i] = tag_pos[i][0]
+            tag_pos[i][2] += h_offset
         #assert(len(tag_pos) == 4)
         #corners = [np.array([0.73,0.47,0]), np.array([0.73,0.25,-0.1])
                 #,np.array([0.55, 0.25, 0]), np.array([0.53, 0.47, 0.1])]
