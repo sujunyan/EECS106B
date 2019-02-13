@@ -86,12 +86,16 @@ def get_trajectory(task, ar_marker_num, num_way, controller_name):
 
         path = LinearPath(limb,kin,total_time,ar_marker_num,start_pos,final_pos) # ar_marker_num might be redundent
     elif task == 'circle':
+        """
         h_offset = 0.1
         center_pos = lookup_tag(ar_marker_num[0])
+        center_pos = center_pos[0]
+        print(center_pos)
         center_pos[2] += h_offset
-        #center_pos = np.array([0.583, -0.16, 0.09]) # right_hand
+        """
+        center_pos = np.array([0.583, -0.16, -0.1]) # right_hand
         #center_pos = np.array([0.7, 0.23, 0]) # left_hand
-        r = 0.08
+        r = 0.1
         path = CircularPath(limb,kin,total_time,ar_marker_num,center_pos,r)
     elif task == 'square':
         tag_pos = [lookup_tag(num) for num in ar_marker_num]
@@ -123,17 +127,17 @@ def get_controller(controller_name):
     """
     if controller_name == 'workspace':
         ## for circle
-        #Kp = np.array([4 , 3 , 4,0,0,0]) # 6x array
-        #Kv = np.array([0, 0.02 , 0,0,0,0])
+        Kp = np.array([4 , 3 , 4,0,0,0]) # 6x array
+        Kv = np.array([0, 0.02 , 0,0,0,0])
         #for line
         #Kp = np.array([1, 1 , 4,0,0,0]) # 6x array
         #Kv = np.array([0, 0 , 0,0,0,0])
         ## for square
-        Kp = np.array([1 , 1 , 4,0,0,0]) # 6x array
-        Kv = np.array([0, 0.0 , 0,0,0,0])
+        #Kp = np.array([1 , 1 , 4,0,0,0]) # 6x array
+        #Kv = np.array([0, 0.0 , 0,0,0,0])
         controller = PDWorkspaceVelocityController(limb, kin, Kp, Kv)
     elif controller_name == 'jointspace':
-        Kp = np.array([0,4,12,0,10,0,0])   # 7x array
+        Kp = np.array([1,4,1,-0.1,5,1,-0.1])   # 7x array
         Kv = np.array([0,0.2,0,0,0,0,0])
         controller = PDJointVelocityController(limb, kin, Kp, Kv)
     elif controller_name == 'torque':
