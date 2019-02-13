@@ -117,8 +117,8 @@ def get_controller(controller_name):
         controller = PDJointVelocityController(limb, kin, Kp, Kv)
     elif controller_name == 'torque':
         
-        Kp = np.array([6,5,5,6,8,8,5])      # 7x array
-        Kv = np.array([0,0,0,0,0,0,0])
+        Kp = np.array([20,8,28,20,12,0,20])      # 7x array 20 8 28 20 15 0 20
+        Kv = np.array([3,4,2,4,3,3,4])   #3 4 2 4 3 3 4     3 5 2 4 3 3 4
         controller = PDJointTorqueController(limb, kin, Kp, Kv)
     elif controller_name == 'open_loop':
         controller = FeedforwardJointVelocityController(limb, kin)
