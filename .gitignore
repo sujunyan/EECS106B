@@ -3,3 +3,8 @@ devel
 *.pyc
 ar_track_alvar
 *.swp
+.nfs*
+lab1/src/lab1_pkg/scripts/path_planner.pyc
+lab1/src/lab1_pkg/src/controllers/__init__.pyc
+lab1/src/lab1_pkg/src/utils/__init__.pyc
+lab1/src/lab1_pkg/src/utils/utils.pyc
