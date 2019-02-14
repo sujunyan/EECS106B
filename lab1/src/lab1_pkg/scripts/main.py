@@ -91,6 +91,8 @@ def get_trajectory(task, ar_marker_num, num_way, controller_name):
         path = LinearPath(limb,kin,total_time,ar_marker_num,start_pos,final_pos) # ar_marker_num might be redundent
     elif task == 'circle':
         """
+        center_pos = np.array([0.730, 0.253, 0.140])
+        path = CircularPath(limb,kin,total_time,ar_marker_num,center_pos)
         h_offset = 0.1
         center_pos = lookup_tag(ar_marker_num[0])
         center_pos = center_pos[0]
@@ -108,7 +110,8 @@ def get_trajectory(task, ar_marker_num, num_way, controller_name):
         for i in range(len(tag_pos)):
             tag_pos[i] = tag_pos[i][0]
             tag_pos[i][2] += h_offset
-        #assert(len(tag_pos) == 4)
+        corners = [np.array([0.73,0.47,0]), np.array([0.73,0.25,0.1])
+                ,np.array([0.55, 0.25, 0]), np.array([0.53, 0.47, 0.1])]
         #corners = [np.array([0.73,0.47,0]), np.array([0.73,0.25,-0.1])
                 #,np.array([0.55, 0.25, 0]), np.array([0.53, 0.47, 0.1])]
         corners = tag_pos
@@ -143,13 +146,12 @@ def get_controller(controller_name):
         #Kv = np.array([0, 0.0 , 0,0,0,0])
         controller = PDWorkspaceVelocityController(limb, kin, Kp, Kv)
     elif controller_name == 'jointspace':
-        Kp = np.array([1,4,1,-0.1,5,1,-0.1])   # 7x array
+        Kp = np.array([0,4,1,-0.1,5,1,-0.1])   # 7x array
         Kv = np.array([0,0.2,0,0,0,0,0])
         controller = PDJointVelocityController(limb, kin, Kp, Kv)
     elif controller_name == 'torque':
-        # YOUR CODE HERE
-        Kp = None
-        Kv = None
+        Kp = np.array([20,8,28,20,12,0,20])      # 7x array 20 8 28 20 15 0 20
+        Kv = np.array([3,4,2,4,3,3,4])   #3 4 2 4 3 3 4     3 5 2 4 3 3 4
         controller = PDJointTorqueController(limb, kin, Kp, Kv)
     elif controller_name == 'open_loop':
         controller = FeedforwardJointVelocityController(limb, kin)
@@ -169,6 +171,7 @@ if __name__ == "__main__":
 
     You can also change the rate, timeout if you want
     """
+    start = time.time()
     parser = argparse.ArgumentParser()
     parser.add_argument('-task', '-t', type=str, default='line', help=
         'Options: line, circle, square.  Default: line'
@@ -203,7 +206,7 @@ if __name__ == "__main__":
     parser.add_argument('--log', action='store_true', help='plots controller performance')
     args = parser.parse_args()
 
-
+    
 
 
     rospy.init_node('moveit_node')
@@ -280,3 +283,8 @@ if __name__ == "__main__":
         if not done:
             print 'Failed to move to position'
             sys.exit(0)
+
+    end = time.time()
+    alltime = end - start
+    print( "The executed time is")
+    print(alltime)
