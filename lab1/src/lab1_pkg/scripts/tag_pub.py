@@ -27,6 +27,7 @@ def tag_pub(tags):
     tag_number : int
         AR tag number
     """
+    print("tag_pub called")
     rospy.init_node('tag_pub', anonymous=True)
     pub = rospy.Publisher('tag_talk', Point, queue_size=10)
     r = rospy.Rate(100) # 10hz
@@ -36,6 +37,7 @@ def tag_pub(tags):
     from_frame = 'base'
     pos, quat = None, None
     while not rospy.is_shutdown():
+        print(tags)
         for i in range(len(tags)):
             to_frame = 'ar_marker_{}'.format(tags[i])
             try:
@@ -47,7 +49,7 @@ def tag_pub(tags):
                 continue
         if pos is not None:
             pub.publish(*pos)
-            br.sendTransform(pos, quat, rospy.Time.now(), from_frame, to_frame)
+            #br.sendTransform(pos, quat, rospy.Time.now(), from_frame, to_frame)
         r.sleep()
 
 if __name__ == '__main__':
@@ -56,7 +58,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-tags', nargs='+', required=True, help='the tag number')
     args = parser.parse_args()
+    print(args.tags)
     try:
-        tag_pub(args.tags[0:-2])
+        tag_pub(args.tags[0])
     except rospy.ROSInterruptException:
         print("call tag_pub failed!")

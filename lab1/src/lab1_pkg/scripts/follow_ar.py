@@ -77,7 +77,7 @@ def get_controller(controller_name):
         controller = PDWorkspaceVelocityController(limb, kin, Kp, Kv)
     elif controller_name == 'jointspace':
         # YOUR CODE HERE
-        Kp = vec(0,   0, 0, 0., 0., 0., 0.)
+        Kp = vec(1,   1, 1, 1., 1., 1., 1.)
         Kv = vec(0,   0, 0, 0., 0., 0., 0.)
         controller = PDJointVelocityController(limb, kin, Kp, Kv,ik_srv=ik_srv)
     elif controller_name == 'torque':
@@ -132,7 +132,8 @@ if __name__ == "__main__":
     # for info on how to use each method
     kin = baxter_kinematics(args.arm)
     group = '%s_arm'%(args.arm)
-    ik_srv = MoveitIK(group)
+    ik_srv = None
+    #ik_srv = MoveitIK(group)
 
     controller = get_controller(args.controller_name)
     try:

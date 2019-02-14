@@ -1,0 +1,12 @@
+<launch>
+
+
+   <include file="$(find lab1_pkg)/launch/baxter_right_hand_track.launch"/>
+   
+   <node name="trajectory_controller" pkg="lab1_pkg" type="start_joint_trajectory_action_server.py" />
+   
+   <include file="$(find baxter_moveit_config)/launch/baxter_grippers.launch"/>
+   <!--<include file="$(find baxter_moveit_config)/launch/move_group.launch"/>
+   <include file="$(find baxter_moveit_config)/launch/planning_context.launch"/>-->
+
+</launch>
