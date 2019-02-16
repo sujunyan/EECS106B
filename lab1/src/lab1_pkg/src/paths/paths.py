@@ -232,11 +232,11 @@ class MotionPath(object):
         """
         Given an AR tag number, this returns the position of the AR tag in the robot's base frame.
         You can use either this function or try starting the scripts/tag_pub.py script.  More info
-        about that script is in that file.  
+        about that script is in that file.
 
         Parameters
         ----------
-        tag_number : int    
+        tag_number : int
 
         Returns
         -------
@@ -245,7 +245,7 @@ class MotionPath(object):
         """
         listener = tf.TransformListener()
         from_frame = 'base'
-        to_frame = 'ar_marker_{}'.format(tag_number)    
+        to_frame = 'ar_marker_{}'.format(tag_number)
 
         r = rospy.Rate(200)
         while (
@@ -254,7 +254,7 @@ class MotionPath(object):
             not rospy.is_shutdown()
         ):
             print 'Cannot find AR marker {}, retrying'.format(tag_number)
-            r.sleep()   
+            r.sleep()
 
         t = listener.getLatestCommonTime(from_frame, to_frame)
         tag_pos, _ = listener.lookupTransform(from_frame, to_frame, t)
@@ -356,11 +356,11 @@ class CircularPath(MotionPath):
         ????? You're going to have to fill these in how you see fit
         """
         super(CircularPath,self).__init__(limb,kin,total_time,ar_marker_num)
-        
+
         self._center_pos = center_pos
-        
+
         h = - 0.0
-        
+
         self._center_pos[2]+=h
         self.delta_t = 0.01
         self.r = r
@@ -390,10 +390,10 @@ class CircularPath(MotionPath):
         target_pos = np.array(self._center_pos)
         ratio = time / self.total_time
 
-        target_pos[0] = self._center_pos[0] + r * math.cos(ratio * 2 * math.pi + math.pi/4) 
+        target_pos[0] = self._center_pos[0] + r * math.cos(ratio * 2 * math.pi + math.pi/4)
         target_pos[1] = self._center_pos[1] + r * math.sin(ratio * 2 * math.pi + math.pi/4)
         #print target_pos, r, ratio, self._center_pos[0], r * math.cos(ratio * 2 * math.pi)
-        return target_pos   
+        return target_pos
 
 
     def target_velocity(self, time):

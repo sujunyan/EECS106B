@@ -90,13 +90,19 @@ def get_trajectory(task, ar_marker_num, num_way, controller_name):
 
         path = LinearPath(limb,kin,total_time,ar_marker_num,start_pos,final_pos) # ar_marker_num might be redundent
     elif task == 'circle':
-        """
+
+
         center_pos = np.array([0.730, 0.253, 0.140])
-        path = CircularPath(limb,kin,total_time,ar_marker_num,center_pos)
+
+        h_offset = 0.1
+        #center_pos = lookup_tag(ar_marker_num[0])
+
+        """
         h_offset = 0.1
         center_pos = lookup_tag(ar_marker_num[0])
         center_pos = center_pos[0]
         print(center_pos)
+>>>>>>> fbab7416a8b73571cd5b75b976c515774a987fa0
         center_pos[2] += h_offset
         """
         center_pos = np.array([0.583, -0.16, -0.1]) # right_hand
@@ -137,26 +143,16 @@ def get_controller(controller_name):
     :obj:`Controller`
     """
     if controller_name == 'workspace':
-        ## for circle
         Kp = np.array([4 , 3 , 4,0,0,0]) # 6x array
         Kv = np.array([0, 0.02 , 0,0,0,0])
-        #for line
-        #Kp = np.array([1, 1 , 4,0,0,0]) # 6x array
-        #Kv = np.array([0, 0 , 0,0,0,0])
-        ## for square
-        #Kp = np.array([1 , 1 , 4,0,0,0]) # 6x array
-        #Kv = np.array([0, 0.0 , 0,0,0,0])
         controller = PDWorkspaceVelocityController(limb, kin, Kp, Kv)
     elif controller_name == 'jointspace':
-        Kp = np.array([0,4,1,-0.1,5,1,-0.1])   # 7x array
+        Kp = np.array([1,4,1,-0.1,5,1,-0.1])   # 7x array
         Kv = np.array([0,0.2,0,0,0,0,0])
         controller = PDJointVelocityController(limb, kin, Kp, Kv)
     elif controller_name == 'torque':
-        #Line
-        #Kp = np.array([100 ,50 ,50 ,20 ,20 ,20, 10])      # 7x array 20 8 28 20 15 0 20
-        #Kv = np.array([3,3,2,1,0,1,1])   #3 4 2 4 3 3 4     3 5 2 4 3 3 4
-        Kp = np.array([32 ,32 ,32,12 ,20 ,12, 3])      # 7x array 20 8 28 20 15 0 20
-        Kv = np.array([0,0,0.1,0,0,0,0])   #3 4 2 4 3 3 4     3 5 2 4 3 3 4
+        Kp = np.array([20,8,28,20,25,0,20])      # 7x array 20 8 28 20 15 0 20
+        Kv = np.array([3,5,5,4,3,3,1])   #3 4 2 4 3 3 4     3 5 2 4 3 3 1
         controller = PDJointTorqueController(limb, kin, Kp, Kv)
     elif controller_name == 'open_loop':
         controller = FeedforwardJointVelocityController(limb, kin)
@@ -211,7 +207,7 @@ if __name__ == "__main__":
     parser.add_argument('--log', action='store_true', help='plots controller performance')
     args = parser.parse_args()
 
-    
+
 
 
     rospy.init_node('moveit_node')
