@@ -104,17 +104,19 @@ def get_trajectory(task, ar_marker_num, num_way, controller_name):
         r = 0.1
         path = CircularPath(limb,kin,total_time,ar_marker_num,center_pos,r)
     elif task == 'square':
+        """
         tag_pos = [lookup_tag(num) for num in ar_marker_num]
         h_offset = 0.1
         print(tag_pos)
         for i in range(len(tag_pos)):
             tag_pos[i] = tag_pos[i][0]
             tag_pos[i][2] += h_offset
+            """
         corners = [np.array([0.73,0.47,0]), np.array([0.73,0.25,0.1])
                 ,np.array([0.55, 0.25, 0]), np.array([0.53, 0.47, 0.1])]
         #corners = [np.array([0.73,0.47,0]), np.array([0.73,0.25,-0.1])
                 #,np.array([0.55, 0.25, 0]), np.array([0.53, 0.47, 0.1])]
-        corners = tag_pos
+        #corners = tag_pos
         length = len(corners)
         paths = [LinearPath(limb,kin,total_time,ar_marker_num,corners[i],corners[(i+1)%length]) for i in range(length)]
         path = MultiplePaths(paths)
@@ -150,8 +152,11 @@ def get_controller(controller_name):
         Kv = np.array([0,0.2,0,0,0,0,0])
         controller = PDJointVelocityController(limb, kin, Kp, Kv)
     elif controller_name == 'torque':
-        Kp = np.array([20,8,28,20,12,0,20])      # 7x array 20 8 28 20 15 0 20
-        Kv = np.array([3,4,2,4,3,3,4])   #3 4 2 4 3 3 4     3 5 2 4 3 3 4
+        #Line
+        #Kp = np.array([100 ,50 ,50 ,20 ,20 ,20, 10])      # 7x array 20 8 28 20 15 0 20
+        #Kv = np.array([3,3,2,1,0,1,1])   #3 4 2 4 3 3 4     3 5 2 4 3 3 4
+        Kp = np.array([32 ,32 ,32,12 ,20 ,12, 3])      # 7x array 20 8 28 20 15 0 20
+        Kv = np.array([0,0,0.1,0,0,0,0])   #3 4 2 4 3 3 4     3 5 2 4 3 3 4
         controller = PDJointTorqueController(limb, kin, Kp, Kv)
     elif controller_name == 'open_loop':
         controller = FeedforwardJointVelocityController(limb, kin)

@@ -400,7 +400,7 @@ class Controller:
         start_t = rospy.Time.now()
         r = rospy.Rate(rate)
         start_time = time.time()
-        total_time = 0.5
+        total_time = 1
         path = None
         last_path_time = 0
         
@@ -811,30 +811,51 @@ class PDJointTorqueController(Controller):
 
         # G = J_T * M_cart * [0,0,0.981,0,0,0]
         J_T = self._kin.jacobian_transpose()
-        M_car = self._kin.cart_inertia()
-        gravity = np.array([0,0,0.981,0,0,0]) 
-        G = J_T.dot(M_car)
-        G = G.dot(gravity)
-        
-        # M 
+        M_cart = self._kin.cart_inertia()
+        g = np.matrix([0,0,-.981,0,0,0]).transpose() 
+        G = J_T * M_cart * g 
+        G = G.A1
+        #G = G.dot(g).A1
+        #G = J_T * M_cart * [0,0,0.981,0,0,0]
+        # M
         M = self._kin.inertia()
-        M = M.dot(target_acceleration)
+        tau_d =  M.dot(target_acceleration).A1
+        #M = M.dot(target_acceleration)
+        #C = self._kin.coriolis()
+
+        """
+        print("G",G)
+        print("M",M)
+        print("C",C)
+        """
+
+        #output_vel = M + G + Kp.dot(err) + Kv.dot(err_d) 
+        #output_torque =  M + G + Kp.dot(err) + Kv.dot(err_d) 
+        output_torque = tau_d + Kp.dot(err) + Kv.dot(err_d)  
+        print "tau_d",tau_d
+        print "target_acceleration",target_acceleration
+        print "output",output_torque
+        #output_torque = output_torque.A1
+        """
+        output_torque = np.ones(7)
+        out = joint_array_to_dict(output_torque, self._limb)
+        cur_effort = self._limb.joint_efforts()
 
         
-        print(G)
+        err = [out[key]-cur_effort[key] for key,value in out.iteritems()]
+        print "\noutput_torque\n",out
+        print "joint_efforts\n",cur_effort
+        print "effort error is\n",err
+        """
+        #print "J_T\n",J_T
+        #print "M_cart\n",M_cart
+        #print joint_array_to_dict(output_torque, self._limb), "\n"
+        #self._limb.set_joint_torques(cur_effort)
+        self._limb.set_joint_torques(joint_array_to_dict(output_torque, self._limb))
 
-        C = self._kin.coriolis()
-        
-
-        output_vel = M + G + Kp.dot(err) + Kv.dot(err_d)     
-        output_vel = output_vel.A1
-        print "\n",output_vel
-
-        print joint_array_to_dict(output_vel, self._limb), "\n"
-
-        self._limb.set_joint_torques(joint_array_to_dict(output_vel, self._limb))
-
-
+## comments on gravity
+#   
+# 
 
 
 

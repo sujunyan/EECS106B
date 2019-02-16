@@ -36,6 +36,7 @@ def tag_pub(tags):
     br = tf.TransformBroadcaster()
     from_frame = 'base'
     pos, quat = None, None
+    tags = [tags]
     while not rospy.is_shutdown():
         print(tags)
         for i in range(len(tags)):

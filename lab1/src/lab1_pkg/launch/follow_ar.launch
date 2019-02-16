@@ -1,6 +1,0 @@
-<launch>
-
-   <node name="tag_pub" pkg="lab1_pkg" type="tag_pub.py" args="-tags 3" />
-  <!-- <node name="follow_ar" pkg="lab1_pkg" type="follow_ar.py" args="-ar 3 -a right -c jointsapce -timeout 5 log" /> -->
-
-</launch>
