@@ -23,6 +23,7 @@ import tf
 import baxter_interface
 from moveit_msgs.msg import DisplayTrajectory, RobotState
 from baxter_pykdl import baxter_kinematics
+from moveit_ik import MoveitIK
 
 def lookup_tag(tag_number):
     """
@@ -76,14 +77,14 @@ def get_controller(controller_name):
         controller = PDWorkspaceVelocityController(limb, kin, Kp, Kv)
     elif controller_name == 'jointspace':
         # YOUR CODE HERE
-        Kp = vec(0,   0, 0, 0., 0., 0., 0.) 
+        Kp = vec(0,   0, 0, 0., 0., 0., 0.)
         Kv = vec(0,   0, 0, 0., 0., 0., 0.)
-        controller = PDJointVelocityController(limb, kin, Kp, Kv)
+        controller = PDJointVelocityController(limb, kin, Kp, Kv,ik_srv=ik_srv)
     elif controller_name == 'torque':
         # YOUR CODE HERE
         Kp = None
         Kv = None
-        controller = PDJointTorqueController(limb, kin, Kp, Kv)
+        controller = PDJointTorqueController(limb, kin, Kp, Kv,ik_srv=ik_srv)
     elif controller_name == 'open_loop':
         controller = FeedforwardJointVelocityController(limb, kin)
     else:
@@ -130,6 +131,8 @@ if __name__ == "__main__":
     # https://github.com/valmik/baxter_pykdl/blob/master/src/baxter_pykdl/baxter_pykdl.py
     # for info on how to use each method
     kin = baxter_kinematics(args.arm)
+    group = '%s_arm'%(args.arm)
+    ik_srv = MoveitIK(group)
 
     controller = get_controller(args.controller_name)
     try:

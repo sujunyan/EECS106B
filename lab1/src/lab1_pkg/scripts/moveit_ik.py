@@ -106,7 +106,7 @@ if __name__ == "__main__":
     group = "right_arm"
     ik_srv = MoveitIK(group)
 
-    pos = [1, 0, .5]
+    pos = [0.583, -0.16, -0.1]
     quat = [0,1,0,0]
     pose = create_pose_stamped_from_pos_quat(pos, quat,"base")
     res = ik_srv.get_ik(pose)
