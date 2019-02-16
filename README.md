@@ -1,3 +1,3 @@
-# EECS106B
+# EECS106B Lab workspace
 
-This is a repository for EECS106B robotics at UC Berkeley.
+This is a repository for EECS106B 2019 Spring at UC Berkeley.
