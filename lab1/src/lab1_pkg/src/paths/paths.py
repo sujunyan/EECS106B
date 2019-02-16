@@ -387,11 +387,10 @@ class CircularPath(MotionPath):
         """
         r = self.r
 
-<<<<<<< HEAD
-        target_pos = np.array([0.726, 0.028, 0.140])
-=======
+
+
         target_pos = np.array(self._center_pos)
->>>>>>> 0d5440115e702bf353a9cf0de31b49e6a112f7ed
+
         ratio = time / self.total_time
 
         target_pos[0] = self._center_pos[0] + r * math.cos(ratio * 2 * math.pi + math.pi/4) 
