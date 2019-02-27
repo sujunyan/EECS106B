@@ -4,15 +4,15 @@
    <node name="trajectory_controller" pkg="lab1_pkg" type="start_joint_trajectory_action_server.py" />
    <include file="$(find baxter_moveit_config)/launch/baxter_grippers.launch"/>
 
-<<<<<<< HEAD
+
    <include file="$(find lab1_pkg)/launch/baxter_left_hand_track.launch"/>
    <node name="tag_pub" pkg="lab1_pkg" type="tag_pub.py" args="-tags 13"/>
 <!--   
-=======
+
    <include file="$(find lab1_pkg)/launch/baxter_right_hand_track.launch"/>
-   <!--<node name="tag_pub" pkg="lab1_pkg" type="tag_pub.py" args="-tags 3 5"/>
->>>>>>> fbab7416a8b73571cd5b75b976c515774a987fa0
-    <node name="main" pkg="lab1_pkg" type="main.py" />
- <node name="left_hand_camera_tf" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 1 left_hand_camera reference/left_hand_camera 100"/> -->
+
+   
+   <node name="main" pkg="lab1_pkg" type="main.py" args="-ar 0 1 2 3 -a right -t square"/>
+    <node name="tag_pub" pkg="lab1_pkg" type="tag_pub.py" args="-tags 3 5"/>
 
 </launch>

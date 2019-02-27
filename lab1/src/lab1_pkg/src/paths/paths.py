@@ -386,8 +386,12 @@ class CircularPath(MotionPath):
            desired x,y,z position in workspace coordinates of the end effector
         """
         r = self.r
+        """
+<<<<<<< HEAD
 
 
+        target_pos = np.array(self._center_pos)
+        """
 
         target_pos = np.array(self._center_pos)
 

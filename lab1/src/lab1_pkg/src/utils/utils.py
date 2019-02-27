@@ -7,7 +7,6 @@ Author: Chris Correa
 import numpy as np
 from math import sin, cos, atan2
 import itertools
-
 try:
     from geometry_msgs.msg._Point import Point
     import tf.transformations as tfs
@@ -293,3 +292,5 @@ def create_pose_stamped_from_pos_quat(pos, quat, frame_id):
     wpose.pose.orientation.z = quat[2]
     wpose.pose.orientation.w = quat[3]
     return wpose
+
+## self-defined ----------------------------------------------

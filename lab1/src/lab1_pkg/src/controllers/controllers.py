@@ -24,6 +24,7 @@ import intera_interface
 from geometry_msgs.msg import PoseStamped
 from moveit_msgs.msg import RobotTrajectory
 import moveit_ik
+from paths.paths import LinearPath
 NUM_JOINTS = 7
 
 class Controller:
@@ -44,7 +45,9 @@ class Controller:
         self._limb = limb
         self._kin = kin
         self.name = 'Controller'
-        self.ik_srv = ik_srv
+        group = 'right_arm'
+        self.ik_srv = moveit_ik.MoveitIK(group)
+        print self.ik_srv
 
     def step_control(self, target_position, target_velocity, target_acceleration):
         """
@@ -238,7 +241,7 @@ class Controller:
                 plt.ylabel("Joint " + str(joint) + " Velocity Error")
 
             print "Close the plot window to continue"
-            plt.show()
+            plt.show() 
 
         else:
             # it's workspace
@@ -397,7 +400,10 @@ class Controller:
         start_t = rospy.Time.now()
         r = rospy.Rate(rate)
         start_time = time.time()
-
+        total_time = 1
+        path = None
+        last_path_time = 0
+        
         while not rospy.is_shutdown():
             # Find the time from start
             t = (rospy.Time.now() - start_t).to_sec()
@@ -408,15 +414,35 @@ class Controller:
                 self.stop_moving()
                 break
                 #return False
+            if t - last_path_time >= total_time:
+                path = None
+                last_path_time += 1
 
             current_position = get_joint_positions(self._limb)
             current_velocity = get_joint_velocities(self._limb)
 
             # Get the desired position, velocity, and effort
             tag_pos = rospy.wait_for_message('tag_talk', Point)
-            (target_position,
-            target_velocity,
-            target_acceleration) = self.get_ar_target(tag_pos)
+           
+            if not path:
+                start_pos = self.get_current_position()[:3]
+                h_offset = 0.1
+                final_pos = np.array([tag_pos.x, tag_pos.y , tag_pos.z + h_offset])
+                path = LinearPath(self._limb,self._kin,total_time,None,start_pos,final_pos)
+            if self.name == 'workspace':
+                #p = path.trajectory_point(t - last_path_time,0)
+                (target_position,
+                target_velocity,
+                target_acceleration) = self.get_ar_target(tag_pos)
+            else:
+                p = path.trajectory_point(t - last_path_time,1)
+                (target_position,
+                target_velocity,
+                target_acceleration) = (p.positions ,p.velocities, p.accelerations)
+
+            
+            """
+            """
 
             # For plotting
             if log:
@@ -471,9 +497,9 @@ class Controller:
         h_offset = 0.1
         target_position = np.array([tag_pos.x,tag_pos.y,tag_pos.z + h_offset ,0,0,0]) #6x np array
         current_position = self.get_current_position()
-        speed = 0.3
+        speed = 0.2
         target_velocity = (target_position - current_position ) * speed
-        target_position = current_position + target_velocity # take a small step ahead
+        #target_position = current_position + target_velocity # take a small step ahead
         target_acceleration = np.zeros(6) # might not be correct
 
         if self.name != 'workspace':
@@ -497,8 +523,8 @@ class Controller:
             target_acceleration /= delta_t*delta_t
             """
             #print(target_position)
-            target_velocity = J_inv.dot(target_velocity).A1
-            target_acceleration = J_inv.dot(target_acceleration).A1
+            #target_velocity = J_inv.dot(target_velocity).A1
+            #target_acceleration = J_inv.dot(target_acceleration).A1
         else : # This might be redundent
             target_position = target_position[:3]
             target_velocity = target_velocity[:3]
@@ -538,12 +564,19 @@ class Controller:
         """
         ik_attempts, theta = 0, None
         orien = [0,1,0,0]
+        #self.ik_srv = None
         while theta is None and not rospy.is_shutdown():
             if self.ik_srv:
                 pose = create_pose_stamped_from_pos_quat(x, orien,"base")
-                res = ik_srv.get_ik(pose)
-                theta = res.joint_state.position #TODO
-                print(theta)
+                #print("Hello from get_ik")
+                res = self.ik_srv.get_ik(pose) # TODO
+                if res.error_code.val == 1:
+                    #print res.solution
+                    theta = res.solution.joint_state.position[-8:-1] # right hand
+                else:
+                    print("IK failed with error code %s"%(res.error_code.val))
+                #print(res)
+                #print(theta)
             else:
                 theta = self._kin.inverse_kinematics(
                     position=x,
@@ -778,30 +811,51 @@ class PDJointTorqueController(Controller):
 
         # G = J_T * M_cart * [0,0,0.981,0,0,0]
         J_T = self._kin.jacobian_transpose()
-        M_car = self._kin.cart_inertia()
-        gravity = np.array([0,0,0.981,0,0,0]) 
-        G = J_T.dot(M_car)
-        G = G.dot(gravity)
-        
-        # M 
+        M_cart = self._kin.cart_inertia()
+        g = np.matrix([0,0,-.981,0,0,0]).transpose() 
+        G = J_T * M_cart * g 
+        G = G.A1
+        #G = G.dot(g).A1
+        #G = J_T * M_cart * [0,0,0.981,0,0,0]
+        # M
         M = self._kin.inertia()
-        M = M.dot(target_acceleration)
+        tau_d =  M.dot(target_acceleration).A1
+        #M = M.dot(target_acceleration)
+        #C = self._kin.coriolis()
+
+        """
+        print("G",G)
+        print("M",M)
+        print("C",C)
+        """
+
+        #output_vel = M + G + Kp.dot(err) + Kv.dot(err_d) 
+        #output_torque =  M + G + Kp.dot(err) + Kv.dot(err_d) 
+        output_torque = tau_d + Kp.dot(err) + Kv.dot(err_d)  
+        print "tau_d",tau_d
+        print "target_acceleration",target_acceleration
+        print "output",output_torque
+        #output_torque = output_torque.A1
+        """
+        output_torque = np.ones(7)
+        out = joint_array_to_dict(output_torque, self._limb)
+        cur_effort = self._limb.joint_efforts()
 
         
-        print(G)
+        err = [out[key]-cur_effort[key] for key,value in out.iteritems()]
+        print "\noutput_torque\n",out
+        print "joint_efforts\n",cur_effort
+        print "effort error is\n",err
+        """
+        #print "J_T\n",J_T
+        #print "M_cart\n",M_cart
+        #print joint_array_to_dict(output_torque, self._limb), "\n"
+        #self._limb.set_joint_torques(cur_effort)
+        self._limb.set_joint_torques(joint_array_to_dict(output_torque, self._limb))
 
-        C = self._kin.coriolis()
-        
-
-        output_vel = M + G + Kp.dot(err) + Kv.dot(err_d)     
-        output_vel = output_vel.A1
-        print "\n",output_vel
-
-        print joint_array_to_dict(output_vel, self._limb), "\n"
-
-        self._limb.set_joint_torques(joint_array_to_dict(output_vel, self._limb))
-
-
+## comments on gravity
+#   
+# 
 
 
 

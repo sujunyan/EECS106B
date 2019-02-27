@@ -56,9 +56,13 @@ def lookup_tag(tag_number):
     ):
         print 'Cannot find AR marker {}, retrying'.format(tag_number)
         r.sleep()
-
-    t = listener.getLatestCommonTime(from_frame, to_frame)
-    tag_pos, _ = listener.lookupTransform(from_frame, to_frame, t)
+    while (True):
+        try:
+            t = listener.getLatestCommonTime(from_frame, to_frame)
+            tag_pos, _ = listener.lookupTransform(from_frame, to_frame, t)
+            break
+        except:
+            continue
     return vec(tag_pos)
 
 def get_trajectory(task, ar_marker_num, num_way, controller_name):
@@ -81,11 +85,12 @@ def get_trajectory(task, ar_marker_num, num_way, controller_name):
         #start_pos = np.array([0.6, 0.147, 0])
         #final_pos = np.array([0.8, 0.30 , 0])
         #right
-        start_pos = np.array([0.555, -0.37, 0])
-        final_pos = np.array([0.76, -0.1 , 0])
+        start_pos = np.array([0.676, 0.339, 0.202])
+        final_pos = np.array([0.617, 0.812 , 0.169])
 
         path = LinearPath(limb,kin,total_time,ar_marker_num,start_pos,final_pos) # ar_marker_num might be redundent
     elif task == 'circle':
+
 
 
         center_pos = np.array([0.730, 0.253, 0.140])
@@ -94,31 +99,53 @@ def get_trajectory(task, ar_marker_num, num_way, controller_name):
         #center_pos = lookup_tag(ar_marker_num[0])
 
         """
-        h_offset = 0.1
-        center_pos = lookup_tag(ar_marker_num[0])
-        center_pos = center_pos[0]
-        print(center_pos)
->>>>>>> fbab7416a8b73571cd5b75b976c515774a987fa0
-        center_pos[2] += h_offset
+
         """
-        center_pos = np.array([0.583, -0.16, -0.1]) # right_hand
+        
+        
+
+        
+        #center_pos = lookup_tag(ar_marker_num[0])
+        #center_pos = center_pos[0]
+        
+
+        center_pos[2] += h_offset
+        print(center_pos)
+        #center_pos = np.array([0.583, -0.16, -0.1]) # right_hand
         #center_pos = np.array([0.7, 0.23, 0]) # left_hand
         r = 0.1
         path = CircularPath(limb,kin,total_time,ar_marker_num,center_pos,r)
 
+
+
+
     elif task == 'square':
+        
+        """
         tag_pos = [lookup_tag(num) for num in ar_marker_num]
         h_offset = 0.1
+        print(tag_pos)
         for i in range(len(tag_pos)):
+
             tag_pos[i] += h_offset
         #assert(len(tag_pos) == 4)
-
+        """
         corners = [np.array([0.73,0.47,0]), np.array([0.73,0.25,0.1])
                 ,np.array([0.55, 0.25, 0]), np.array([0.53, 0.47, 0.1])]
 
         #corners = [np.array([0.73,0.47,0]), np.array([0.73,0.25,-0.1])
                 #,np.array([0.55, 0.25, 0]), np.array([0.53, 0.47, 0.1])]
-        corners = tag_pos
+        #corners = tag_pos
+
+
+        #tag_pos[i] = tag_pos[i][0]
+        #tag_pos[i][2] += h_offset
+            
+        #corners = [np.array([0.73,0.47,0]), np.array([0.73,0.25,0.1])
+        #        ,np.array([0.55, 0.25, 0]), np.array([0.53, 0.47, 0.1])]
+        #corners = [np.array([0.73,0.47,0]), np.array([0.73,0.25,-0.1])
+                #,np.array([0.55, 0.25, 0]), np.array([0.53, 0.47, 0.1])]
+        #corners = tag_pos
 
         length = len(corners)
         paths = [LinearPath(limb,kin,total_time,ar_marker_num,corners[i],corners[(i+1)%length]) for i in range(length)]
@@ -140,35 +167,14 @@ def get_controller(controller_name):
     :obj:`Controller`
     """
     if controller_name == 'workspace':
-
-  #      Kp = np.array([0.2,0,0.01,0,3,0]) # 6x array
-  #      Kv = np.array([0,0,0,0,0,0])
-
-        ## for circle
         Kp = np.array([4 , 3 , 4,0,0,0]) # 6x array
         Kv = np.array([0, 0.02 , 0,0,0,0])
-        #for line
-        #Kp = np.array([1, 1 , 4,0,0,0]) # 6x array
-        #Kv = np.array([0, 0 , 0,0,0,0])
-        ## for square
-#<<<<<<< HEAD
-#        Kp = np.array([1 , 1 , 4,0,0,0]) # 6x array
-#        Kv = np.array([0, 0.0 , 0,0,0,0])
-
-#        controller = PDWorkspaceVelocityController(limb, kin, Kp, Kv)
-#    elif controller_name == 'jointspace':
-#        Kp = np.array([0,4,1,-0.1,5,1,-0.1])   # 7x array
-#=======
-        #Kp = np.array([1 , 1 , 4,0,0,0]) # 6x array
-        #Kv = np.array([0, 0.0 , 0,0,0,0])
         controller = PDWorkspaceVelocityController(limb, kin, Kp, Kv)
     elif controller_name == 'jointspace':
         Kp = np.array([1,4,1,-0.1,5,1,-0.1])   # 7x array
-#>>>>>>> fbab7416a8b73571cd5b75b976c515774a987fa0
         Kv = np.array([0,0.2,0,0,0,0,0])
         controller = PDJointVelocityController(limb, kin, Kp, Kv)
     elif controller_name == 'torque':
-        
         Kp = np.array([20,8,28,20,25,0,20])      # 7x array 20 8 28 20 15 0 20
         Kv = np.array([3,5,5,4,3,3,1])   #3 4 2 4 3 3 4     3 5 2 4 3 3 1
         controller = PDJointTorqueController(limb, kin, Kp, Kv)
@@ -190,6 +196,7 @@ if __name__ == "__main__":
 
     You can also change the rate, timeout if you want
     """
+
     start = time.time()
     parser = argparse.ArgumentParser()
     parser.add_argument('-task', '-t', type=str, default='line', help=
