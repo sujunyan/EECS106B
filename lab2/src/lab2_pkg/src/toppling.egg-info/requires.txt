@@ -1,0 +1,3 @@
+autolab-core
+trimesh[easy]
+numpy

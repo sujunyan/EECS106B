@@ -1,4 +1,0 @@
-controllers
-joint_trajectory_action_server
-paths
-utils
