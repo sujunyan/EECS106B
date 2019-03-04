@@ -12,8 +12,8 @@ from visualization import Visualizer3D as vis3d
 
 # 106B lab imports
 from lab2.metrics import (
-    compute_force_closure, 
-    compute_gravity_resistance, 
+    compute_force_closure,
+    compute_gravity_resistance,
     compute_custom_metric
 )
 from lab2.utils import length, normalize
@@ -29,16 +29,18 @@ CONTACT_GAMMA = 0.1
 OBJECT_MASS = {'gearbox': .25, 'nozzle': .25, 'pawn': .25}
 
 def vet_distance(vert1, vert2):
-    """ 
-    Parameter: 
+    """
+    Parameter:
+    -----------------------------------
 
        vert1:  1x3 :obj:`numpy.ndarray`
-    
+       vert2:  1x3 :obj:`numpy.ndarray`
+
     Return :
-       obj : distance
+       obj : distance : double
 
     """
-    return np.linalg.norm(vert1.reshape((3,1)) - point2.reshape((3,1)))
+    return np.linalg.norm(vert1.reshape((3,1)) - vert2.reshape((3,1)))
 
 
 
@@ -50,14 +52,14 @@ class GraspingPolicy():
         Parameters
         ----------
         n_vert : int
-            We are sampling vertices on the surface of the object, and will use pairs of 
+            We are sampling vertices on the surface of the object, and will use pairs of
             these vertices as grasp candidates
         n_grasps : int
             how many grasps to sample.  Each grasp is a pair of vertices
         n_execute : int
             how many grasps to return in policy.action()
         n_facets : int
-            how many facets should be used to approximate the friction cone between the 
+            how many facets should be used to approximate the friction cone between the
             finger and the object
         metric_name : string
             name of one of the function in src/lab2/metrics/metrics.py
@@ -67,19 +69,19 @@ class GraspingPolicy():
         self.n_facets = n_facets
         # This is a function, one of the functions in src/lab2/metrics/metrics.py
         self.metric = eval(metric_name)
-    
+
     def vertices_to_baxter_hand_pose(grasp_vertices, approach_direction):
         """
         takes the contacts positions in the object frame and returns the hand pose T_obj_gripper
-        BE CAREFUL ABOUT THE FROM FRAME AND TO FRAME.  the RigidTransform class' frames are 
+        BE CAREFUL ABOUT THE FROM FRAME AND TO FRAME.  the RigidTransform class' frames are
         weird.
-        
+
         Parameters
         ----------
         grasp_vertices : 2x3 :obj:`numpy.ndarray`
             position of the fingers in object frame
         approach_direction : 3x' :obj:`numpy.ndarray`
-            there are multiple grasps that go through contact1 and contact2.  This describes which 
+            there are multiple grasps that go through contact1 and contact2.  This describes which
             orientation the hand should be in
 
         Returns
@@ -92,8 +94,8 @@ class GraspingPolicy():
     def sample_grasps(self, vertices, normals):
         """
         Samples a bunch of candidate grasps.  You should randomly choose pairs of vertices and throw out
-        pairs which are too big for the gripper, or too close too the table.  You should throw out vertices 
-        which are lower than ~3cm of the table.  You may want to change this.  Returns the pairs of 
+        pairs which are too big for the gripper, or too close too the table.  You should throw out vertices
+        which are lower than ~3cm of the table.  You may want to change this.  Returns the pairs of
         grasp vertices and grasp normals (the normals at the grasp vertices)
 
         Parameters
@@ -118,36 +120,46 @@ class GraspingPolicy():
         normals_candidates = []
         factor = 5
         count = 0
-        length = vertices.shape[0]
+        l = vertices.shape[0]
+        min_dis_to_table = 0.03
         while True:
-            i = random.randrange(0, length)
-            j = random.randrange(0,length)
+            i = random.randrange(0,l)
+            j = random.randrange(0,l)
             v1,v2 = vertices[i], vertices[j]
             n1,n2 = normals[i], normals[j]
-            if v1[2] < 0.03 or v2[2]< 0.03 or n1.dot(n2) > 0 or v1 == v2:
-                continue
-            distance = vet_distance(v1,v2)
+            #print(v1,v2)
+            #print(n1,n2)
+            #print(count)
+            #print('\n\n')
 
-            if distance < 0.02 or distance > 0.06:
+            if v1[2] < min_dis_to_table or v2[2]< min_dis_to_table:
                 continue
+            if n1.dot(n2) > 0:
+                continue
+            if np.array_equal(v1,v2):
+                continue
+
+            distance = vet_distance(v1,v2)
+            if distance < MIN_HAND_DISTANCE or distance > MAX_HAND_DISTANCE:
+                continue
+
             count += 1
-            vertices_candidates.append(list(list(v1),list(v2)))
-            normals_candidates.append(list(list(n1),list(n2)))
+            vertices_candidates.append([v1,v2])
+            normals_candidates.append([n1,n2])
 
             if count == self.n_grasps:
                 break
-        
-              
+
         grasp_vertices = np.array(vertices_candidates)
         grasp_normals = np.array(normals_candidates)
 
         return grasp_vertices , grasp_normals
-        
+
 
     def score_grasps(self, grasp_vertices, grasp_normals, object_mass):
         """
         takes mesh and returns pairs of contacts and the quality of grasp between the contacts, sorted by quality
-        
+
         Parameters
         ----------
         grasp_vertices : n_graspsx2x3 :obj:`numpy.ndarray`
@@ -160,9 +172,17 @@ class GraspingPolicy():
         Returns
         -------
         :obj:`list` of int
-            grasp quality for each 
+            grasp quality for each
         """
-        raise NotImplementedError
+        quality = []
+        for i in range(len(grasp_vertices)):
+            vertices = grasp_vertices[i]
+            normals = grasp_normals[i]
+            num_facets = self.n_facets
+            mu = CONTACT_MU
+            gamma = CONTACT_GAMMA
+            quality.append(self.metric(vertices, normals, num_facets, mu, gamma, object_mass))
+        return quality
 
     def vis(self, mesh, grasp_vertices, grasp_qualities):
         """
@@ -170,7 +190,7 @@ class GraspingPolicy():
         each grasp on the object and plot the grasps as a bar between the points, with
         colored dots on the line endpoints representing the grasp quality associated
         with each grasp
-        
+
         Parameters
         ----------
         mesh : :obj:`Trimesh`
@@ -195,15 +215,15 @@ class GraspingPolicy():
 
     def top_n_actions(self, mesh, obj_name, vis=True):
         """
-        Takes in a mesh, samples a bunch of grasps on the mesh, evaluates them using the 
+        Takes in a mesh, samples a bunch of grasps on the mesh, evaluates them using the
         metric given in the constructor, and returns the best grasps for the mesh.  SHOULD
         RETURN GRASPS IN ORDER OF THEIR GRASP QUALITY.
 
-        You should try to use mesh.mass to get the mass of the object.  You should check the 
+        You should try to use mesh.mass to get the mass of the object.  You should check the
         output of this, because from this
         https://github.com/BerkeleyAutomation/trimesh/blob/master/trimesh/base.py#L2203
         it would appear that the mass is approximated using the volume of the object.  If it
-        is not returning reasonable results, you can manually weight the objects and store 
+        is not returning reasonable results, you can manually weight the objects and store
         them in the dictionary at the top of the file.
 
         Parameters
@@ -218,11 +238,16 @@ class GraspingPolicy():
             the matrices T_grasp_world, which represents the hand poses of the baxter / sawyer
             which would result in the fingers being placed at the vertices of the best grasps
         """
-        # Some objects have vertices in odd places, so you should sample evenly across 
+        # Some objects have vertices in odd places, so you should sample evenly across
         # the mesh to get nicer candidate grasp points using trimesh.sample.sample_surface_even()
-        vertice_candidates , face_index = trimesh.sample.sample_surface_even()
-        normal_candidates = []
+        vertice_candidates , face_index = trimesh.sample.sample_surface_even(mesh,self.n_vert)
+        normal = []
         for x in range(len(face_index)):
              normal.append(list(mesh.face_normals[face_index[x]]))
         normal_candidates = np.array(normal)
-        grasp_pair, normal_pair = sample_grasps(vertice_candidate,normal_candidates)
+        grasp_vertices, grasp_normals = self.sample_grasps(vertice_candidates,normal_candidates)
+        object_mass = OBJECT_MASS[obj_name]
+        grasp_qualities = self.score_grasps(grasp_vertices, grasp_normals, object_mass)
+
+        if (vis):
+            self.vis(mesh, grasp_vertices, grasp_qualities)

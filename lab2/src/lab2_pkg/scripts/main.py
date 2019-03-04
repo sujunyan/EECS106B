@@ -1,4 +1,4 @@
-#!/usr/bin/env python -W ignore::DeprecationWarning
+#!/usr/bin/env python
 """
 Starter script for EE106B grasp planning lab
 Author: Chris Correa
@@ -27,7 +27,7 @@ except:
 
 def lookup_transform(to_frame, from_frame='base'):
     """
-    Returns the AR tag position in world coordinates 
+    Returns the AR tag position in world coordinates
 
     Parameters
     ----------
@@ -58,11 +58,11 @@ def lookup_transform(to_frame, from_frame='base'):
 
 def execute_grasp(T_grasp_world, planner, gripper):
     """
-    takes in the desired hand position relative to the object, finds the desired 
-    hand position in world coordinates.  Then moves the gripper from its starting 
-    orientation to some distance BEHIND the object, then move to the  hand pose 
-    in world coordinates, closes the gripper, then moves up.  
-    
+    takes in the desired hand position relative to the object, finds the desired
+    hand position in world coordinates.  Then moves the gripper from its starting
+    orientation to some distance BEHIND the object, then move to the  hand pose
+    in world coordinates, closes the gripper, then moves up.
+
     Parameters
     ----------
     T_grasp_world : :obj:`autolab_core.RigidTransform`
@@ -89,16 +89,16 @@ def parse_args():
     """
     parser = argparse.ArgumentParser()
     parser.add_argument('-obj', type=str, default='gearbox', help=
-        """Which Object you\'re trying to pick up.  Options: gearbox, nozzle, pawn.  
+        """Which Object you\'re trying to pick up.  Options: gearbox, nozzle, pawn.
         Default: gearbox"""
     )
     parser.add_argument('-n_vert', type=int, default=1000, help=
         'How many vertices you want to sample on the object surface.  Default: 1000'
     )
     parser.add_argument('-n_facets', type=int, default=32, help=
-        """You will approximate the friction cone as a set of n_facets vectors along 
-        the surface.  This way, to check if a vector is within the friction cone, all 
-        you have to do is check if that vector can be represented by a POSITIVE 
+        """You will approximate the friction cone as a set of n_facets vectors along
+        the surface.  This way, to check if a vector is within the friction cone, all
+        you have to do is check if that vector can be represented by a POSITIVE
         linear combination of the n_facets vectors.  Default: 32"""
     )
     parser.add_argument('-n_grasps', type=int, default=500, help=
@@ -106,14 +106,14 @@ def parse_args():
     parser.add_argument('-n_execute', type=int, default=5, help=
         'How many grasps you want to execute.  Default: 5')
     parser.add_argument('-metric', '-m', type=str, default='compute_force_closure', help=
-        """Which grasp metric in grasp_metrics.py to use.  
+        """Which grasp metric in grasp_metrics.py to use.
         Options: compute_force_closure, compute_gravity_resistance, compute_custom_metric"""
     )
     parser.add_argument('-arm', '-a', type=str, default='left', help=
         'Options: left, right.  Default: left'
     )
     parser.add_argument('--baxter', action='store_true', help=
-        """If you don\'t use this flag, you will only visualize the grasps.  This is 
+        """If you don\'t use this flag, you will only visualize the grasps.  This is
         so you can run this on your laptop"""
     )
     parser.add_argument('--debug', action='store_true', help=
@@ -128,20 +128,20 @@ if __name__ == '__main__':
         np.random.seed(0)
 
     # Mesh loading and pre-processing
-    mesh = trimesh.load_mesh('objects/{}.obj'.format(args.obj))
+    mesh = trimesh.load('../objects/{}.obj'.format(args.obj))
     T_obj_world = lookup_transform(args.obj)
     mesh.apply_transform(T_obj_world.matrix)
     mesh.fix_normals()
 
     # This policy takes a mesh and returns the best actions to execute on the robot
     grasping_policy = GraspingPolicy(
-        args.n_vert, 
-        args.n_grasps, 
-        args.n_execute, 
-        args.n_facets, 
+        args.n_vert,
+        args.n_grasps,
+        args.n_execute,
+        args.n_facets,
         args.metric
     )
-    # Each grasp is represented by T_grasp_world, a RigidTransform defining the 
+    # Each grasp is represented by T_grasp_world, a RigidTransform defining the
     # position of the end effector
     T_grasp_worlds = grasping_policy.top_n_actions(mesh, args.obj)
 

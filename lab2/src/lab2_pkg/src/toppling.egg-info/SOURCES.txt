@@ -1,3 +1,4 @@
+README.md
 setup.py
 src/lab2/__init__.py
 src/toppling.egg-info/PKG-INFO
