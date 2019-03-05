@@ -7,7 +7,7 @@ Author: Chris Correa
 import numpy as np
 from lab2.utils import vec, adj, look_at_general, length
 #import cvxpy as cvx
-import math
+from math import *
 
 def vert_angle(vert1, vert2):
     """
@@ -78,10 +78,16 @@ def get_grasp_map(vertices, normals, num_facets, mu, gamma):
 
     Returns
     -------
-    :obj:`numpy.ndarray` grasp map
+    grasp map  6x(num_facets+1):obj:`numpy.ndarray` 
     """
     # YOUR CODE HERE
-    raise NotImplementedError
+    n = num_facets
+    grasp_map = []
+    for i in range(n):
+        fi = [cos(i/n*pi*2), cos(i/n*pi*2), 1,0,0,0]
+        grasp_map.append(fi)
+    grasp_map.append([0,0,0,0,0,1])
+    return grasp_map
 
 def contact_forces_exist(vertices, normals, num_facets, mu, gamma, desired_wrench):
     """
