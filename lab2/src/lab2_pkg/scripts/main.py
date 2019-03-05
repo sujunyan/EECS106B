@@ -143,10 +143,10 @@ if __name__ == '__main__':
 
     # Mesh loading and pre-processing
     mesh = trimesh.load('../objects/{}.obj'.format(args.obj))
-    """
+    
     T_obj_world = lookup_transform(args.obj)
     mesh.apply_transform(T_obj_world.matrix)
-    """
+    
     mesh.fix_normals()
 
     # This policy takes a mesh and returns the best actions to execute on the robot

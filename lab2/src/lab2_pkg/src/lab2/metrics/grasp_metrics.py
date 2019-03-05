@@ -85,7 +85,10 @@ def get_grasp_map(vertices, normals, num_facets, mu, gamma):
     v1, v2 = vertices[0], vertices[1]
     n1, n2 = normals[0],  normals[1] 
                               
-    R1     = look_at_general(v1, n1)
+    R      = look_at_general(v1, n1)
+    R1     = R[:3,:3]
+    p1     = R[:3,:3]
+    R
     
     raise NotImplementedError
 
@@ -145,12 +148,12 @@ def compute_gravity_resistance(vertices, normals, num_facets, mu, gamma, object_
     -------
     float : quality of the grasp
     """
-    gravity_wrench = [0,0,0, -object_mass, 0,0]
+    gravity_wrench = [0,0,0, -object_mass * .981, 0,0]
     gravity_wrench = np.array(gravity_wrench)
 
-    f1, r1 = contact_forces_exist(vertices, normals, num_facets, mu, gamma, gravity_wrench)
-    f2, r2 = contact_forces_exist(vertices, normals, num_facets, mu, gamma, gravity_wrench)
-    return 1/r1 + 1/r2
+    f, r = contact_forces_exist(vertices, normals, num_facets, mu, gamma, gravity_wrench)
+    
+    return 1/r 
 
 
 
