@@ -163,5 +163,5 @@ def compute_custom_metric(vertices, normals, num_facets, mu, gamma, object_mass)
     -------
     float : quality of the grasp
     """
-    # YOUR CODE HERE :)
-    raise NotImplementedError
+    scores = np.zeros((vertices.shape[0],1))
+    

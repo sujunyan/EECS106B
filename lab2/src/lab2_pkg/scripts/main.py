@@ -25,6 +25,10 @@ except:
     print 'Couldn\'t import ROS.  I assume you\'re running this on your laptop'
     ros_enabled = False
 
+BAXTER_CONNECTED = True
+
+
+
 def lookup_transform(to_frame, from_frame='base'):
     """
     Returns the AR tag position in world coordinates
@@ -44,6 +48,12 @@ def lookup_transform(to_frame, from_frame='base'):
         print 'I am the lookup transform function!  ' \
             + 'You\'re not using ROS, so I\'m returning the Identity Matrix.'
         return RigidTransform(to_frame=from_frame, from_frame=to_frame)
+
+    if BAXTER_CONNECTED:
+        rospy.init_node('moveit_node')
+
+
+    
     listener = tf.TransformListener()
     attempts, max_attempts, rate = 0, 10, rospy.Rate(1.0)
     while attempts < max_attempts:
@@ -122,15 +132,21 @@ def parse_args():
     return parser.parse_args()
 
 if __name__ == '__main__':
+
     args = parse_args()
+
+    if BAXTER_CONNECTED:
+        rospy.init_node('moveit_node')
 
     if args.debug:
         np.random.seed(0)
 
     # Mesh loading and pre-processing
     mesh = trimesh.load('../objects/{}.obj'.format(args.obj))
+    """
     T_obj_world = lookup_transform(args.obj)
     mesh.apply_transform(T_obj_world.matrix)
+    """
     mesh.fix_normals()
 
     # This policy takes a mesh and returns the best actions to execute on the robot
