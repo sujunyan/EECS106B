@@ -25,7 +25,8 @@ except:
     print 'Couldn\'t import ROS.  I assume you\'re running this on your laptop'
     ros_enabled = False
 
-BAXTER_CONNECTED = True
+ros_enabled = False
+BAXTER_CONNECTED = False
 
 
 
@@ -49,8 +50,8 @@ def lookup_transform(to_frame, from_frame='base'):
             + 'You\'re not using ROS, so I\'m returning the Identity Matrix.'
         return RigidTransform(to_frame=from_frame, from_frame=to_frame)
 
-    if BAXTER_CONNECTED:
-        rospy.init_node('moveit_node')
+    #if BAXTER_CONNECTED:
+        #rospy.init_node('moveit_node')
 
 
     
@@ -135,8 +136,8 @@ if __name__ == '__main__':
 
     args = parse_args()
 
-    if BAXTER_CONNECTED:
-        rospy.init_node('moveit_node')
+    #if BAXTER_CONNECTED:
+        #rospy.init_node('moveit_node')
 
     if args.debug:
         np.random.seed(0)

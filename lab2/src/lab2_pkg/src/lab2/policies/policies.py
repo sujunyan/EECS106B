@@ -24,7 +24,7 @@ MAX_HAND_DISTANCE = .04
 MIN_HAND_DISTANCE = .01
 CONTACT_MU = 0.5
 CONTACT_GAMMA = 0.1
-
+MIN_DIS_TO_TABLE = 0.03
 # TODO
 OBJECT_MASS = {'gearbox': .25, 'nozzle': .25, 'pawn': .25}
 
@@ -126,7 +126,10 @@ class GraspingPolicy():
         factor = 5
         count = 0
         l = vertices.shape[0]
-        min_dis_to_table = 0.03
+
+        # the z value of the bottom of the object
+        ground_z = min(vertices[:][2])
+        #print(ground_z)
         while True:
             i = random.randrange(0,l)
             j = random.randrange(0,l)
@@ -137,7 +140,7 @@ class GraspingPolicy():
             #print(count)
             #print('\n\n')
 
-            if v1[2] < min_dis_to_table or v2[2]< min_dis_to_table:
+            if v1[2] - ground_z < MIN_DIS_TO_TABLE or v2[2] - ground_z < MIN_DIS_TO_TABLE:
                 continue
             if n1.dot(n2) > 0:
                 continue
@@ -255,4 +258,5 @@ class GraspingPolicy():
         grasp_qualities = self.score_grasps(grasp_vertices, grasp_normals, object_mass)
 
         if (vis):
+            #print(grasp_qualities)
             self.vis(mesh, grasp_vertices, grasp_qualities)
