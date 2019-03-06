@@ -88,8 +88,13 @@ class GraspingPolicy():
         -------
         :obj:`autolab_core:RigidTransform` Hand pose in the object frame
         """
-        # YOUR CODE HERE
-        raise NotImplementedError
+        v1, v2 = grasp_vertices[0] , grasp_vertices[1]
+        center = (v1+v2) /2 
+        
+        R = look_at_general(center, approach_direction)
+        R = R[:3,:3]
+        handpose = autolab_core.RigidTransform(R, approach_direction,from_frame=’gripper’, to_frame=’world’)
+        return handpose
 
     def sample_grasps(self, vertices, normals):
         """
