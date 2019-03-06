@@ -121,8 +121,10 @@ class GraspingPolicy():
         factor = 5
         count = 0
         l = vertices.shape[0]
+
+        # the z value of the bottom of the object
         ground_z = min(vertices[:][2])
-        print(ground_z)
+        #print(ground_z)
         while True:
             i = random.randrange(0,l)
             j = random.randrange(0,l)

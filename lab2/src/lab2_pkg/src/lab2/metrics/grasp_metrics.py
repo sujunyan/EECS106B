@@ -140,11 +140,11 @@ def contact_forces_exist(vertices, normals, num_facets, mu, gamma, desired_wrenc
     n = num_facets
     lb = np.zeros(2*n + 2)
     up = np.array([np.inf for i in range(2*n + 2)])
-    up[n] = gamma
-    up[2*n +1] = gamma
+    #up[n] = gamma
+    #up[2*n +1] = gamma
 
     G = get_grasp_map(vertices,normals,num_facets,mu,gamma)
-    result = scipy.optimize.lsq_linear(G, desired_wrench,bounds=(lb,up),verbose=1,lsmr_tol = 'auto')
+    result = scipy.optimize.lsq_linear(G, desired_wrench,bounds=(lb,up),verbose=0,lsmr_tol = 'auto')
 
     cost = result.cost
     return (result.success)
