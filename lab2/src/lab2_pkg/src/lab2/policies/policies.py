@@ -9,6 +9,7 @@ import random
 from autolab_core import RigidTransform
 import trimesh
 from visualization import Visualizer3D as vis3d
+import heapq
 
 # 106B lab imports
 from lab2.metrics import (
@@ -93,8 +94,8 @@ class GraspingPolicy():
         
         R = look_at_general(center, approach_direction)
         R = R[:3,:3]
-        handpose = autolab_core.RigidTransform(R, approach_direction,from_frame=’gripper’, to_frame=’world’)
-        return handpose
+        print('R', R)
+        
 
     def sample_grasps(self, vertices, normals):
         """
@@ -257,6 +258,23 @@ class GraspingPolicy():
         object_mass = OBJECT_MASS[obj_name]
         grasp_qualities = self.score_grasps(grasp_vertices, grasp_normals, object_mass)
 
+        rel = map(grasp_qualities.index, heapq.nlargest(500, grasp_qualities))   
+        print('rel', rel)
+        
+        best_vertices = []  
+        best_grasp_qualities = []      
+        for i in rel:
+            best_vertices.append(list(grasp_vertices[i]))
+            best_grasp_qualities.append(grasp_qualities[i])
+
+        best_vertices = np.array(best_vertices)
+        print('best_vertices',best_vertices)
+        if (vis):
+            self.vis(mesh, best_vertices, best_grasp_qualities)
+
+
+        """
         if (vis):
             #print(grasp_qualities)
             self.vis(mesh, grasp_vertices, grasp_qualities)
+        """
