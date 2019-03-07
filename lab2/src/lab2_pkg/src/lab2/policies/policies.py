@@ -94,11 +94,15 @@ class GraspingPolicy():
         
         R = look_at_general(center, approach_direction)
         R = R[:3,:3]
+<<<<<<< HEAD
         print('R', R)
 
         handpose = RigidTransform(R ,approach_direction, from_frame = 'gripper',to_frame = 'object')
 
         return handpose
+=======
+        #print('R', R)
+>>>>>>> f4a383bc539775f30fb014c5c556f1c86ecb715c
         
 
     def sample_grasps(self, vertices, normals):
@@ -264,8 +268,13 @@ class GraspingPolicy():
         
         rel = sorted(range(len(grasp_qualities)),key = lambda x:grasp_qualities[x]) 
 
+<<<<<<< HEAD
         rel = rel[:5]   
         print('rel', rel)
+=======
+        rel = map(grasp_qualities.index, heapq.nlargest(self.n_grasps, grasp_qualities))   
+        #print('rel', rel)
+>>>>>>> f4a383bc539775f30fb014c5c556f1c86ecb715c
         
         best_vertices = []  
         best_grasp_qualities = []      
@@ -274,6 +283,7 @@ class GraspingPolicy():
             best_grasp_qualities.append(grasp_qualities[i])
 
         best_vertices = np.array(best_vertices)
+<<<<<<< HEAD
 
         print('best_vertices',best_vertices)
 
@@ -306,3 +316,8 @@ class GraspingPolicy():
             #print(grasp_qualities)
             self.vis(mesh, grasp_vertices, grasp_qualities)
         """
+=======
+        #print('best_vertices',best_vertices)
+        if (vis):
+            self.vis(mesh, best_vertices, best_grasp_qualities)
+>>>>>>> f4a383bc539775f30fb014c5c556f1c86ecb715c
