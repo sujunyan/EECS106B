@@ -20,6 +20,7 @@ try:
     import tf
     from baxter_interface import gripper as baxter_gripper
     from path_planner import PathPlanner
+    from intera_interface import gripper as sawyer_gripper
     ros_enabled = True
 except:
     print 'Couldn\'t import ROS.  I assume you\'re running this on your laptop'
@@ -81,18 +82,24 @@ def execute_grasp(T_grasp_world, planner, gripper):
     """
     def close_gripper():
         """closes the gripper"""
-        gripper.close(block=True)
+        gripper.close()
         rospy.sleep(1.0)
 
     def open_gripper():
         """opens the gripper"""
-        gripper.open(block=True)
+        gripper.open()
         rospy.sleep(1.0)
 
     inp = raw_input('Press <Enter> to move, or \'exit\' to exit')
     if inp == "exit":
         return
-    raise NotImplementedError
+    open_gripper()
+
+    g = T_grasp_world.matrix
+    target_pose = create_pose_from_rigid_transform(g)
+    plan = planner.plan_to_pose(target_pose)
+    planner.execute_plan(plan)
+    close_gripper()
 
 def parse_args():
     """
@@ -127,6 +134,10 @@ def parse_args():
         """If you don\'t use this flag, you will only visualize the grasps.  This is
         so you can run this on your laptop"""
     )
+    parser.add_argument('--sawyer', action='store_true', help=
+        """If you don\'t use this flag, you will only visualize the grasps.  This is
+        so you can run this on your laptop"""
+    )
     parser.add_argument('--debug', action='store_true', help=
         'Whether or not to use a random seed'
     )
@@ -136,8 +147,7 @@ if __name__ == '__main__':
 
     args = parse_args()
 
-    #if BAXTER_CONNECTED:
-        #rospy.init_node('moveit_node')
+    rospy.init_node('grasp_main_node')
 
     if args.debug:
         np.random.seed(0)
@@ -160,15 +170,23 @@ if __name__ == '__main__':
     )
     # Each grasp is represented by T_grasp_world, a RigidTransform defining the
     # position of the end effector
-    T_grasp_worlds = grasping_policy.top_n_actions(mesh, args.obj)
+    T_grasp_worlds = grasping_policy.top_n_actions(mesh, args.obj,vis=False )
 
     # Execute each grasp on the baxter / sawyer
-    if args.baxter:
-        gripper = baxter_gripper.Gripper(args.arm)
-        planner = PathPlanner('{}_arm'.format(arm))
+    if args.baxter or args.sawyer:
+        if args.baxter:
+            gripper = baxter_gripper.Gripper(args.arm)
+            planner = PathPlanner('{}_arm'.format(arm))
+        elif args.sawyer:
+            gripper = sawyer_gripper.Gripper('right')
+            planner = PathPlanner('right_arm')
 
+        T_grasp_world = []
+        execute_grasp(T_grasp_world, planner, gripper)
+        """
         for T_grasp_world in T_grasp_worlds:
             repeat = True
             while repeat:
                 execute_grasp(T_grasp_world, planner, gripper)
                 repeat = raw_input("repeat? [y|n] ") == 'y'
+        """
