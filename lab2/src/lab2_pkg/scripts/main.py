@@ -27,7 +27,7 @@ except:
     print 'Couldn\'t import ROS.  I assume you\'re running this on your laptop'
     ros_enabled = False
 
-ros_enabled = False
+ros_enabled = True
 BAXTER_CONNECTED = False
 
 
@@ -80,8 +80,11 @@ def lookup_transform(to_frame, from_frame='base'):
         try:
             t = listener.getLatestCommonTime(from_frame, to_frame)
             tag_pos, tag_rot = listener.lookupTransform(from_frame, to_frame, t)
+            print("Find transform!")
+            break;          
         except:
             rate.sleep()
+            print("Try to find transform failed...")
             attempts += 1
     rot = RigidTransform.rotation_from_quaternion(tag_rot)
     return RigidTransform(rot, tag_pos, to_frame=from_frame, from_frame=to_frame)
@@ -116,6 +119,7 @@ def execute_grasp(T_grasp_world, planner, gripper):
     target_pose = create_pose_from_rigid_transform(g)
     plan = planner.plan_to_pose(target_pose)
     planner.execute_plan(plan)
+    rospy.sleep(2.0)
     close_gripper()
 
 def parse_args():
@@ -174,9 +178,9 @@ if __name__ == '__main__':
     
     T_obj_world = lookup_transform(args.obj)
     mesh.apply_transform(T_obj_world.matrix)
-    
+    print("Transform applied")
     mesh.fix_normals()
-
+    print("Normals fixed")
     # This policy takes a mesh and returns the best actions to execute on the robot
     grasping_policy = GraspingPolicy(
         args.n_vert,
@@ -185,10 +189,11 @@ if __name__ == '__main__':
         args.n_facets,
         args.metric
     )
+    print("grasping_policy got")
     # Each grasp is represented by T_grasp_world, a RigidTransform defining the
     # position of the end effector
     T_grasp_worlds = grasping_policy.top_n_actions(mesh, args.obj,vis=False )
-
+    print("T_grasp_worlds got")
     # Execute each grasp on the baxter / sawyer
     if args.baxter or args.sawyer:
         if args.baxter:
@@ -197,15 +202,16 @@ if __name__ == '__main__':
         elif args.sawyer:
             gripper = sawyer_gripper.Gripper('right')
             planner = PathPlanner('right_arm')
-
+        """
         rot = create_rotation_from_RPY(-3.141, 0.002, 1.382)
         T_grasp_world = RigidTransform(translation=np.array([ 0.672, 0.421, -0.112]),
                                         rotation=rot)
         execute_grasp(T_grasp_world, planner, gripper)
         """
         for T_grasp_world in T_grasp_worlds:
+            print(T_grasp_world)
             repeat = True
             while repeat:
                 execute_grasp(T_grasp_world, planner, gripper)
                 repeat = raw_input("repeat? [y|n] ") == 'y'
-        """
+        
