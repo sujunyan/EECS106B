@@ -10,14 +10,14 @@ from autolab_core import RigidTransform
 import trimesh
 from visualization import Visualizer3D as vis3d
 import heapq
-
+import rospy
 # 106B lab imports
 from lab2.metrics import (
     compute_force_closure,
     compute_gravity_resistance,
     compute_custom_metric
 )
-from lab2.utils import length, normalize
+from lab2.utils import length, normalize, look_at_general
 
 # YOUR CODE HERE
 # probably don't need to change these (BUT confirm that they're correct)
@@ -71,7 +71,7 @@ class GraspingPolicy():
         # This is a function, one of the functions in src/lab2/metrics/metrics.py
         self.metric = eval(metric_name)
 
-    def vertices_to_baxter_hand_pose(grasp_vertices, approach_direction):
+    def vertices_to_baxter_hand_pose(self,grasp_vertices, approach_direction):
         """
         takes the contacts positions in the object frame and returns the hand pose T_obj_gripper
         BE CAREFUL ABOUT THE FROM FRAME AND TO FRAME.  the RigidTransform class' frames are
@@ -95,6 +95,11 @@ class GraspingPolicy():
         R = look_at_general(center, approach_direction)
         R = R[:3,:3]
         print('R', R)
+
+        handpose = RigidTransform(R, center, from_frame = 'gripper',to_frame = 'object')
+
+        return handpose
+
         
 
     def sample_grasps(self, vertices, normals):
@@ -129,9 +134,11 @@ class GraspingPolicy():
         l = vertices.shape[0]
 
         # the z value of the bottom of the object
-        ground_z = min(vertices[:][2])
+        vertices_z = [vertices[i][2] for i in range(l)]
+        ground_z = min(vertices_z)
+        print(vertices[:][2])
         #print(ground_z)
-        while True:
+        while not rospy.is_shutdown():
             i = random.randrange(0,l)
             j = random.randrange(0,l)
             v1,v2 = vertices[i], vertices[j]
@@ -140,16 +147,21 @@ class GraspingPolicy():
             #print(n1,n2)
             #print(count)
             #print('\n\n')
-
+            #print("vertices candidate",v1,v2)
+            #print(vertices_z)
+            #print(vertices_z.shape)
             if v1[2] - ground_z < MIN_DIS_TO_TABLE or v2[2] - ground_z < MIN_DIS_TO_TABLE:
+                print("sample too close to the table",ground_z)
                 continue
             if n1.dot(n2) > 0:
+                print("")
                 continue
             if np.array_equal(v1,v2):
                 continue
 
             distance = vet_distance(v1,v2)
             if distance < MIN_HAND_DISTANCE or distance > MAX_HAND_DISTANCE:
+                print("hand too close")
                 continue
 
             count += 1
@@ -249,16 +261,21 @@ class GraspingPolicy():
         """
         # Some objects have vertices in odd places, so you should sample evenly across
         # the mesh to get nicer candidate grasp points using trimesh.sample.sample_surface_even()
+        print("top_n_actions called")
         vertice_candidates , face_index = trimesh.sample.sample_surface_even(mesh,self.n_vert)
         normal = []
         for x in range(len(face_index)):
              normal.append(list(mesh.face_normals[face_index[x]]))
         normal_candidates = np.array(normal)
+        print("normal_candidates got")
         grasp_vertices, grasp_normals = self.sample_grasps(vertice_candidates,normal_candidates)
+        print('samples got')
         object_mass = OBJECT_MASS[obj_name]
         grasp_qualities = self.score_grasps(grasp_vertices, grasp_normals, object_mass)
-
-        rel = map(grasp_qualities.index, heapq.nlargest(500, grasp_qualities))   
+        
+        print('grasp_qualities got')
+        rel = sorted(range(len(grasp_qualities)),key = lambda x:grasp_qualities[x]) 
+        rel = rel[:5]   
         print('rel', rel)
         
         best_vertices = []  
@@ -268,13 +285,21 @@ class GraspingPolicy():
             best_grasp_qualities.append(grasp_qualities[i])
 
         best_vertices = np.array(best_vertices)
+
         print('best_vertices',best_vertices)
+
         if (vis):
             self.vis(mesh, best_vertices, best_grasp_qualities)
 
+        approach_direction = [-1, -1, -1] # TODO 
+        approach_direction = np.array(approach_direction) 
 
-        """
-        if (vis):
-            #print(grasp_qualities)
-            self.vis(mesh, grasp_vertices, grasp_qualities)
-        """
+        T_grasp_worlds = []
+        print(best_vertices[0])
+
+        
+        for x in range(best_vertices.shape[0]):
+            T_grasp_worlds.append(self.vertices_to_baxter_hand_pose(best_vertices[x],approach_direction))
+            
+        print(T_grasp_worlds)
+        return T_grasp_worlds

@@ -235,3 +235,21 @@ def create_pose_from_rigid_transform(g):
     wpose.orientation.z = quaternion[2]
     wpose.orientation.w = quaternion[3]
     return wpose
+
+def create_rotation_from_RPY(a,b,c):
+    """
+    takes roll, pitch yaw and return a rotation matrix
+
+    Parameters
+    ------------
+    a,b,c: roll,pitch,yaw
+
+    Returns
+    ------------
+    R 3x3
+    """
+    result = np.array([ [cos(a)*cos(b), cos(a)*sin(b)*sin(c)-sin(a)*cos(c), cos(a)*sin(b)*cos(c) + sin(a)*sin(c)],
+                      [sin(a)*cos(b), sin(a)*sin(b)*sin(c)+cos(a)*cos(c), sin(a)*sin(b)*cos(c) - cos(a)*sin(c)],
+                      [-sin(b)      , cos(b)*sin(c)                     , cos(b)*cos(c)]
+                    ])
+    return result
