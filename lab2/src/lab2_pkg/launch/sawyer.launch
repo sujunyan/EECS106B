@@ -3,19 +3,20 @@
   <arg name="marker_size" default="4.4" />
   <arg name="max_new_marker_error" default="0.08" />
   <arg name="max_track_error" default="0.2" />
-  <arg name="cam_image_topic" default="/cameras/right_hand_camera/image" />
-  <arg name="cam_info_topic" default="/cameras/right_hand_camera/camera_info" />
+  <arg name="cam_image_topic" default="/io/internal_camera/right_hand_camera/image_raw" />
+  <arg name="cam_info_topic" default="/io/internal_camera/right_hand_camera/camera_info" />
   <arg name="output_frame" default="/right_hand_camera" />
   <arg name="mname" default="sawyer_right_hand_camera" />
 
   <node name="ar_track_alvar_right_hand" pkg="ar_track_alvar" type="individualMarkersNoKinect" respawn="false" output="screen" args="$(arg marker_size) $(arg max_new_marker_error) $(arg max_track_error) $(arg cam_image_topic) $(arg cam_info_topic) $(arg output_frame)" />
-
+<!---->
   <node name="object_pose_publisher" pkg="lab2_pkg" type="object_pose_publisher.py" respawn="false" output="screen" />
 
   <node name="sawyer_action_server" pkg="intera_interface" type="joint_trajectory_action_server.py" />
 
   <include file="$(find sawyer_moveit_config)/launch/sawyer_moveit.launch">
   	<arg name="electric_gripper" value="true"/>
-  </include>>
+  </include> 
+
 
 </launch>

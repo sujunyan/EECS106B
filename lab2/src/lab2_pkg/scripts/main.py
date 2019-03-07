@@ -31,6 +31,23 @@ ros_enabled = False
 BAXTER_CONNECTED = False
 
 
+def create_rotation_from_RPY(a,b,c):
+    """
+    takes roll, pitch yaw and return a rotation matrix
+
+    Parameters
+    ------------
+    a,b,c: roll,pitch,yaw
+
+    Returns
+    ------------
+    R 3x3
+    """
+    result = np.array([ [cos(a)*cos(b), cos(a)*sin(b)*sin(c)-sin(a)*cos(c), cos(a)*sin(b)*cos(c) + sin(a)*sin(c)],
+                      [sin(a)*cos(b), sin(a)*sin(b)*sin(c)+cos(a)*cos(c), sin(a)*sin(b)*cos(c) - cos(a)*sin(c)],
+                      [-sin(b)      , cos(b)*sin(c)                     , cos(b)*cos(c)]
+                    ])
+    return result
 
 def lookup_transform(to_frame, from_frame='base'):
     """
@@ -181,8 +198,9 @@ if __name__ == '__main__':
             gripper = sawyer_gripper.Gripper('right')
             planner = PathPlanner('right_arm')
 
+        rot = create_rotation_from_RPY(-3.141, 0.002, 1.382)
         T_grasp_world = RigidTransform(translation=np.array([ 0.672, 0.421, -0.112]),
-                                        rotation=create_rotation_from_RPY([-3.141, 0.002, 1.382]))
+                                        rotation=rot)
         execute_grasp(T_grasp_world, planner, gripper)
         """
         for T_grasp_world in T_grasp_worlds:
