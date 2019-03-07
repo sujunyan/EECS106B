@@ -14,6 +14,7 @@ import trimesh
 
 # 106B lab imports
 from lab2.policies import GraspingPolicy
+from utils import *
 
 try:
     import rospy
@@ -94,7 +95,6 @@ def execute_grasp(T_grasp_world, planner, gripper):
     if inp == "exit":
         return
     open_gripper()
-
     g = T_grasp_world.matrix
     target_pose = create_pose_from_rigid_transform(g)
     plan = planner.plan_to_pose(target_pose)
@@ -181,7 +181,8 @@ if __name__ == '__main__':
             gripper = sawyer_gripper.Gripper('right')
             planner = PathPlanner('right_arm')
 
-        T_grasp_world = []
+        T_grasp_world = RigidTransform(translation=np.array([ 0.672, 0.421, -0.112]),
+                                        rotation=create_rotation_from_RPY([-3.141, 0.002, 1.382]))
         execute_grasp(T_grasp_world, planner, gripper)
         """
         for T_grasp_world in T_grasp_worlds:

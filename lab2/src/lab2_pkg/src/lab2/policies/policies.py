@@ -258,7 +258,7 @@ class GraspingPolicy():
         object_mass = OBJECT_MASS[obj_name]
         grasp_qualities = self.score_grasps(grasp_vertices, grasp_normals, object_mass)
 
-        rel = map(grasp_qualities.index, heapq.nlargest(500, grasp_qualities))   
+        rel = map(grasp_qualities.index, heapq.nlargest(self.n_grasps, grasp_qualities))   
         #print('rel', rel)
         
         best_vertices = []  
