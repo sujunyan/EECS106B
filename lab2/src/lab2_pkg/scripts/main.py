@@ -256,7 +256,9 @@ if __name__ == '__main__':
         """
         #print(T_obj_world)
         for T_grasp_world in T_grasp_worlds:
-            print(T_grasp_world)
+            T_grasp_world, best_vertices, quality = T_grasp_world
+            print('\nExecute the grasp with vertices')
+            print(best_vertices)
             repeat = True
             while repeat and not rospy.is_shutdown():
                 execute_grasp(T_grasp_world, planner, gripper)

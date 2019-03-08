@@ -266,7 +266,7 @@ class GraspingPolicy():
 
         Returns
         -------
-        :obj:`list` of :obj:`autolab_core.RigidTransform`
+        :obj:`list` of : [`autolab_core.RigidTransform`, best_vertices 2x3 np.array, grasp_quality]
             the matrices T_grasp_world, which represents the hand poses of the baxter / sawyer
             which would result in the fingers being placed at the vertices of the best grasps
         """
@@ -310,7 +310,8 @@ class GraspingPolicy():
 
 
         for x in range(best_vertices.shape[0]):
-            T_grasp_worlds.append(self.vertices_to_baxter_hand_pose(best_vertices[x],approach_direction))
+            T_grasp_worlds.append([self.vertices_to_baxter_hand_pose(best_vertices[x],approach_direction),
+                                    best_vertices[x], grasp_qualities[x]])
 
         #print(T_grasp_worlds)
         return T_grasp_worlds
