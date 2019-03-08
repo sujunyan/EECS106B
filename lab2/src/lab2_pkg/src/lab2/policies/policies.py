@@ -92,10 +92,20 @@ class GraspingPolicy():
         v1, v2 = grasp_vertices[0] , grasp_vertices[1]
         center = (v1+v2) /2 
         
-        R = look_at_general(center, approach_direction)
-        R = R[:3,:3]
-        print('R', R)
+        # borrow the idea from look_at_general() 
+        x = normalize(v1 - v2)
+        y = normalize(np.cross(x, approach_direction) )
+        z = np.cross(x,y)
+        
 
+        R = np.eye(3)
+        R[0:3,0] = x
+        R[0:3,1] = y
+        R[0:3,2] = z
+        
+        print('z direction',z)
+        #print('R', R)
+        #print(R,np.linalg.det(R))
         handpose = RigidTransform(R, center, from_frame = 'gripper',to_frame = 'object')
 
         return handpose
@@ -136,6 +146,7 @@ class GraspingPolicy():
         # the z value of the bottom of the object
         vertices_z = [vertices[i][2] for i in range(l)]
         ground_z = min(vertices_z)
+        self.ground_z = ground_z
         print(vertices[:][2])
         #print(ground_z)
         while not rospy.is_shutdown():
@@ -151,7 +162,7 @@ class GraspingPolicy():
             #print(vertices_z)
             #print(vertices_z.shape)
             if v1[2] - ground_z < MIN_DIS_TO_TABLE or v2[2] - ground_z < MIN_DIS_TO_TABLE:
-                print("sample too close to the table",ground_z)
+                #print("sample too close to the table",ground_z)
                 continue
             if n1.dot(n2) > 0:
                 print("")
@@ -161,7 +172,7 @@ class GraspingPolicy():
 
             distance = vet_distance(v1,v2)
             if distance < MIN_HAND_DISTANCE or distance > MAX_HAND_DISTANCE:
-                print("hand too close")
+                #print("hand too close")
                 continue
 
             count += 1
@@ -291,7 +302,7 @@ class GraspingPolicy():
         if (vis):
             self.vis(mesh, best_vertices, best_grasp_qualities)
 
-        approach_direction = [-1, -1, -1] # TODO 
+        approach_direction = [0, 0, 1] # TODO 
         approach_direction = np.array(approach_direction) 
 
         T_grasp_worlds = []

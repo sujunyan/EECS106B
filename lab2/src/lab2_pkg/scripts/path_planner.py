@@ -138,7 +138,7 @@ class PathPlanner(object):
         co = CollisionObject()
         co.operation = CollisionObject.ADD
         co.id = name
-        co.header = pose.header
+        #co.header = pose.header
 
         # Create a box primitive, which will be inside the CollisionObject
         box = SolidPrimitive()

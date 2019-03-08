@@ -253,3 +253,17 @@ def create_rotation_from_RPY(a,b,c):
                       [-sin(b)      , cos(b)*sin(c)                     , cos(b)*cos(c)]
                     ])
     return result
+
+def translate_g(g,p):
+    """
+    Parameters
+    ----------
+    g : 4x4 : :obj:`numpy.ndarray`
+    p : 3x1 : :obj:`numpy.ndarray`
+
+    Returns
+    ---------------
+    g : 4x4 : :obj:`numpy.ndarray`. New g translated by p
+    """
+    g[0:3,3] = g[0:3,3] + p
+    return g

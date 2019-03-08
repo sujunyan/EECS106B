@@ -28,8 +28,21 @@ except:
     ros_enabled = False
 
 ros_enabled = True
-BAXTER_CONNECTED = False
+GRIPPER_CONNECTED = True
 
+def translate_g(g,p):
+    """
+    Parameters
+    ----------
+    g : 4x4 : :obj:`numpy.ndarray`
+    p : 3x1 : :obj:`numpy.ndarray`
+
+    Returns
+    ---------------
+    g : 4x4 : :obj:`numpy.ndarray`. New g translated by p
+    """
+    g[0:3,3] = g[0:3,3] + p
+    return g
 
 def create_rotation_from_RPY(a,b,c):
     """
@@ -76,7 +89,7 @@ def lookup_transform(to_frame, from_frame='base'):
     
     listener = tf.TransformListener()
     attempts, max_attempts, rate = 0, 10, rospy.Rate(1.0)
-    while attempts < max_attempts:
+    while attempts < max_attempts and not rospy.is_shutdown():
         try:
             t = listener.getLatestCommonTime(from_frame, to_frame)
             tag_pos, tag_rot = listener.lookupTransform(from_frame, to_frame, t)
@@ -103,24 +116,44 @@ def execute_grasp(T_grasp_world, planner, gripper):
     """
     def close_gripper():
         """closes the gripper"""
-        gripper.close()
+        if gripper:
+            gripper.close()
         rospy.sleep(1.0)
 
     def open_gripper():
         """opens the gripper"""
-        gripper.open()
+        if gripper:
+            gripper.open()
         rospy.sleep(1.0)
 
     inp = raw_input('Press <Enter> to move, or \'exit\' to exit')
     if inp == "exit":
         return
+
     open_gripper()
     g = T_grasp_world.matrix
+    # move an approxiamate pos to avoid collision
+    offest_p = np.array([-0.05,0.05,0.05])
+    g = translate_g(g,offest_p)
     target_pose = create_pose_from_rigid_transform(g)
     plan = planner.plan_to_pose(target_pose)
     planner.execute_plan(plan)
-    rospy.sleep(2.0)
+    rospy.sleep(1.0)
+
+    g = translate_g(g,-offest_p)
+    target_pose = create_pose_from_rigid_transform(g)
+    plan = planner.plan_to_pose(target_pose)
+    planner.execute_plan(plan)
+    rospy.sleep(1.0)
     close_gripper()
+
+    # move to new position 
+    offest_p[2] = 0
+    g = translate_g(g,offest_p)
+    target_pose = create_pose_from_rigid_transform(g)
+    plan = planner.plan_to_pose(target_pose)
+    planner.execute_plan(plan)
+    open_gripper()
 
 def parse_args():
     """
@@ -174,7 +207,7 @@ if __name__ == '__main__':
         np.random.seed(0)
 
     # Mesh loading and pre-processing
-    mesh = trimesh.load('../objects/{}.obj'.format(args.obj))
+    mesh = trimesh.load('~/EECS106B/lab2/src/lab2_pkg/objects/{}.obj'.format(args.obj))
     
     T_obj_world = lookup_transform(args.obj)
     mesh.apply_transform(T_obj_world.matrix)
@@ -200,18 +233,31 @@ if __name__ == '__main__':
             gripper = baxter_gripper.Gripper(args.arm)
             planner = PathPlanner('{}_arm'.format(arm))
         elif args.sawyer:
-            gripper = sawyer_gripper.Gripper('right')
+            if GRIPPER_CONNECTED:
+                gripper = sawyer_gripper.Gripper('right')
+            else:
+                gripper = None
             planner = PathPlanner('right_arm')
+
+        # add the obstacle table
+        g = np.eye(4)
+        size = np.array([1,1,1])
+        g[0:3,3] = T_obj_world.translation
+        g[2,3] = grasping_policy.ground_z - size[2]
+        sPose = PoseStamped()
+        sPose.pose = create_pose_from_rigid_transform(g)
+        planner.add_box_obstacle( size, 'table', sPose)
         """
         rot = create_rotation_from_RPY(-3.141, 0.002, 1.382)
         T_grasp_world = RigidTransform(translation=np.array([ 0.672, 0.421, -0.112]),
                                         rotation=rot)
         execute_grasp(T_grasp_world, planner, gripper)
         """
+        #print(T_obj_world)
         for T_grasp_world in T_grasp_worlds:
             print(T_grasp_world)
             repeat = True
-            while repeat:
+            while repeat and not rospy.is_shutdown():
                 execute_grasp(T_grasp_world, planner, gripper)
                 repeat = raw_input("repeat? [y|n] ") == 'y'
         
