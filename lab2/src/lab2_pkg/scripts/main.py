@@ -14,7 +14,7 @@ import trimesh
 
 # 106B lab imports
 from lab2.policies import GraspingPolicy
-from utils import *
+from lab2.utils import *
 
 try:
     import rospy
@@ -86,7 +86,7 @@ def lookup_transform(to_frame, from_frame='base'):
         #rospy.init_node('moveit_node')
 
 
-    
+
     listener = tf.TransformListener()
     attempts, max_attempts, rate = 0, 10, rospy.Rate(1.0)
     while attempts < max_attempts and not rospy.is_shutdown():
@@ -94,7 +94,7 @@ def lookup_transform(to_frame, from_frame='base'):
             t = listener.getLatestCommonTime(from_frame, to_frame)
             tag_pos, tag_rot = listener.lookupTransform(from_frame, to_frame, t)
             print("Find transform!")
-            break;          
+            break;
         except:
             rate.sleep()
             print("Try to find transform failed...")
@@ -133,7 +133,8 @@ def execute_grasp(T_grasp_world, planner, gripper):
     open_gripper()
     g = T_grasp_world.matrix
     # move an approxiamate pos to avoid collision
-    offest_p = np.array([-0.05,0.05,0.05])
+    offest_p = - g[0:3,3] * 0.1 # move backwords with some distance
+    #offest_p = np.array([-0.05,0.05,0.05])
     g = translate_g(g,offest_p)
     target_pose = create_pose_from_rigid_transform(g)
     plan = planner.plan_to_pose(target_pose)
@@ -147,7 +148,7 @@ def execute_grasp(T_grasp_world, planner, gripper):
     rospy.sleep(1.0)
     close_gripper()
 
-    # move to new position 
+    # move to new position
     offest_p[2] = 0
     g = translate_g(g,offest_p)
     target_pose = create_pose_from_rigid_transform(g)
@@ -208,7 +209,7 @@ if __name__ == '__main__':
 
     # Mesh loading and pre-processing
     mesh = trimesh.load('~/EECS106B/lab2/src/lab2_pkg/objects/{}.obj'.format(args.obj))
-    
+
     T_obj_world = lookup_transform(args.obj)
     mesh.apply_transform(T_obj_world.matrix)
     print("Transform applied")
@@ -260,4 +261,3 @@ if __name__ == '__main__':
             while repeat and not rospy.is_shutdown():
                 execute_grasp(T_grasp_world, planner, gripper)
                 repeat = raw_input("repeat? [y|n] ") == 'y'
-        
