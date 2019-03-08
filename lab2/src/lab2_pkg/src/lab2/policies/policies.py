@@ -90,19 +90,19 @@ class GraspingPolicy():
         :obj:`autolab_core:RigidTransform` Hand pose in the object frame
         """
         v1, v2 = grasp_vertices[0] , grasp_vertices[1]
-        center = (v1+v2) /2 
-        
-        # borrow the idea from look_at_general() 
+        center = (v1+v2) /2
+
+        # borrow the idea from look_at_general()
         x = normalize(v1 - v2)
         y = normalize(np.cross(x, approach_direction) )
         z = np.cross(x,y)
-        
+
 
         R = np.eye(3)
         R[0:3,0] = x
         R[0:3,1] = y
         R[0:3,2] = z
-        
+
         print('z direction',z)
         #print('R', R)
         #print(R,np.linalg.det(R))
@@ -110,7 +110,7 @@ class GraspingPolicy():
 
         return handpose
 
-        
+
 
     def sample_grasps(self, vertices, normals):
         """
@@ -283,14 +283,14 @@ class GraspingPolicy():
         print('samples got')
         object_mass = OBJECT_MASS[obj_name]
         grasp_qualities = self.score_grasps(grasp_vertices, grasp_normals, object_mass)
-        
-        print('grasp_qualities got')
-        rel = sorted(range(len(grasp_qualities)),key = lambda x:grasp_qualities[x]) 
-        rel = rel[:5]   
-        print('rel', rel)
-        
-        best_vertices = []  
-        best_grasp_qualities = []      
+
+        #print('grasp_qualities got')
+        rel = sorted(range(len(grasp_qualities)),key = lambda x:grasp_qualities[x])
+        rel = rel[:5]
+        #print('rel', rel)
+
+        best_vertices = []
+        best_grasp_qualities = []
         for i in rel:
             best_vertices.append(list(grasp_vertices[i]))
             best_grasp_qualities.append(grasp_qualities[i])
@@ -302,15 +302,15 @@ class GraspingPolicy():
         if (vis):
             self.vis(mesh, best_vertices, best_grasp_qualities)
 
-        approach_direction = [0, 0, 1] # TODO 
-        approach_direction = np.array(approach_direction) 
+        approach_direction = [0, 0, 1] # TODO
+        approach_direction = np.array(approach_direction)
 
         T_grasp_worlds = []
-        print(best_vertices[0])
+        #print(best_vertices[0])
 
-        
+
         for x in range(best_vertices.shape[0]):
             T_grasp_worlds.append(self.vertices_to_baxter_hand_pose(best_vertices[x],approach_direction))
-            
-        print(T_grasp_worlds)
+
+        #print(T_grasp_worlds)
         return T_grasp_worlds
