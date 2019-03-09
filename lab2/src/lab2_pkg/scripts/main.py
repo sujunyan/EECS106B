@@ -27,7 +27,7 @@ except:
     print 'Couldn\'t import ROS.  I assume you\'re running this on your laptop'
     ros_enabled = False
 
-ros_enabled = True
+ros_enabled = False
 GRIPPER_CONNECTED = True
 
 
@@ -57,11 +57,11 @@ def lookup_transform(to_frame, from_frame='base'):
 
 
     listener = tf.TransformListener()
-    attempts, max_attempts, rate = 0, 10, rospy.Rate(1.0)
+    attempts, max_attempts, rate = 0, 1000, rospy.Rate(1.0)
     while attempts < max_attempts and not rospy.is_shutdown():
         try:
             t = listener.getLatestCommonTime(from_frame, to_frame)
-            tag_pos, tag_rot = listener.lookupTransform(from_frame, to_frame, t)
+            tag_pos, tag_rot = listener.lookupTransform(from_frame, to_frame, t)   #  from
             print("Find transform!")
             break;
         except:
@@ -73,7 +73,7 @@ def lookup_transform(to_frame, from_frame='base'):
     #print (rot)
     #print(tag_rot)
     #exit(0)
-    rot = np.eye(3)
+    #rot = np.eye(3)
     return RigidTransform(rot, tag_pos, to_frame=from_frame, from_frame=to_frame)
 
 def execute_grasp(T_grasp_world, planner, gripper):
@@ -118,6 +118,7 @@ def execute_grasp(T_grasp_world, planner, gripper):
 
     # move to the desired position
     g = translate_g(g,-offest_p)
+    print(g)
     target_pose = create_pose_from_rigid_transform(g)
     plan = planner.plan_to_pose(target_pose)
     planner.execute_plan(plan)
@@ -125,11 +126,13 @@ def execute_grasp(T_grasp_world, planner, gripper):
     close_gripper()
 
     # move to new position
+    
     offest_p = np.array([-0.05,0.05,0.05])
     g = translate_g(g,offest_p)
     target_pose = create_pose_from_rigid_transform(g)
     plan = planner.plan_to_pose(target_pose)
     planner.execute_plan(plan)
+    
     open_gripper()
 
 def parse_args():

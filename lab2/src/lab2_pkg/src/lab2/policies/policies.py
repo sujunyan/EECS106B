@@ -25,7 +25,7 @@ MAX_HAND_DISTANCE = .04
 MIN_HAND_DISTANCE = .01
 CONTACT_MU = 0.5
 CONTACT_GAMMA = 0.1
-MIN_DIS_TO_TABLE = 0.03
+MIN_DIS_TO_TABLE = 0.04
 # TODO
 OBJECT_MASS = {'gearbox': .25, 'nozzle': .25, 'pawn': .25}
 
@@ -288,7 +288,7 @@ class GraspingPolicy():
 
         rel = sorted(range(len(grasp_qualities)),key = lambda x:grasp_qualities[x])
         #print('rel', rel)
-        n_execute = 10
+        n_execute = 1
         rel = rel[-n_execute:] # sort is from small to large
         rel.reverse()
 
