@@ -17,7 +17,7 @@ from lab2.metrics import (
     compute_gravity_resistance,
     compute_custom_metric
 )
-from lab2.utils import length, normalize, look_at_general
+from lab2.utils import *
 
 # YOUR CODE HERE
 # probably don't need to change these (BUT confirm that they're correct)
@@ -70,6 +70,8 @@ class GraspingPolicy():
         self.n_facets = n_facets
         # This is a function, one of the functions in src/lab2/metrics/metrics.py
         self.metric = eval(metric_name)
+        self.approach_direction = [0, 0, 1] # TODO
+        self.approach_direction = np.array(approach_direction)
 
     def vertices_to_baxter_hand_pose(self,grasp_vertices, approach_direction):
         """
@@ -243,6 +245,8 @@ class GraspingPolicy():
         for grasp, quality in zip(grasp_vertices, grasp_qualities):
             color = [min(1, 2*(1-quality)), min(1, 2*quality), 0, 1]
             vis3d.plot3d(grasp, color=color, tube_radius=.001)
+            g = self.vertices_to_baxter_hand_pose(grasp,self.approach_direction)
+            vis3d.plot3d(g[0:3,2], tube_radius=.001) # plot the z-direction of the grasp
         vis3d.show()
 
     def top_n_actions(self, mesh, obj_name, vis=True):
@@ -306,15 +310,13 @@ class GraspingPolicy():
             self.vis(mesh, best_vertices, best_grasp_qualities)
             #self.vis(mesh, grasp_vertices, grasp_qualities)
 
-        approach_direction = [0, 0, 1] # TODO
-        approach_direction = np.array(approach_direction)
 
         T_grasp_worlds = []
         #print(best_vertices[0])
 
 
         for x in range(best_vertices.shape[0]):
-            T_grasp_worlds.append([self.vertices_to_baxter_hand_pose(best_vertices[x],approach_direction),
+            T_grasp_worlds.append([self.vertices_to_baxter_hand_pose(best_vertices[x],self.approach_direction),
                                     best_vertices[x], grasp_qualities[x]])
 
         #print(T_grasp_worlds)
