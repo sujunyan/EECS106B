@@ -14,15 +14,20 @@ from math import *
 
 def vert_angle(vert1, vert2):
     """
+    Parameters
+    ------------
     vert : 1*3 : obj : 'numpy.ndarray'
+
+    Return
+    -------------
+    angle bewteen v1 and v2
 
     """
     lx, ly = length(vert1), length(vert2)
     angle = vert1.dot(vert2) / (lx * ly)
-    if angle > np.pi /2:
-        return np,pi - angle
-    else:
-        return angle
+    angle = np.arccos(angle)
+    return angle
+
 
 
 

@@ -7,7 +7,7 @@ import numpy as np
 import scipy
 import sys
 import argparse
-
+import random
 # AutoLab imports
 from autolab_core import RigidTransform
 import trimesh
@@ -30,37 +30,6 @@ except:
 ros_enabled = True
 GRIPPER_CONNECTED = True
 
-def translate_g(g,p):
-    """
-    Parameters
-    ----------
-    g : 4x4 : :obj:`numpy.ndarray`
-    p : 3x1 : :obj:`numpy.ndarray`
-
-    Returns
-    ---------------
-    g : 4x4 : :obj:`numpy.ndarray`. New g translated by p
-    """
-    g[0:3,3] = g[0:3,3] + p
-    return g
-
-def create_rotation_from_RPY(a,b,c):
-    """
-    takes roll, pitch yaw and return a rotation matrix
-
-    Parameters
-    ------------
-    a,b,c: roll,pitch,yaw
-
-    Returns
-    ------------
-    R 3x3
-    """
-    result = np.array([ [cos(a)*cos(b), cos(a)*sin(b)*sin(c)-sin(a)*cos(c), cos(a)*sin(b)*cos(c) + sin(a)*sin(c)],
-                      [sin(a)*cos(b), sin(a)*sin(b)*sin(c)+cos(a)*cos(c), sin(a)*sin(b)*cos(c) - cos(a)*sin(c)],
-                      [-sin(b)      , cos(b)*sin(c)                     , cos(b)*cos(c)]
-                    ])
-    return result
 
 def lookup_transform(to_frame, from_frame='base'):
     """
@@ -99,7 +68,12 @@ def lookup_transform(to_frame, from_frame='base'):
             rate.sleep()
             print("Try to find transform failed...")
             attempts += 1
-    rot = RigidTransform.rotation_from_quaternion(tag_rot)
+    rot = [tag_rot[3]] + tag_rot[0:3]
+    rot = RigidTransform.rotation_from_quaternion(rot)
+    #print (rot)
+    #print(tag_rot)
+    #exit(0)
+    rot = np.eye(3)
     return RigidTransform(rot, tag_pos, to_frame=from_frame, from_frame=to_frame)
 
 def execute_grasp(T_grasp_world, planner, gripper):
@@ -129,11 +103,12 @@ def execute_grasp(T_grasp_world, planner, gripper):
     inp = raw_input('Press <Enter> to move, or \'exit\' to exit')
     if inp == "exit":
         return
-
+    rospy.sleep(1.0)
     open_gripper()
     g = T_grasp_world.matrix
     # move an approxiamate pos to avoid collision
-    offest_p = - g[0:3,3] * 0.1 # move backwords with some distance
+    offest_p = - g[0:3,2] * 0.1 # move backwords (z-direction) with some distance
+    print(offest_p)
     #offest_p = np.array([-0.05,0.05,0.05])
     g = translate_g(g,offest_p)
     target_pose = create_pose_from_rigid_transform(g)
@@ -141,6 +116,7 @@ def execute_grasp(T_grasp_world, planner, gripper):
     planner.execute_plan(plan)
     rospy.sleep(1.0)
 
+    # move to the desired position
     g = translate_g(g,-offest_p)
     target_pose = create_pose_from_rigid_transform(g)
     plan = planner.plan_to_pose(target_pose)
@@ -149,7 +125,7 @@ def execute_grasp(T_grasp_world, planner, gripper):
     close_gripper()
 
     # move to new position
-    offest_p[2] = 0
+    offest_p = np.array([-0.05,0.05,0.05])
     g = translate_g(g,offest_p)
     target_pose = create_pose_from_rigid_transform(g)
     plan = planner.plan_to_pose(target_pose)
@@ -174,7 +150,7 @@ def parse_args():
         you have to do is check if that vector can be represented by a POSITIVE
         linear combination of the n_facets vectors.  Default: 32"""
     )
-    parser.add_argument('-n_grasps', type=int, default=500, help=
+    parser.add_argument('-n_grasps', type=int, default=1000, help=
         'How many grasps you want to sample.  Default: 500')
     parser.add_argument('-n_execute', type=int, default=5, help=
         'How many grasps you want to execute.  Default: 5')
@@ -205,7 +181,7 @@ if __name__ == '__main__':
     rospy.init_node('grasp_main_node')
 
     if args.debug:
-        np.random.seed(0)
+        random.seed(0)
 
     # Mesh loading and pre-processing
     mesh = trimesh.load('~/EECS106B/lab2/src/lab2_pkg/objects/{}.obj'.format(args.obj))
@@ -226,7 +202,7 @@ if __name__ == '__main__':
     print("grasping_policy got")
     # Each grasp is represented by T_grasp_world, a RigidTransform defining the
     # position of the end effector
-    T_grasp_worlds = grasping_policy.top_n_actions(mesh, args.obj,vis=False )
+    T_grasp_worlds = grasping_policy.top_n_actions(mesh, args.obj,vis=True )
     print("T_grasp_worlds got")
     # Execute each grasp on the baxter / sawyer
     if args.baxter or args.sawyer:

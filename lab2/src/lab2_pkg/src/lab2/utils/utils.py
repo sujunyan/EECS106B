@@ -1,4 +1,4 @@
-#!/usr/bin/env python -W ignore::DeprecationWarning
+#!/usr/bin/env python
 """
 Utils for EE106B grasp planning lab
 Author: Chris Correa
@@ -253,6 +253,7 @@ def create_rotation_from_RPY(a,b,c):
                       [-sin(b)      , cos(b)*sin(c)                     , cos(b)*cos(c)]
                     ])
     return result
+
 
 def translate_g(g,p):
     """

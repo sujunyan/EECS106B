@@ -162,10 +162,10 @@ class GraspingPolicy():
             #print(vertices_z)
             #print(vertices_z.shape)
             if v1[2] - ground_z < MIN_DIS_TO_TABLE or v2[2] - ground_z < MIN_DIS_TO_TABLE:
-                #print("sample too close to the table",ground_z)
+                #print("sample too close to the table",ground_z,v1,v2)
                 continue
             if n1.dot(n2) > 0:
-                print("")
+                #print("")
                 continue
             if np.array_equal(v1,v2):
                 continue
@@ -285,9 +285,12 @@ class GraspingPolicy():
         grasp_qualities = self.score_grasps(grasp_vertices, grasp_normals, object_mass)
 
         #print('grasp_qualities got')
+
         rel = sorted(range(len(grasp_qualities)),key = lambda x:grasp_qualities[x])
-        rel = rel[:5]
         #print('rel', rel)
+        n_execute = 10
+        rel = rel[-n_execute:] # sort is from small to large
+        rel.reverse()
 
         best_vertices = []
         best_grasp_qualities = []
@@ -298,9 +301,10 @@ class GraspingPolicy():
         best_vertices = np.array(best_vertices)
 
         print('best_vertices',best_vertices)
-
+        print('qualities',best_grasp_qualities)
         if (vis):
             self.vis(mesh, best_vertices, best_grasp_qualities)
+            #self.vis(mesh, grasp_vertices, grasp_qualities)
 
         approach_direction = [0, 0, 1] # TODO
         approach_direction = np.array(approach_direction)
