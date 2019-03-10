@@ -86,7 +86,7 @@ def get_grasp_map(vertices, normals, num_facets, mu, gamma):
 
     Returns
     -------
-    grasp map  6x2(num_facets+1):obj:`numpy.ndarray` 
+    grasp map  6x2(num_facets+1):obj:`numpy.ndarray`
     """
 
     n = num_facets
@@ -100,9 +100,9 @@ def get_grasp_map(vertices, normals, num_facets, mu, gamma):
     wrench_basis = np.array(wrench_basis).transpose()
 
     v1, v2 = vertices[0], vertices[1]
-    n1, n2 = normals[0],  normals[1] 
-                              
-    #TODO might be inverse(g)                          
+    n1, n2 = normals[0],  normals[1]
+
+    #TODO might be inverse(g)
     g1      = look_at_general(v1, n1)
     adj1T = adj(g1).transpose()
     G1 = adj1T.dot(wrench_basis)
@@ -115,7 +115,7 @@ def get_grasp_map(vertices, normals, num_facets, mu, gamma):
     #print(G1.shape,G2.shape)
     #print(grasp_map.shape)
     return grasp_map
-    
+
 
 def contact_forces_exist(vertices, normals, num_facets, mu, gamma, desired_wrench):
     """
@@ -144,7 +144,7 @@ def contact_forces_exist(vertices, normals, num_facets, mu, gamma, desired_wrenc
     """
     n = num_facets
     lb = np.zeros(2*n + 2)
-    up = np.array([np.inf for i in range(2*n + 2)]) 
+    up = np.array([np.inf for i in range(2*n + 2)])
     #up[n] = gamma
     #up[2*n +1] = gamma
 
@@ -153,7 +153,7 @@ def contact_forces_exist(vertices, normals, num_facets, mu, gamma, desired_wrenc
 
     cost = result.cost
     return (result.success)
-                           
+
 
 def compute_gravity_resistance(vertices, normals, num_facets, mu, gamma, object_mass):
     """
@@ -184,8 +184,8 @@ def compute_gravity_resistance(vertices, normals, num_facets, mu, gamma, object_
     gravity_wrench = np.array(gravity_wrench)
 
     return contact_forces_exist(vertices, normals, num_facets, mu, gamma, gravity_wrench)
-    
-    
+
+
 
 
 
@@ -213,5 +213,14 @@ def compute_custom_metric(vertices, normals, num_facets, mu, gamma, object_mass)
     -------
     float : quality of the grasp
     """
-    scores = np.zeros((vertices.shape[0],1))
-    
+    relative_err = 0.01
+    sample_n = 1000
+    success = 0.0
+    for i in range(sample_n):
+        new_mu = mu + random.normalvariate(0,relative_err*mu)
+        new_vertices = np.array([ [vertices[0][j] * (1+random.normalvariate(0,relative_err)) for j in range(3)],
+                              [vertices[1][j] * (1+random.normalvariate(0,relative_err)) for j in range(3)]
+                            ])
+        if compute_force_closure(new_vertices, normals, num_facets, new_mu, gamma , object_mass):
+            success += 1
+    return success/double(sample_n)
