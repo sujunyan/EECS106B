@@ -27,7 +27,7 @@ except:
     print 'Couldn\'t import ROS.  I assume you\'re running this on your laptop'
     ros_enabled = False
 
-ros_enabled = False
+ros_enabled = True
 GRIPPER_CONNECTED = True
 
 
@@ -103,12 +103,15 @@ def execute_grasp(T_grasp_world, planner, gripper):
     inp = raw_input('Press <Enter> to move, or \'exit\' to exit')
     if inp == "exit":
         return
+    #open_gripper()
+    #close_gripper()
+    
     rospy.sleep(1.0)
     open_gripper()
     g = T_grasp_world.matrix
     # move an approxiamate pos to avoid collision
     offest_p = - g[0:3,2] * 0.1 # move backwords (z-direction) with some distance
-    print(offest_p)
+    #print(offest_p)
     #offest_p = np.array([-0.05,0.05,0.05])
     g = translate_g(g,offest_p)
     target_pose = create_pose_from_rigid_transform(g)
@@ -118,7 +121,8 @@ def execute_grasp(T_grasp_world, planner, gripper):
 
     # move to the desired position
     g = translate_g(g,-offest_p)
-    print(g)
+    g = translate_g(g,-offest_p * 0.1) # slightly higher  
+    #print(g)
     target_pose = create_pose_from_rigid_transform(g)
     plan = planner.plan_to_pose(target_pose)
     planner.execute_plan(plan)
@@ -126,14 +130,29 @@ def execute_grasp(T_grasp_world, planner, gripper):
     close_gripper()
 
     # move to new position
-    
-    offest_p = np.array([-0.05,0.05,0.05])
+    offest_p = np.array([-0.08,0.08, 0.08])
     g = translate_g(g,offest_p)
     target_pose = create_pose_from_rigid_transform(g)
     plan = planner.plan_to_pose(target_pose)
     planner.execute_plan(plan)
-    
+    rospy.sleep(1.0)
+
+    # move and release
+    offest_p = np.array([0 , 0, -offest_p[2]])
+    g = translate_g(g,offest_p)
+    target_pose = create_pose_from_rigid_transform(g)
+    plan = planner.plan_to_pose(target_pose)
+    planner.execute_plan(plan)
     open_gripper()
+
+    # move to higher position
+    g = translate_g(g,-offest_p)
+    target_pose = create_pose_from_rigid_transform(g)
+    plan = planner.plan_to_pose(target_pose)
+    planner.execute_plan(plan)
+    rospy.sleep(1.0)
+
+    
 
 def parse_args():
     """

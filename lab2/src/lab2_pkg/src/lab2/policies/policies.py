@@ -21,8 +21,8 @@ from lab2.utils import *
 
 # YOUR CODE HERE
 # probably don't need to change these (BUT confirm that they're correct)
-MAX_HAND_DISTANCE = .04
-MIN_HAND_DISTANCE = .01
+MAX_HAND_DISTANCE = .12
+MIN_HAND_DISTANCE = .072
 CONTACT_MU = 0.5
 CONTACT_GAMMA = 0.1
 MIN_DIS_TO_TABLE = 0.04
@@ -70,8 +70,7 @@ class GraspingPolicy():
         self.n_facets = n_facets
         # This is a function, one of the functions in src/lab2/metrics/metrics.py
         self.metric = eval(metric_name)
-        self.approach_direction = [0, 0, 1] # TODO
-        self.approach_direction = np.array(approach_direction)
+        self.approach_direction = np.array([0, 0, -1])
 
     def vertices_to_baxter_hand_pose(self,grasp_vertices, approach_direction):
         """
@@ -95,8 +94,8 @@ class GraspingPolicy():
         center = (v1+v2) /2
 
         # borrow the idea from look_at_general()
-        x = normalize(v1 - v2)
-        y = normalize(np.cross(x, approach_direction) )
+        y = normalize(v1 - v2)
+        x = normalize(np.cross(y, approach_direction) )
         z = np.cross(x,y)
 
 
@@ -246,7 +245,10 @@ class GraspingPolicy():
             color = [min(1, 2*(1-quality)), min(1, 2*quality), 0, 1]
             vis3d.plot3d(grasp, color=color, tube_radius=.001)
             g = self.vertices_to_baxter_hand_pose(grasp,self.approach_direction)
-            vis3d.plot3d(g[0:3,2], tube_radius=.001) # plot the z-direction of the grasp
+            z = g.matrix[0:3,2]
+            mid = (grasp[0,:] + grasp[1,:])/2
+            z_dir = np.array([mid,mid - 0.06*normalize(z)])
+            vis3d.plot3d(z_dir, color=color,tube_radius=.001) # plot the z-direction of the grasp
         vis3d.show()
 
     def top_n_actions(self, mesh, obj_name, vis=True):
@@ -292,7 +294,7 @@ class GraspingPolicy():
 
         rel = sorted(range(len(grasp_qualities)),key = lambda x:grasp_qualities[x])
         #print('rel', rel)
-        n_execute = 1
+        n_execute = 10
         rel = rel[-n_execute:] # sort is from small to large
         rel.reverse()
 
