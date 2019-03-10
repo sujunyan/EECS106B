@@ -120,8 +120,7 @@ def execute_grasp(T_grasp_world, planner, gripper):
     rospy.sleep(1.0)
 
     # move to the desired position
-    g = translate_g(g,-offest_p)
-    g = translate_g(g,-offest_p * 0.1) # slightly higher  
+    g = translate_g(g,-0.9 * offest_p )
     #print(g)
     target_pose = create_pose_from_rigid_transform(g)
     plan = planner.plan_to_pose(target_pose)
@@ -172,7 +171,7 @@ def parse_args():
         you have to do is check if that vector can be represented by a POSITIVE
         linear combination of the n_facets vectors.  Default: 32"""
     )
-    parser.add_argument('-n_grasps', type=int, default=1000, help=
+    parser.add_argument('-n_grasps', type=int, default=500, help=
         'How many grasps you want to sample.  Default: 500')
     parser.add_argument('-n_execute', type=int, default=5, help=
         'How many grasps you want to execute.  Default: 5')
@@ -245,7 +244,7 @@ if __name__ == '__main__':
         g[2,3] = grasping_policy.ground_z - size[2]
         sPose = PoseStamped()
         sPose.pose = create_pose_from_rigid_transform(g)
-        planner.add_box_obstacle( size, 'table', sPose)
+        #planner.add_box_obstacle( size, 'table', sPose)
         """
         rot = create_rotation_from_RPY(-3.141, 0.002, 1.382)
         T_grasp_world = RigidTransform(translation=np.array([ 0.672, 0.421, -0.112]),
@@ -253,6 +252,7 @@ if __name__ == '__main__':
         execute_grasp(T_grasp_world, planner, gripper)
         """
         #print(T_obj_world)
+        
         for T_grasp_world in T_grasp_worlds:
             T_grasp_world, best_vertices, quality = T_grasp_world
             print('\nExecute the grasp with vertices')
@@ -261,3 +261,4 @@ if __name__ == '__main__':
             while repeat and not rospy.is_shutdown():
                 execute_grasp(T_grasp_world, planner, gripper)
                 repeat = raw_input("repeat? [y|n] ") == 'y'
+        

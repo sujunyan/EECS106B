@@ -6,6 +6,7 @@ Author: Chris Correa
 # may need more imports
 import numpy as np
 import scipy
+import random
 from lab2.utils import vec, adj, look_at_general, length
 
 from math import *
@@ -213,8 +214,8 @@ def compute_custom_metric(vertices, normals, num_facets, mu, gamma, object_mass)
     -------
     float : quality of the grasp
     """
-    relative_err = 0.01
-    sample_n = 1000
+    relative_err = 0.02
+    sample_n = 500
     success = 0.0
     for i in range(sample_n):
         new_mu = mu + random.normalvariate(0,relative_err*mu)
@@ -223,4 +224,4 @@ def compute_custom_metric(vertices, normals, num_facets, mu, gamma, object_mass)
                             ])
         if compute_force_closure(new_vertices, normals, num_facets, new_mu, gamma , object_mass):
             success += 1
-    return success/double(sample_n)
+    return success/float(sample_n)

@@ -25,7 +25,7 @@ MAX_HAND_DISTANCE = .12
 MIN_HAND_DISTANCE = .072
 CONTACT_MU = 0.5
 CONTACT_GAMMA = 0.1
-MIN_DIS_TO_TABLE = 0.04
+MIN_DIS_TO_TABLE = 0.03
 # TODO
 OBJECT_MASS = {'gearbox': .25, 'nozzle': .25, 'pawn': .25}
 
@@ -295,6 +295,7 @@ class GraspingPolicy():
         rel = sorted(range(len(grasp_qualities)),key = lambda x:grasp_qualities[x])
         #print('rel', rel)
         n_execute = 10
+        #print(rel)
         rel = rel[-n_execute:] # sort is from small to large
         rel.reverse()
 
@@ -308,6 +309,7 @@ class GraspingPolicy():
 
         print('best_vertices',best_vertices)
         print('qualities',best_grasp_qualities)
+        print('qualities',grasp_qualities)
         if (vis):
             self.vis(mesh, best_vertices, best_grasp_qualities)
             #self.vis(mesh, grasp_vertices, grasp_qualities)
