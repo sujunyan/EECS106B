@@ -1,0 +1,53 @@
+<launch>
+  <!-- Are we using turtlesim? -->
+  <arg name="turtlesim" default="true"/>
+
+  <!-- Topics. -->
+  <arg name="bicycle_command_topic" default="/bicycle/cmd_vel" />
+  <arg name="turtlesim_command_topic" default="/turtle1/cmd_vel" />
+  <arg name="turtlesim_pose_topic" default="/turtle1/pose" />
+  <arg name="turtlebot_command_topic" default="/mobile_base/commands/velocity" />
+  <arg name="state_topic" default="/bicycle/state" />
+
+  <!-- Frames -->
+  <arg name="fixed_frame" default="odom" />
+  <arg name="robot_frame" default="base_link" />
+
+  <!-- Length of imaginary car. -->
+  <arg name="length" default="0.3" />
+
+  <!-- Max Values -->
+  <arg name="max_steering_rate" default="3" />
+  <arg name="max_steering_angle" default="0.3" />
+  <arg name="max_linear_velocity" default="2" />
+
+
+
+  <group if="$(arg turtlesim)">
+    <node name="turtlesim"
+    pkg="turtlesim"
+    type="turtlesim_node"
+    output="screen"/>
+  </group>
+
+  <!-- Bicycle Converter node. -->
+  <node name="bicycle_converter"
+        pkg="lab3_pkg"
+        type="bicycle_converter.py"
+        output="screen">
+
+    <param name="converter/turtlesim" value="$(arg turtlesim)" />
+    <param name="converter/turtlesim_command_topic" value="$(arg turtlesim_command_topic)" />
+    <param name="converter/turtlebot_command_topic" value="$(arg turtlebot_command_topic)" />
+    <param name="converter/fixed_frame" value="$(arg fixed_frame)" />
+    <param name="converter/robot_frame" value="$(arg robot_frame)" />
+    <param name="converter/turtlesim_pose_topic" value="$(arg turtlesim_pose_topic)" />
+    <param name="converter/state_topic" value="$(arg state_topic)" />
+    <param name="converter/bicycle_command_topic" value="$(arg bicycle_command_topic)" />
+    <param name="converter/length" value="$(arg length)" />
+    <param name="converter/max_steering_rate" value="$(arg max_steering_rate)" />
+    <param name="converter/max_steering_angle" value="$(arg max_steering_angle)" />
+    <param name="converter/max_linear_velocity" value="$(arg max_linear_velocity)" />
+
+  </node>
+</launch>
