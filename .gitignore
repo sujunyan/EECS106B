@@ -9,3 +9,5 @@ lab1/src/lab1_pkg/src/controllers/__init__.pyc
 lab1/src/lab1_pkg/src/utils/__init__.pyc
 lab1/src/lab1_pkg/src/utils/utils.pyc
 modules
+.catkin_workspace
+CMakeLists.txt
