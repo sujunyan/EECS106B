@@ -22,32 +22,9 @@ class Sinusoid():
         # for i in range(10):
             # self.turn(1, -1)
             # self.strafe()
-        self.sin_turn(a1, a2, w1, w2)
+        self.sin_command(a1, a2, w1, w2)
 
-    def strafe(self):
-        self.turn(1, 1)
-        self.rate.sleep()
-        self.cmd(10, 0)
-        self.rate.sleep()
-        self.turn(1, -1)
-        self.rate.sleep()
-        self.cmd(-10, 0)
-        self.rate.sleep()
-        self.cmd(0, 0)
-        
-
-    def turn(self, mag, d):
-        self.cmd(mag, d*mag)
-        self.rate.sleep()
-        self.cmd(-mag, d*mag)
-        self.rate.sleep()
-        self.cmd(-mag, -d*mag)
-        self.rate.sleep()
-        self.cmd(mag, -d*mag)
-        self.rate.sleep()
-        self.cmd(0, 0)
-
-    def sin_turn(self, a1, a2, w1, w2):
+    def sin_command(self, a1, a2, w1, w2):
         start_time = rospy.Time.now()
 
         while not rospy.is_shutdown():
@@ -68,12 +45,15 @@ class Sinusoid():
         u2 = v2
         self.cmd(u1, u2)
 
-
     def cmd(self, u1, u2):
         self.pub.publish(BicycleCommandMsg(u1, u2))
 
     def subscribe(self, msg):
         self.state = msg
+
+    def shutdown(self):
+        rospy.loginfo("shutting down")
+        self.cmd(0,0)
 
 
 if __name__ == '__main__':

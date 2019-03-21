@@ -19,16 +19,21 @@ class BangBang(object):
     def run(self):
         for i in range(10):
             # self.turn(1, -1)
+            if rospy.is_shutdown():
+                self.cmd(0,0)
+                break
             self.strafe()
 
     def strafe(self):
         self.turn(1, 1)
         self.rate.sleep()
-        self.cmd(10, 0)
+        self.cmd(2, 0)
+        self.rate.sleep()
         self.rate.sleep()
         self.turn(1, -1)
         self.rate.sleep()
-        self.cmd(-10, 0)
+        self.cmd(-2, 0)
+        self.rate.sleep()
         self.rate.sleep()
         self.cmd(0, 0)
         

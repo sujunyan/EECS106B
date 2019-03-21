@@ -24,6 +24,7 @@ class Exectutor(object):
         self.sub = rospy.Subscriber('/bicycle/state', BicycleStateMsg, self.subscribe )
         self.rate = rospy.Rate(100)
         self.state = BicycleStateMsg()
+        rospy.on_shutdown(self.shutdown)
 
     def execute(self, plan):
         """
@@ -33,7 +34,10 @@ class Exectutor(object):
         ----------
         plan : :obj:`list` of (time, BicycleCommandMsg, BicycleStateMsg)
         """
-        for t, cmd, state in plan:
+        if len(plan) == 0:
+            return
+
+        for (t, cmd, state) in plan:
             self.cmd(cmd)
             self.rate.sleep()
             if rospy.is_shutdown():
@@ -60,15 +64,19 @@ class Exectutor(object):
         """
         self.state = msg
 
+    def shutdown(self):
+        rospy.loginfo("Shutting Down")
+        self.cmd(BicycleCommandMsg())
+
 def parse_args():
     """
     Pretty self explanatory tbh
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument('-x', type=float, help='How far to move in the x direction')
-    parser.add_argument('-y', type=float, help='How far to move in the y direction')
-    parser.add_argument('-theta', type=float, help='How far to turn the turtlebot')
-    parser.add_argument('-phi', type=float, help='How far to turn the wheels')
+    parser.add_argument('-x', type=float, default=0.0, help='Desired position in x')
+    parser.add_argument('-y', type=float, default=0.0, help='Desired position in y')
+    parser.add_argument('-theta', type=float, default=0.0, help='Desired turtlebot angle')
+    parser.add_argument('-phi', type=float, default=0.0, help='Desired angle of the (imaginary) steering wheel')
     return parser.parse_args()
 
 if __name__ == '__main__':
@@ -84,13 +92,20 @@ if __name__ == '__main__':
     
     ex = Exectutor()
 
-    p = SinusoidPlanner(0.3)
+    print "Initial State"
+    print ex.state
+
+    p = SinusoidPlanner(0.3, 0.3, 2, 3)
     goalState = BicycleStateMsg(args.x, args.y, args.theta, args.phi)
     plan = p.plan_to_pose(ex.state, goalState, 0.01, 2)
+    
+    print "Predicted Initial State"
+    print plan[0][2]
+    print "Predicted Final State"
+    print plan[-1][2]
 
     ex.execute(plan)
-
-
-
+    print "Final State"
+    print ex.state
 
 

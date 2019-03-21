@@ -97,17 +97,18 @@ class BicycleConverter():
         self.state_publisher = rospy.Publisher(self.state_topic, BicycleStateMsg, queue_size = 1)
         self.subscriber = rospy.Subscriber(self.bicycle_command_topic, BicycleCommandMsg, self.command_listener)
         rospy.Service('converter/reset', EmptySrv, self.reset)
+        rospy.on_shutdown(self.shutdown)
 
     def command_listener(self, msg):
         msg.steering_rate = max(min(msg.steering_rate, self.max_steering_rate), -self.max_steering_rate)
-        msg.linear_velocity = max(min(msg.steering_rate, self.max_linear_velocity), -self.max_linear_velocity)
+        msg.linear_velocity = max(min(msg.linear_velocity, self.max_linear_velocity), -self.max_linear_velocity)
 
         self.command = msg
         self.last_time = rospy.Time.now() # Save the time of last command for safety
 
     def update_turtlesim_pose(self, msg):
-        self.state.x = msg.x
-        self.state.y = msg.y
+        self.state.x = msg.x - 5.544445 # Transform the state to put (0,0) at the center
+        self.state.y = msg.y - 5.544445
         self.state.theta = msg.theta
 
     def run(self):
@@ -161,6 +162,10 @@ class BicycleConverter():
             self.reset_odom.publish(EmptyMsg())
         self.state = BicycleStateMsg()
         return EmptyResponse()
+
+    def shutdown(self):
+    	rospy.loginfo("Shutting Down")
+    	self.command_publisher.publish(Twist()) # Stop moving
 
 if __name__ == '__main__':
     rospy.init_node("Bicycle Conversion", anonymous=True)
