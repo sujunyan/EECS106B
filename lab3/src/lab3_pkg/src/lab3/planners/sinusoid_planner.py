@@ -50,11 +50,18 @@ class SinusoidPlanner():
             This is a list of timesteps, the command to be sent at that time, and the predicted state at that time
         """
 
-        # This bit hasn't been exhaustively tested, so you might hit a singularity anyways
         max_abs_angle = max(abs(goal_state.theta), abs(start_state.theta))
         min_abs_angle = min(abs(goal_state.theta), abs(start_state.theta))
-        if (max_abs_angle > np.pi/2) and (min_abs_angle < np.pi/2):
-            raise ValueError("You'll cause a singularity here. You should add something to this function to fix it")
+
+        theta_path = []
+        start_t = 0
+
+        # steer the theta first to escape the singularity. Bugs exist since we do not know 
+        # if it will hit the singularity point when the system goes.
+        if (max_abs_angle >= np.pi/2) and (min_abs_angle <= np.pi/2):
+            theta_path = self.steer_theta(start_state, goal_state,0,dt, delta_t)
+            start_t = theta_path[-1][0] + dt
+            #raise ValueError("You'll cause a singularity here. You should add something to this function to fix it")
 
         if abs(start_state.phi) > self.max_phi or abs(goal_state.phi) > self.max_phi:
             raise ValueError("Either your start state or goal state exceeds steering angle bounds")
@@ -68,7 +75,7 @@ class SinusoidPlanner():
         x_path =        self.steer_x(
                             start_state, 
                             goal_state, 
-                            0, 
+                            start_t, 
                             dt, 
                             delta_t
                         )
@@ -95,9 +102,48 @@ class SinusoidPlanner():
                         )     
 
         path = []
-        for p in [x_path, phi_path, alpha_path, y_path]:
+        for p in [theta_path, x_path, phi_path, alpha_path, y_path]:
             path.extend(p)
         return path
+
+    def steer_theta(self, start_state, goal_state, t0 = 0, dt = 0.01, delta_t = 2):
+        """
+        Create a trajectory to move the turtlebot in the theta direction
+        Only called when singularity points exist
+
+        Parameters
+        ----------
+        start_state : :obj:`BicycleStateMsg`
+            current state of the turtlebot
+        goal_state : :obj:`BicycleStateMsg`
+            desired state of the turtlebot
+        t0 : float
+            what timestep this trajectory starts at
+        dt : float
+            how many seconds between each trajectory point
+        delta_t : float
+            how many seconds the trajectory should run for
+
+        Returns
+        -------
+        :obj:`list` of (float, BicycleCommandMsg, BicycleStateMsg)
+            This is a list of timesteps, the command to be sent at that time, and the predicted state at that time
+        """
+
+        raise NotImplementedError
+        
+        start_state_v = self.state2v(start_state)
+        goal_state_v = self.state2v(goal_state)
+        delta_x = goal_state_v[0] - start_state_v[0]
+
+        v1 = delta_x/delta_t
+        v2 = 0
+
+        path, t = [], t0
+        while t < t0 + delta_t:
+            path.append([t, v1, v2])
+            t = t + dt
+        return self.v_path_to_u_path(path, start_state, dt)
 
     def steer_x(self, start_state, goal_state, t0 = 0, dt = 0.01, delta_t = 2):
         """
@@ -107,7 +153,7 @@ class SinusoidPlanner():
         ----------
         start_state : :obj:`BicycleStateMsg`
             current state of the turtlebot
-        start_state : :obj:`BicycleStateMsg`
+        goal_state : :obj:`BicycleStateMsg`
             desired state of the turtlebot
         t0 : float
             what timestep this trajectory starts at
@@ -158,8 +204,19 @@ class SinusoidPlanner():
             This is a list of timesteps, the command to be sent at that time, and the predicted state at that time
         """
 
-        # ************* IMPLEMENT THIS
-        return []
+        # copy from ster_x and modify it
+        start_state_v = self.state2v(start_state)
+        goal_state_v = self.state2v(goal_state)
+        delta_phi = goal_state_v[1] - start_state_v[1]
+
+        v1 = 0
+        v2 = delta_phi/delta_t
+
+        path, t = [], t0
+        while t < t0 + delta_t:
+            path.append([t, v1, v2])
+            t = t + dt
+        return self.v_path_to_u_path(path, start_state, dt)
 
     def steer_alpha(self, start_state, goal_state, t0 = 0, dt = 0.01, delta_t = 2):
         """
