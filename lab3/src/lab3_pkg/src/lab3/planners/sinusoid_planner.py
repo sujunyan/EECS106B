@@ -4,7 +4,9 @@ Starter code for EE106B Turtlebot Lab
 Author: Valmik Prabhu, Chris Correa
 """
 import numpy as np
+from math import *
 from scipy.integrate import quad
+from scipy import optimize
 import sys
 from copy import copy
 
@@ -131,7 +133,7 @@ class SinusoidPlanner():
         """
 
         raise NotImplementedError
-        
+
         start_state_v = self.state2v(start_state)
         goal_state_v = self.state2v(goal_state)
         delta_x = goal_state_v[0] - start_state_v[0]
@@ -295,7 +297,42 @@ class SinusoidPlanner():
         """
         
         # ************* IMPLEMENT THIS
-        return []
+
+        start_state_v = self.state2v(start_state)
+        goal_state_v = self.state2v(goal_state)
+        delta_y = goal_state_v[3] - start_state_v[3]
+
+        omega = 2*np.pi / delta_t
+
+        # the gross func to find the root: gross_func = 0
+        def gross_func(x):
+            (a1,a2) = x
+            def alpha_t(t):
+                def integrand(t):
+                    f = lambda phi: (1/self.l)*np.tan(phi) # This is from the car model
+                    phi_fn = lambda t: (a2/omega)*np.sin(omega*t) + start_state_v[1]
+                    return f(phi_fn(t)) * np.sin(omega * t) * a1
+                return quad(integrand,0,t)[0]
+            def g(a):
+                return a/sqrt(1-a*a)
+            def integrand(t):
+                return g(alpha_t(t)) * sin(omega * t)
+            return quad(integrand,0,delta_t)[0] * a1 - delta_y
+
+        sol = optimize.root(gross_func)
+        (a1,a2) = sol.x
+
+
+        # generate the path              
+        v1 = lambda t: a1*np.sin(omega*(t))
+        v2 = lambda t: a2*np.cos(omega*(t))
+
+        path, t = [], t0
+        while t < t0 + delta_t:
+            path.append([t, v1(t-t0), v2(t-t0)])
+            t = t + dt
+        return self.v_path_to_u_path(path, start_state, dt)
+        
 
     def state2v(self, state):
         """
