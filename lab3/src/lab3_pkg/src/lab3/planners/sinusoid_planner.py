@@ -306,26 +306,35 @@ class SinusoidPlanner():
 
         # the gross func to find the root: gross_func = 0
         def gross_func(x):
-            (a1,a2) = x
+            a1 = x[0]
+            a2 = x[1]
             def alpha_t(t):
                 def integrand(t):
                     f = lambda phi: (1/self.l)*np.tan(phi) # This is from the car model
-                    phi_fn = lambda t: (a2/omega)*np.sin(omega*t) + start_state_v[1]
+                    phi_fn = lambda t: (a2/2/omega)*np.sin(2*omega*t) + start_state_v[1]
                     return f(phi_fn(t)) * np.sin(omega * t) * a1
-                return quad(integrand,0,t)[0]
+                result = quad(integrand,0,t)[0]
+                if (abs(result) > 1):
+                    #raise ValueError("alpha=%f should not be greater than one"%result) 
+                    result = np.sign(result) #TODO bug may exist
+                return result
             def g(a):
+                #print(a)
                 return a/sqrt(1-a*a)
             def integrand(t):
                 return g(alpha_t(t)) * sin(omega * t)
-            return quad(integrand,0,delta_t)[0] * a1 - delta_y
+            return [quad(integrand,0,delta_t)[0] * a1 - delta_y ,-0]
 
-        sol = optimize.root(gross_func)
+
+        sol = optimize.root(gross_func,[0.1,0.1],method='lm')
         (a1,a2) = sol.x
+        print("In steer_y a1=%f a2=%f delta_y=%f"%(a1,a2,delta_y))
+        print("success = %d terminate because %s"%(sol.success,sol.message))
 
 
         # generate the path              
         v1 = lambda t: a1*np.sin(omega*(t))
-        v2 = lambda t: a2*np.cos(omega*(t))
+        v2 = lambda t: a2*np.cos(2*omega*(t))
 
         path, t = [], t0
         while t < t0 + delta_t:
