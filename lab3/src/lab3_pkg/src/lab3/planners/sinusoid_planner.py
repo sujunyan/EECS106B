@@ -73,7 +73,7 @@ class SinusoidPlanner():
             abs(goal_state.phi - self.max_phi),
             abs(goal_state.phi + self.max_phi)
         )
-
+        print("Generating x_path...") 
         x_path =        self.steer_x(
                             start_state, 
                             goal_state, 
@@ -81,6 +81,7 @@ class SinusoidPlanner():
                             dt, 
                             delta_t
                         )
+        print("Generating phi_path...") 
         phi_path =      self.steer_phi(
                             x_path[-1][2], 
                             goal_state, 
@@ -88,6 +89,7 @@ class SinusoidPlanner():
                             dt, 
                             delta_t
                         )
+        print("Generating alpha...") 
         alpha_path =    self.steer_alpha(
                             phi_path[-1][2], 
                             goal_state, 
@@ -95,6 +97,7 @@ class SinusoidPlanner():
                             dt, 
                             delta_t
                         )
+        print("Generating y_path...") 
         y_path =        self.steer_y(
                             alpha_path[-1][2], 
                             goal_state, 
@@ -252,7 +255,7 @@ class SinusoidPlanner():
 
         omega = 2*np.pi / delta_t
 
-        a2 = min(1, self.phi_dist*omega)
+        a2 = min(1, self.phi_dist * omega)
         f = lambda phi: (1/self.l)*np.tan(phi) # This is from the car model
         phi_fn = lambda t: (a2/omega)*np.sin(omega*t) + start_state_v[1]
         integrand = lambda t: f(phi_fn(t))*np.sin(omega*t) # The integrand to find beta
@@ -261,6 +264,7 @@ class SinusoidPlanner():
         a1 = (delta_alpha*omega)/(np.pi*beta1)
 
               
+        print("In steer_alpha a1 %f a2 %f"%(a1,a2))
         v1 = lambda t: a1*np.sin(omega*(t))
         v2 = lambda t: a2*np.cos(omega*(t))
 
@@ -296,18 +300,22 @@ class SinusoidPlanner():
             This is a list of timesteps, the command to be sent at that time, and the predicted state at that time
         """
         
-        # ************* IMPLEMENT THIS
-
         start_state_v = self.state2v(start_state)
         goal_state_v = self.state2v(goal_state)
         delta_y = goal_state_v[3] - start_state_v[3]
 
-        omega = 2*np.pi / delta_t
+        omega = 2 * np.pi / delta_t
 
+        max_a1 = self.max_u1
+        max_a2 = self.max_u2 * 2 * omega
         # the gross func to find the root: gross_func = 0
         def gross_func(x):
             a1 = x[0]
             a2 = x[1]
+            if abs(a1) > max_a1 or abs(a2) > max_a2:
+                r = abs(a1) + abs(a2) # set the constrain
+                return [r , r]
+
             def alpha_t(t):
                 def integrand(t):
                     f = lambda phi: (1/self.l)*np.tan(phi) # This is from the car model
@@ -316,7 +324,7 @@ class SinusoidPlanner():
                 result = quad(integrand,0,t)[0]
                 if (abs(result) > 1):
                     #raise ValueError("alpha=%f should not be greater than one"%result) 
-                    result = np.sign(result) #TODO bug may exist
+                    result = 0.99999 * np.sign(result) #TODO bug may exist
                 return result
             def g(a):
                 #print(a)
@@ -325,8 +333,8 @@ class SinusoidPlanner():
                 return g(alpha_t(t)) * sin(omega * t)
             return [quad(integrand,0,delta_t)[0] * a1 - delta_y ,-0]
 
-
-        sol = optimize.root(gross_func,[0.1,0.1],method='lm')
+        init_guess = [delta_y*2, delta_y*2]
+        sol = optimize.root(gross_func,init_guess,method='hybr')
         (a1,a2) = sol.x
         print("In steer_y a1=%f a2=%f delta_y=%f"%(a1,a2,delta_y))
         print("success = %d terminate because %s"%(sol.success,sol.message))
@@ -380,13 +388,21 @@ class SinusoidPlanner():
         def v2cmd(v1, v2, state):
             u1 = v1/np.cos(state.theta)
             u2 = v2
+            if abs(u1) > self.max_u1:
+                print("The limit is reached. u1 %f max %f"%(u1,self.max_u1))
+            if abs(u2) > self.max_u2:
+                print("The limit is reached. u2 %f max %f"%(u2,self.max_u2))
+            phi = state.phi
+            if abs(phi) > self.max_phi:
+                print("The limit is reached. phi %f max %f"%(phi,self.max_phi))
             return BicycleCommandMsg(u1, u2)
 
         curr_state = copy(start_state)
         for i, (t, v1, v2) in enumerate(path):
             cmd_u = v2cmd(v1, v2, curr_state)
             path[i] = [t, cmd_u, curr_state]
-
+            # TODO should add limitation to u
+            
             curr_state = BicycleStateMsg(
                 curr_state.x     + np.cos(curr_state.theta)               * cmd_u.linear_velocity*dt,
                 curr_state.y     + np.sin(curr_state.theta)               * cmd_u.linear_velocity*dt,
