@@ -5,7 +5,7 @@ Author: Valmik Prabhu, Chris Correa
 """
 import numpy as np
 from math import *
-from scipy.integrate import quad
+from scipy.integrate import quad,quadrature,ode,odeint
 from scipy import optimize
 import sys
 from copy import copy
@@ -255,11 +255,11 @@ class SinusoidPlanner():
 
         omega = 2*np.pi / delta_t
 
-        a2 = min(1, self.phi_dist * omega)
+        a2 = min(0.9, self.phi_dist * omega)
         f = lambda phi: (1/self.l)*np.tan(phi) # This is from the car model
         phi_fn = lambda t: (a2/omega)*np.sin(omega*t) + start_state_v[1]
         integrand = lambda t: f(phi_fn(t))*np.sin(omega*t) # The integrand to find beta
-        beta1 = (omega/np.pi) * quad(integrand, 0, delta_t)[0]
+        beta1 = (omega/np.pi) * quad(integrand, 0, delta_t,full_output=0)[0]
 
         a1 = (delta_alpha*omega)/(np.pi*beta1)
 
@@ -306,7 +306,7 @@ class SinusoidPlanner():
 
         omega = 2 * np.pi / delta_t
 
-        max_a1 = self.max_u1
+        max_a1 = self.max_u1 
         max_a2 = self.max_u2 
         # the gross func to find the root: gross_func = 0
         def gross_func(x):
@@ -315,56 +315,77 @@ class SinusoidPlanner():
             if abs(a1) > max_a1 or abs(a2) > max_a2:
                 r = abs(a1) + abs(a2) # set the constrain
                 return [r , r]
-
+            tol = 1e-4
+            limit = 10
             def alpha_t(t):
+                # alpha = sin(theta)
+                # we can calculate theta first to escape the domain check of alpha
                 def integrand(t):
                     f = lambda phi: (1/self.l)*np.tan(phi) # This is from the car model
-                    phi_fn = lambda t: (a2/2/omega)*np.sin(2*omega*t) + start_state_v[1]
+                    def phi_fn(t):
+                        phi = (a2/2/omega)*np.sin(2*omega*t) + start_state_v[1]
+                        return phi if abs(phi) < self.max_phi else np.pi/2
                     return f(phi_fn(t)) * np.sin(omega * t) * a1
-                result = quad(integrand,0,t)[0]
-                if (abs(result) > 1):
-                    #raise ValueError("alpha=%f should not be greater than one"%result) 
-                    pass
-                    #result = np.sign(result) #TODO bug may exist
+                result = quad(integrand,0,t,full_output=0,epsabs=tol,epsrel=tol,limit=limit)[0]
+                #result = quadrature(integrand,0,t,vec_func=False)[0]
                 return result
             def g(a):
                 #print(a)
-                if abs(a) >=1:
+                if abs(a) >1:
                     return np.inf
                 return a/sqrt(1-a*a)
             def integrand(t):
                 return g(alpha_t(t)) * sin(omega * t)
-            return [abs(quad(integrand,0,delta_t)[0] * a1 - delta_y ), 0 ]
+            int_val = abs(quad(integrand,0,delta_t,full_output=0,epsabs=tol,epsrel=tol,limit=limit)[0])
+            #int_val = abs(quadrature(integrand,0,delta_t,vec_func=False)[0])
+            return [ (int_val * a1 - delta_y ), 0 ]
+
+        def gross_func_ode(x):
+            # try to use ode to handle the itegration
+            (a1,a2) = x
+            def my_ode():
+                pass
+
+
 
         def find_root(func1):
             # try to find the root of equation func = 0
-            flag = 1
-            if flag:
-                init_guess = np.array([delta_y*2, delta_y*2])
+            init_guess = np.array([delta_y*2, delta_y*2])
+            while not rospy.is_shutdown():
                 sol = optimize.root(func1,init_guess,method='hybr')
-            else: 
-                init_guess = np.array([max_a1/2,max_a2/2])
-                bnds = ((0,max_a1),(0,max_a2))
-                func2 = lambda t: abs(func1(t)[0])
-                sol = optimize.minimize(func2,init_guess,method='L-BFGS-B',bounds=bnds,options={'disp': True})
-            if (not sol.success):
-                raise ValueError("success = %d terminate because %s"%(sol.success,sol.message))
+                #print("sol.success\n",sol.success,sol.message)
+                if (sol.success):
+                    break
+                else:
+                    init_guess[0] = max_a1 * np.random.rand()
+                    init_guess[1] = max_a2 * np.random.rand()
+                    print("Find root failed, because %s "%(sol.message))
+                    print("change initial guess to (%f,%f) and try again..."%(init_guess[0],init_guess[1]))
+                    #print(sol.x)
             return sol.x
 
-            # try to find 
-
-        (a1,a2) = find_root(gross_func)
-        print("In steer_y a1=%f a2=%f delta_y=%f"%(a1,a2,delta_y))
 
         # generate the path              
-        v1 = lambda t: a1*np.sin(omega*(t))
-        v2 = lambda t: a2*np.cos(2*omega*(t))
+        while not rospy.is_shutdown():
+            (a1,a2) = find_root(gross_func)
+            print("In steer_y a1=%f a2=%f delta_y=%f"%(a1,a2,delta_y))
+            v1 = lambda t: a1*np.sin(omega*(t))
+            v2 = lambda t: a2*np.cos(2*omega*(t))
 
-        path, t = [], t0
-        while t < t0 + delta_t:
-            path.append([t, v1(t-t0), v2(t-t0)])
-            t = t + dt
-        return self.v_path_to_u_path(path, start_state, dt)
+            path, t = [], t0
+            while t < t0 + delta_t:
+                path.append([t, v1(t-t0), v2(t-t0)])
+                t = t + dt
+
+            u_path = self.v_path_to_u_path(path, start_state, dt)
+            if not self.limit_flag:
+                break
+            else:
+                print("Generated y path reached the limit, reduce the max a1 %f a2 %f and try again..."%(max_a1,max_a2))
+                mul = 0.9
+                max_a1 = max_a1 * mul
+                max_a2 = max_a2 * mul
+        return u_path
         
 
     def state2v(self, state):
@@ -401,16 +422,20 @@ class SinusoidPlanner():
         :obj:`list` of (time, BicycleCommandMsg, BicycleStateMsg)
             This is a list of timesteps, the command to be sent at that time, and the predicted state at that time
         """
+        self.limit_flag = False # limit flag to indicate if it reaches the limit
         def v2cmd(v1, v2, state):
             u1 = v1/np.cos(state.theta)
             u2 = v2
             if abs(u1) > self.max_u1:
                 print("The limit is reached. u1 %f max %f"%(u1,self.max_u1))
+                self.limit_flag = True
             if abs(u2) > self.max_u2:
                 print("The limit is reached. u2 %f max %f"%(u2,self.max_u2))
+                self.limit_flag = True
             phi = state.phi
             if abs(phi) > self.max_phi:
                 print("The limit is reached. phi %f max %f"%(phi,self.max_phi))
+                self.limit_flag = True
             return BicycleCommandMsg(u1, u2)
 
         curr_state = copy(start_state)
@@ -418,6 +443,8 @@ class SinusoidPlanner():
             cmd_u = v2cmd(v1, v2, curr_state)
             path[i] = [t, cmd_u, curr_state]
             # TODO should add limitation to u
+            if self.limit_flag:
+                return path
             
             curr_state = BicycleStateMsg(
                 curr_state.x     + np.cos(curr_state.theta)               * cmd_u.linear_velocity*dt,
