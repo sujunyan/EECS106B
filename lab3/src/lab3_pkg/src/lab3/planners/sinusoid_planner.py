@@ -307,7 +307,7 @@ class SinusoidPlanner():
         omega = 2 * np.pi / delta_t
 
         max_a1 = self.max_u1
-        max_a2 = self.max_u2 * 2 * omega
+        max_a2 = self.max_u2 
         # the gross func to find the root: gross_func = 0
         def gross_func(x):
             a1 = x[0]
@@ -324,21 +324,37 @@ class SinusoidPlanner():
                 result = quad(integrand,0,t)[0]
                 if (abs(result) > 1):
                     #raise ValueError("alpha=%f should not be greater than one"%result) 
-                    result = 0.99999 * np.sign(result) #TODO bug may exist
+                    pass
+                    #result = np.sign(result) #TODO bug may exist
                 return result
             def g(a):
                 #print(a)
+                if abs(a) >=1:
+                    return np.inf
                 return a/sqrt(1-a*a)
             def integrand(t):
                 return g(alpha_t(t)) * sin(omega * t)
-            return [quad(integrand,0,delta_t)[0] * a1 - delta_y ,-0]
+            return [abs(quad(integrand,0,delta_t)[0] * a1 - delta_y ), 0 ]
 
-        init_guess = [delta_y*2, delta_y*2]
-        sol = optimize.root(gross_func,init_guess,method='hybr')
-        (a1,a2) = sol.x
+        def find_root(func1):
+            # try to find the root of equation func = 0
+            flag = 1
+            if flag:
+                init_guess = np.array([delta_y*2, delta_y*2])
+                sol = optimize.root(func1,init_guess,method='hybr')
+            else: 
+                init_guess = np.array([max_a1/2,max_a2/2])
+                bnds = ((0,max_a1),(0,max_a2))
+                func2 = lambda t: abs(func1(t)[0])
+                sol = optimize.minimize(func2,init_guess,method='L-BFGS-B',bounds=bnds,options={'disp': True})
+            if (not sol.success):
+                raise ValueError("success = %d terminate because %s"%(sol.success,sol.message))
+            return sol.x
+
+            # try to find 
+
+        (a1,a2) = find_root(gross_func)
         print("In steer_y a1=%f a2=%f delta_y=%f"%(a1,a2,delta_y))
-        print("success = %d terminate because %s"%(sol.success,sol.message))
-
 
         # generate the path              
         v1 = lambda t: a1*np.sin(omega*(t))
