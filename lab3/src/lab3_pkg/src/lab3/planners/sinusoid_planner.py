@@ -342,9 +342,27 @@ class SinusoidPlanner():
 
         def gross_func_ode(x):
             # try to use ode to handle the itegration
+            # v1 = a1 sin wt
+            # v2 = a2 cos(2wt)
             (a1,a2) = x
-            def my_ode():
-                pass
+            def my_ode(z,t):
+                #ode in original form
+                (x,y,theta,phi) = z
+                inf_result = [np.inf,np.inf,np.inf,np.inf]
+                if x == np.inf:
+                    return inf_result
+                if cos(theta) == 0 :
+                    return inf_result
+                u1 = a1 * sin(omega * t) / cos(theta)
+                u2 = a2 * cos(2 * omega * t) 
+                flag = self.check_limit(u1,u2,phi)
+                result = [np.cos(theta)*u1, np.sin(theta)*u1, 1/self.l*tan(phi)*u1, u2]
+                return result if flag else inf_result
+            z0 = self.state2u(start_state)
+            t = (0,delta_t)
+            sol = odeint(my_ode,z0,t)
+            y = sol[-1][1] # the final state of y
+            return [y - goal_state_v[3],0]
 
 
 
@@ -367,7 +385,7 @@ class SinusoidPlanner():
 
         # generate the path              
         while not rospy.is_shutdown():
-            (a1,a2) = find_root(gross_func)
+            (a1,a2) = find_root(gross_func_ode)
             print("In steer_y a1=%f a2=%f delta_y=%f"%(a1,a2,delta_y))
             v1 = lambda t: a1*np.sin(omega*(t))
             v2 = lambda t: a2*np.cos(2*omega*(t))
@@ -386,7 +404,12 @@ class SinusoidPlanner():
                 max_a1 = max_a1 * mul
                 max_a2 = max_a2 * mul
         return u_path
-        
+    
+    def check_limit(self,u1,u2,phi):
+        return abs(u1) <= self.max_u1 and abs(u2) <= self.max_u2 and abs(phi) <= self.max_phi
+
+    def state2u(self,state):
+        return np.array([state.x, state.y, state.theta, state.phi])
 
     def state2v(self, state):
         """
