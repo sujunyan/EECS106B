@@ -30,6 +30,7 @@ class SinusoidPlanner():
         self.max_u1 = max_u1
         self.max_u2 = max_u2
         self.max_y = 0.5
+        self.theta_limit = 0.03
 
     def plan_to_pose(self, start_state, goal_state, dt = 0.01, delta_t=2):
         """
@@ -58,12 +59,17 @@ class SinusoidPlanner():
 
         theta_path = []
         start_t = 0
-
+        start_state_x = start_state
         # steer the theta first to escape the singularity. Bugs exist since we do not know 
         # if it will hit the singularity point when the system goes.
-        if (max_abs_angle >= np.pi/2) and (min_abs_angle <= np.pi/2):
+        #if (max_abs_angle >= np.pi/2) and (min_abs_angle <= np.pi/2):
+        delta_theta = abs(goal_state.theta - start_state.theta)
+        if delta_theta > self.theta_limit:
+            print("\nGenerating theta_path...") 
             theta_path = self.steer_theta(start_state, goal_state,0,dt, delta_t)
             start_t = theta_path[-1][0] + dt
+            start_state_x = theta_path[-1][2]
+            print(start_state_x)
             #raise ValueError("You'll cause a singularity here. You should add something to this function to fix it")
 
         if abs(start_state.phi) > self.max_phi or abs(goal_state.phi) > self.max_phi:
@@ -74,15 +80,15 @@ class SinusoidPlanner():
             abs(goal_state.phi - self.max_phi),
             abs(goal_state.phi + self.max_phi)
         )
-        print("Generating x_path...") 
+        print("\nGenerating x_path...") 
         x_path =        self.steer_x(
-                            start_state, 
+                            start_state_x, 
                             goal_state, 
                             start_t, 
                             dt, 
                             delta_t
                         )
-        print("Generating phi_path...") 
+        print("\nGenerating phi_path...") 
         phi_path =      self.steer_phi(
                             x_path[-1][2], 
                             goal_state, 
@@ -90,7 +96,7 @@ class SinusoidPlanner():
                             dt, 
                             delta_t
                         )
-        print("Generating alpha...") 
+        print("\nGenerating alpha...") 
         alpha_path =    self.steer_alpha(
                             phi_path[-1][2], 
                             goal_state, 
@@ -98,12 +104,15 @@ class SinusoidPlanner():
                             dt, 
                             delta_t
                         )
-        print("Generating y_path...") 
-        n = (goal_state.y - start_state.y) // self.max_y + 1
-        n = int(n)
-        start_state_y = alpha_path[-1][2]
+        print("\nGenerating y_path...") 
         goal_state_y  = goal_state
-        delta_y = (goal_state.y - start_state.y) / n
+        start_state_y = alpha_path[-1][2]
+        n = abs(goal_state_y.y - start_state_y.y) // self.max_y + 1
+        n = int(n)
+        delta_y = (goal_state_y.y - start_state_y.y) / n
+        print("For steer_y n=%d delta_y=%f"%(n,delta_y))
+        print("goal",goal_state_y)
+        print("start",start_state_y)
         goal_state_y.y = start_state_y.y + delta_y
         y_start_t = alpha_path[-1][0] + dt
         y_path = []
@@ -117,12 +126,13 @@ class SinusoidPlanner():
         path = []
         for p in [theta_path, x_path, phi_path, alpha_path, y_path]:
             path.extend(p)
+        #print(theta_path)
         return path
 
     def steer_theta(self, start_state, goal_state, t0 = 0, dt = 0.01, delta_t = 2):
         """
         Create a trajectory to move the turtlebot in the theta direction
-        Only called when singularity points exist
+        Only called when singularity points exist.
 
         Parameters
         ----------
@@ -143,20 +153,43 @@ class SinusoidPlanner():
             This is a list of timesteps, the command to be sent at that time, and the predicted state at that time
         """
 
-        raise NotImplementedError
 
-        start_state_v = self.state2v(start_state)
-        goal_state_v = self.state2v(goal_state)
-        delta_x = goal_state_v[0] - start_state_v[0]
+        delta_theta =  goal_state.theta - start_state.theta
 
-        v1 = delta_x/delta_t
-        v2 = 0
+        # steer phi to max so that it can rotate
+        start_state_phi = start_state
+        goal_state_phi = copy(start_state)
+        goal_state_phi.phi = np.sign(delta_theta) * self.max_phi
+        print("In steer_theta start phi is %f goal phi is %f"%(start_state_phi.phi,goal_state_phi.phi))
+        path = self.steer_phi(start_state_phi,goal_state_phi,t0,dt,delta_t)
+        #print(path)
 
-        path, t = [], t0
-        while t < t0 + delta_t:
-            path.append([t, v1, v2])
-            t = t + dt
-        return self.v_path_to_u_path(path, start_state, dt)
+        # steer u1 to make it rotate
+        curr_state = copy(goal_state_phi)
+        t = path[-1][0] + dt
+        while not rospy.is_shutdown():
+            u1,u2 = self.max_u1, 0
+            cmd_u = BicycleCommandMsg(u1, u2)
+            path.append([t,cmd_u,curr_state])
+            curr_state = BicycleStateMsg(
+                curr_state.x     + np.cos(curr_state.theta)               * cmd_u.linear_velocity*dt,
+                curr_state.y     + np.sin(curr_state.theta)               * cmd_u.linear_velocity*dt,
+                curr_state.theta + np.tan(curr_state.phi) / float(self.l) * cmd_u.linear_velocity*dt,
+                curr_state.phi   + cmd_u.steering_rate*dt
+            )
+            t += dt
+            delta_theta = abs(curr_state.theta - goal_state.theta)
+            if delta_theta < self.theta_limit:
+                break
+
+        #t0 = path[-1][0] + dt
+#        start_state_phi = path[-1][2]
+#        goal_state_phi = start_state_phi
+#        goal_state_phi.phi = start_state.phi
+#        path2 = self.steer_phi(start_state_phi,goal_state_phi,t0,dt,delta_t)
+#        path.extend(path2)
+        return path
+        
 
     def steer_x(self, start_state, goal_state, t0 = 0, dt = 0.01, delta_t = 2):
         """
@@ -311,9 +344,9 @@ class SinusoidPlanner():
         start_state_v = self.state2v(start_state)
         goal_state_v = self.state2v(goal_state)
         delta_y = goal_state_v[3] - start_state_v[3]
-        print("\n")
-        print("In steer, start ",start_state,"goal",goal_state)
-        print("\n")
+        #print("\n")
+        #print("In steer, start ",start_state,"goal",goal_state)
+        #print("\n")
 
         omega = 2 * np.pi / delta_t
 
@@ -409,7 +442,7 @@ class SinusoidPlanner():
                 break
             else:
                 print("Generated y path reached the limit, reduce the max a1 %f a2 %f and try again..."%(max_a1,max_a2))
-                mul = 0.9
+                mul = 0.99
                 max_a1 = max_a1 * mul
                 max_a2 = max_a2 * mul
         return u_path
@@ -485,4 +518,5 @@ class SinusoidPlanner():
                 curr_state.phi   + cmd_u.steering_rate*dt
             )
 
+        print path[-1][2]
         return path
