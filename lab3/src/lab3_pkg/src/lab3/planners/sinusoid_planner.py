@@ -29,6 +29,7 @@ class SinusoidPlanner():
         self.max_phi = max_phi
         self.max_u1 = max_u1
         self.max_u2 = max_u2
+        self.max_y = 0.5
 
     def plan_to_pose(self, start_state, goal_state, dt = 0.01, delta_t=2):
         """
@@ -98,13 +99,20 @@ class SinusoidPlanner():
                             delta_t
                         )
         print("Generating y_path...") 
-        y_path =        self.steer_y(
-                            alpha_path[-1][2], 
-                            goal_state, 
-                            alpha_path[-1][0] + dt, 
-                            dt, 
-                            delta_t
-                        )     
+        n = (goal_state.y - start_state.y) // self.max_y + 1
+        n = int(n)
+        start_state_y = alpha_path[-1][2]
+        goal_state_y  = goal_state
+        delta_y = (goal_state.y - start_state.y) / n
+        goal_state_y.y = start_state_y.y + delta_y
+        y_start_t = alpha_path[-1][0] + dt
+        y_path = []
+        for i in range(n):
+            y_path_tmp = self.steer_y(start_state_y, goal_state_y, y_start_t,dt, delta_t)     
+            y_path.extend(y_path_tmp)
+            y_start_t = y_path_tmp[-1][0] + dt
+            start_state_y.y = goal_state_y.y
+            goal_state_y.y += delta_y
 
         path = []
         for p in [theta_path, x_path, phi_path, alpha_path, y_path]:
@@ -303,6 +311,9 @@ class SinusoidPlanner():
         start_state_v = self.state2v(start_state)
         goal_state_v = self.state2v(goal_state)
         delta_y = goal_state_v[3] - start_state_v[3]
+        print("\n")
+        print("In steer, start ",start_state,"goal",goal_state)
+        print("\n")
 
         omega = 2 * np.pi / delta_t
 
@@ -359,12 +370,10 @@ class SinusoidPlanner():
                 result = [np.cos(theta)*u1, np.sin(theta)*u1, 1/self.l*tan(phi)*u1, u2]
                 return result if flag else inf_result
             z0 = self.state2u(start_state)
-            t = (0,delta_t)
-            sol = odeint(my_ode,z0,t)
+            t = np.array([0,delta_t])
+            sol = odeint(my_ode,z0,t,printmessg=False)
             y = sol[-1][1] # the final state of y
             return [y - goal_state_v[3],0]
-
-
 
         def find_root(func1):
             # try to find the root of equation func = 0
