@@ -518,5 +518,5 @@ class SinusoidPlanner():
                 curr_state.phi   + cmd_u.steering_rate*dt
             )
 
-        print path[-1][2]
+        #print path[-1][2]
         return path

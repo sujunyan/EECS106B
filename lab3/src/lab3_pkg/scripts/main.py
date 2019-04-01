@@ -9,6 +9,7 @@ import argparse
 
 import tf2_ros
 import tf
+import matplotlib.pyplot as plt
 from std_srvs.srv import Empty as EmptySrv
 import rospy
 from lab3_pkg.msg import BicycleCommandMsg, BicycleStateMsg
@@ -34,12 +35,23 @@ class Exectutor(object):
         ----------
         plan : :obj:`list` of (time, BicycleCommandMsg, BicycleStateMsg)
         """
+
+        # store the data for plotting
+        self.desired_state_list = [] # 4xn list (x,y,theta,phi)
+        self.true_state_list = [] # 4xn list (x,y,theta,phi)
+        self.t_list = [] # 1xn list
+
         if len(plan) == 0:
             return
 
         for (t, cmd, state) in plan:
             self.cmd(cmd)
             self.rate.sleep()
+            # store the data for plotting
+            self.t_list.append(t)
+            self.desired_state_list.append([state.x,state.y,state.theta,state.phi])
+            self.true_state_list.append([self.state.x, self.state.y, self.state.theta, self.state.phi])
+
             if rospy.is_shutdown():
                 break
         self.cmd(BicycleCommandMsg())
@@ -67,6 +79,59 @@ class Exectutor(object):
     def shutdown(self):
         rospy.loginfo("Shutting Down")
         self.cmd(BicycleCommandMsg())
+
+    def plot(self):
+        """
+        plot the desired and true trajectories
+        """
+        # x plot
+        desired, true = [a[0] for a in self.desired_state_list],[a[0] for a in self.true_state_list]
+        plt.figure(1)
+        plt.subplot(221)
+        plt.plot(self.t_list,desired)
+        plt.plot(self.t_list,true)
+        plt.ylabel('x')
+        plt.xlabel('t')
+        plt.legend(["desired_x","true_x"])
+        # y plot
+        plt.subplot(222)
+        desired, true = [a[1] for a in self.desired_state_list],[a[1] for a in self.true_state_list]
+        plt.plot(self.t_list,desired)
+        plt.plot(self.t_list,true)
+        plt.ylabel('y')
+        plt.xlabel('t')
+        plt.legend(["desired_y","true_y"])
+ 
+        # theta plot 
+        plt.subplot(223)
+        desired, true = [a[2] for a in self.desired_state_list],[a[2] for a in self.true_state_list]
+        plt.plot(self.t_list,desired)
+        plt.plot(self.t_list,true)
+        plt.ylabel('theta')
+        plt.xlabel('t')
+        plt.legend(["desired_theta","true_theta"])
+
+        # phi
+        plt.subplot(224)
+        desired, true = [a[3] for a in self.desired_state_list],[a[3] for a in self.true_state_list]
+        plt.plot(self.t_list,desired)
+        plt.plot(self.t_list,true)
+        plt.ylabel('phi')
+        plt.xlabel('t')
+        plt.legend(["desired_phi","true_phi"])
+  
+        plt.figure(2)
+        desired_x, true_x = [a[0] for a in self.desired_state_list],[a[0] for a in self.true_state_list]
+        desired_y, true_y = [a[1] for a in self.desired_state_list],[a[1] for a in self.true_state_list]
+        plt.plot(desired_x,desired_y)
+        plt.plot(true_x,true_y)
+        plt.ylabel('y')
+        plt.xlabel('x')
+        plt.legend(["desired","true"])
+
+        plt.show()
+
+
 
 def parse_args():
     """
@@ -107,5 +172,6 @@ if __name__ == '__main__':
     ex.execute(plan)
     print "Final State"
     print ex.state
+    ex.plot()
 
 
