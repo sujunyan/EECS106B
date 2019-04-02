@@ -25,6 +25,7 @@ class Exectutor(object):
         self.sub = rospy.Subscriber('/bicycle/state', BicycleStateMsg, self.subscribe )
         self.rate = rospy.Rate(100)
         self.state = BicycleStateMsg()
+        self.stablize_flag = True # if we need to implement the paper about stablization
         rospy.on_shutdown(self.shutdown)
 
     def execute(self, plan):
@@ -45,6 +46,8 @@ class Exectutor(object):
             return
 
         for (t, cmd, state) in plan:
+            if self.stablize_flag:
+                pass
             self.cmd(cmd)
             self.rate.sleep()
             # store the data for plotting
