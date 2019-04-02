@@ -91,7 +91,7 @@ class BicycleConverter():
             self.unicycle_command_topic = self.turtlebot_command_topic
 
             # resetting stuff
-            reset_odom = rospy.Publisher('/mobile_base/commands/reset_odometry', EmptyMsg, queue_size=10)
+            self.reset_odom = rospy.Publisher('/mobile_base/commands/reset_odometry', EmptyMsg, queue_size=10)
 
         self.command_publisher = rospy.Publisher(self.unicycle_command_topic, Twist, queue_size = 1)
         self.state_publisher = rospy.Publisher(self.state_topic, BicycleStateMsg, queue_size = 1)

@@ -86,7 +86,7 @@ class SinusoidPlanner():
                             goal_state, 
                             start_t, 
                             dt, 
-                            delta_t
+                            2
                         )
         print("\nGenerating phi_path...") 
         phi_path =      self.steer_phi(
@@ -94,7 +94,7 @@ class SinusoidPlanner():
                             goal_state, 
                             x_path[-1][0] + dt, 
                             dt, 
-                            delta_t
+                            2
                         )
         print("\nGenerating alpha...") 
         alpha_path =    self.steer_alpha(
@@ -102,11 +102,13 @@ class SinusoidPlanner():
                             goal_state, 
                             phi_path[-1][0] + dt, 
                             dt, 
-                            delta_t
+                            2
                         )
         print("\nGenerating y_path...") 
         goal_state_y  = goal_state
         start_state_y = alpha_path[-1][2]
+        print(alpha_path)
+        #print(start_state_y,goal_state_y)
         n = abs(goal_state_y.y - start_state_y.y) // self.max_y + 1
         n = int(n)
         delta_y = (goal_state_y.y - start_state_y.y) / n
@@ -508,8 +510,8 @@ class SinusoidPlanner():
             cmd_u = v2cmd(v1, v2, curr_state)
             path[i] = [t, cmd_u, curr_state]
             # TODO should add limitation to u
-            if self.limit_flag:
-                return path
+            #if self.limit_flag:
+                #return path
             
             curr_state = BicycleStateMsg(
                 curr_state.x     + np.cos(curr_state.theta)               * cmd_u.linear_velocity*dt,
