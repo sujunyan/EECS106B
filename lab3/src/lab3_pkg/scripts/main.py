@@ -18,7 +18,7 @@ from lab3.planners import SinusoidPlanner
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 ros_rate = 100
-delta_t = 10
+delta_t = 5
 class Exectutor(object):
     def __init__(self):
         """
@@ -55,7 +55,8 @@ class Exectutor(object):
 
         for (t, cmd, state) in plan:
             if self.stablize_flag:
-                pass
+                (u1,u2) = cmd.linear_velocity,cmd.steering_rate
+                cmd = BicycleCommandMsg(u1,u2)
             self.cmd(cmd) 
             # store the data for plotting
             self.t_list.append(t)

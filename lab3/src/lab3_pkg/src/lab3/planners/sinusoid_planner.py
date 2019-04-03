@@ -31,6 +31,7 @@ class SinusoidPlanner():
         self.max_u2 = max_u2
         self.max_y = 0.5
         self.theta_limit = 0.05
+        self.alpha = 0.1
 
     def plan_to_pose(self, start_state, goal_state, dt = 0.01, delta_t=2):
         """
@@ -506,10 +507,37 @@ class SinusoidPlanner():
                 self.limit_flag = True
             return BicycleCommandMsg(u1, u2)
 
+        def AB(cmd_u,state):
+            pass
+            (u1,u2) = cmd.linear_velocity,cmd.steering_rate
+            theta = state.theta
+            phi = state.phi
+            A = np.matrix([[0,0 ,-sin(theta) * u1 ,0],
+                         [0,0 ,cos(theta)  * u1 ,0],
+                         [0,0 ,0                , u1/self.l/(cos(phi)**2)  ],
+                         [0,0 ,0                ,0]])
+            B = np.matrix([[sin(theta)      ,0],
+                          [cos(theta)      ,0],
+                          [tan(phi)/self.l ,0],
+                          [0               ,1]
+                          ])
+            return (A,B)
+
+
         curr_state = copy(start_state)
+        mul = exp(- self.alpha * dt)
         for i, (t, v1, v2) in enumerate(path):
             cmd_u = v2cmd(v1, v2, curr_state)
-            path[i] = [t, cmd_u, curr_state]
+            A,B = AB(cmd_u,state)
+
+            # calculate the feedback
+            if i>=1:
+                pass
+                PHI = np.eye(4) + 0.5 * (A + last_A) # the estimated state transition matrix
+                Hc = 0.5 * (B * B.transpose()) + mul 
+                path[i-1][4] = feedback
+            last_A,last_B =  A,B
+            path[i] = [t, cmd_u, curr_state, np.zeros(2,4)]
             # TODO should add limitation to u
             #if self.limit_flag:
                 #return path
@@ -521,5 +549,7 @@ class SinusoidPlanner():
                 curr_state.phi   + cmd_u.steering_rate*dt
             )
 
-        #print path[-1][2]
+        # calculate the feedback term approxiamtely   
+        
+
         return path
