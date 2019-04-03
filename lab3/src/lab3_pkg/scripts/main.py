@@ -13,9 +13,12 @@ import matplotlib.pyplot as plt
 from std_srvs.srv import Empty as EmptySrv
 import rospy
 from lab3_pkg.msg import BicycleCommandMsg, BicycleStateMsg
-
 from lab3.planners import SinusoidPlanner
 
+from geometry_msgs.msg import Twist
+from nav_msgs.msg import Odometry
+ros_rate = 100
+delta_t = 5
 class Exectutor(object):
     def __init__(self):
         """
@@ -23,8 +26,12 @@ class Exectutor(object):
         """
         self.pub = rospy.Publisher('/bicycle/cmd_vel', BicycleCommandMsg, queue_size=10)
         self.sub = rospy.Subscriber('/bicycle/state', BicycleStateMsg, self.subscribe )
-        self.rate = rospy.Rate(100)
+        self.sub_vel = rospy.Subscriber('/odom', Odometry, self.subscribe_vel)
+        self.rate = rospy.Rate(ros_rate)
         self.state = BicycleStateMsg()
+        self.real_vel = Twist()
+        self.stablize_flag = True # if we need to implement the paper about stablization
+        self.length = 0.3
         rospy.on_shutdown(self.shutdown)
 
     def execute(self, plan):
@@ -40,18 +47,28 @@ class Exectutor(object):
         self.desired_state_list = [] # 4xn list (x,y,theta,phi)
         self.true_state_list = [] # 4xn list (x,y,theta,phi)
         self.t_list = [] # 1xn list
+        self.true_w = [] # true angular velocity 
+        self.desired_w = [] # desired angular velocity
 
         if len(plan) == 0:
             return
 
         for (t, cmd, state) in plan:
-            self.cmd(cmd)
-            self.rate.sleep()
+            if self.stablize_flag:
+                (u1,u2) = cmd.linear_velocity,cmd.steering_rate
+                cmd = BicycleCommandMsg(u1,u2)
+            self.cmd(cmd) 
             # store the data for plotting
             self.t_list.append(t)
             self.desired_state_list.append([state.x,state.y,state.theta,state.phi])
             self.true_state_list.append([self.state.x, self.state.y, self.state.theta, self.state.phi])
 
+            # store the angular velocity
+            self.true_w.append(self.real_vel.angular.z)
+            desired_w = (1.0/self.length)*np.tan(self.state.phi)*cmd.linear_velocity
+            self.desired_w.append(desired_w)
+
+            self.rate.sleep()
             if rospy.is_shutdown():
                 break
         self.cmd(BicycleCommandMsg())
@@ -59,12 +76,15 @@ class Exectutor(object):
     def cmd(self, msg):
         """
         Sends a command to the turtlebot / turtlesim
-
+c
         Parameters
         ----------
         msg : :obj:`BicycleCommandMsg`
         """
         self.pub.publish(msg)
+
+    def subscribe_vel(self,msg):
+        self.real_vel = msg.twist.twist
 
     def subscribe(self, msg):
         """
@@ -79,6 +99,13 @@ class Exectutor(object):
     def shutdown(self):
         rospy.loginfo("Shutting Down")
         self.cmd(BicycleCommandMsg())
+
+    def plot_vel(self):
+        plt.figure(3)
+        desired, true = self.desired_w, self.true_w
+        plt.plot(self.t_list,desired)
+        plt.plot(self.t_list,true)
+        plt.legend(["desired_vel","true_vel"])
 
     def plot(self):
         """
@@ -129,6 +156,7 @@ class Exectutor(object):
         plt.xlabel('x')
         plt.legend(["desired","true"])
 
+        self.plot_vel()
         plt.show()
 
 
@@ -162,7 +190,7 @@ if __name__ == '__main__':
 
     p = SinusoidPlanner(0.3, 0.3, 2, 3)
     goalState = BicycleStateMsg(args.x, args.y, args.theta, args.phi)
-    plan = p.plan_to_pose(ex.state, goalState, 0.01, 2)
+    plan = p.plan_to_pose(ex.state, goalState, 1.0/ros_rate, delta_t)
     
     print "Predicted Initial State"
     print plan[0][2]
