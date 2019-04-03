@@ -182,12 +182,6 @@ class SinusoidPlanner():
             if delta_theta < self.theta_limit:
                 break
 
-        #t0 = path[-1][0] + dt
-#        start_state_phi = path[-1][2]
-#        goal_state_phi = start_state_phi
-#        goal_state_phi.phi = start_state.phi
-#        path2 = self.steer_phi(start_state_phi,goal_state_phi,t0,dt,delta_t)
-#        path.extend(path2)
         return path
         
 
@@ -315,7 +309,6 @@ class SinusoidPlanner():
             t = t + dt
         return self.v_path_to_u_path(path, start_state, dt)
 
-
     def steer_y(self, start_state, goal_state, t0 = 0, dt = 0.01, delta_t = 2):
         """
         Create a trajectory to move the turtlebot in the y direction. 
@@ -352,37 +345,6 @@ class SinusoidPlanner():
 
         max_a1 = self.max_u1 
         max_a2 = self.max_u2 
-        # the gross func to find the root: gross_func = 0
-        def gross_func(x):
-            a1 = x[0]
-            a2 = x[1]
-            if abs(a1) > max_a1 or abs(a2) > max_a2:
-                r = abs(a1) + abs(a2) # set the constrain
-                return [r , r]
-            tol = 1e-4
-            limit = 10
-            def alpha_t(t):
-                # alpha = sin(theta)
-                # we can calculate theta first to escape the domain check of alpha
-                def integrand(t):
-                    f = lambda phi: (1/self.l)*np.tan(phi) # This is from the car model
-                    def phi_fn(t):
-                        phi = (a2/2/omega)*np.sin(2*omega*t) + start_state_v[1]
-                        return phi if abs(phi) < self.max_phi else np.pi/2
-                    return f(phi_fn(t)) * np.sin(omega * t) * a1
-                result = quad(integrand,0,t,full_output=0,epsabs=tol,epsrel=tol,limit=limit)[0]
-                #result = quadrature(integrand,0,t,vec_func=False)[0]
-                return result
-            def g(a):
-                #print(a)
-                if abs(a) >1:
-                    return np.inf
-                return a/sqrt(1-a*a)
-            def integrand(t):
-                return g(alpha_t(t)) * sin(omega * t)
-            int_val = abs(quad(integrand,0,delta_t,full_output=0,epsabs=tol,epsrel=tol,limit=limit)[0])
-            #int_val = abs(quadrature(integrand,0,delta_t,vec_func=False)[0])
-            return [ (int_val * a1 - delta_y ), 0 ]
 
         def gross_func_ode(x):
             # try to use ode to handle the itegration
