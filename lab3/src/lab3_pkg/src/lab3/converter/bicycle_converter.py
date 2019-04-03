@@ -70,7 +70,7 @@ class BicycleConverter():
     def __init__(self):
         self._name = rospy.get_name()
         self.last_time = rospy.Time.now()
-        self.rate_hz = 200
+        self.rate_hz = 500
         self.rate = rospy.Rate(self.rate_hz)
         self.get_params()
 
@@ -112,9 +112,11 @@ class BicycleConverter():
         self.state.theta = msg.theta
 
     def run(self):
+        self.run_last_time = rospy.Time.now()
         while not rospy.is_shutdown():
 
             # If we aren't using turtlesim, get the state
+
             if not self.turtlesim:
                 for i in range(10):
                     try:
@@ -133,6 +135,7 @@ class BicycleConverter():
                     [pose.transform.rotation.x, pose.transform.rotation.y,
                      pose.transform.rotation.z, pose.transform.rotation.w])
                 self.state.theta = yaw
+                #print(pose.transform)
 
             # Now publish the state
             self.state_publisher.publish(self.state)
@@ -140,13 +143,21 @@ class BicycleConverter():
             # Now execute commands
             # Timeout to ensure that only recent commands are executed
             if (rospy.Time.now() - self.last_time).to_sec() > 1.0:
+                #print("In bicycle_converter, time limit reached")
                 self.command.steering_rate = 0
                 self.command.linear_velocity = 0
+            else:
+                pass
+                #print("In bicycle_converter, time limit not reached")
+            time_eplised = (rospy.Time.now() - self.run_last_time).to_sec()
+            #print("In bicycle_conver.run, time eplised %f"%(time_eplised))
+            self.run_last_time = rospy.Time.now()
 
             # We output velocity and yaw rate based on the bicycle model
             output = Twist()
             output.linear.x = self.command.linear_velocity
-            output.angular.z = (1/self.length)*np.tan(self.state.phi)*self.command.linear_velocity
+            output.angular.z = (1.0/self.length)*np.tan(self.state.phi)*self.command.linear_velocity
+            #print(output)
 
             self.state.phi = self.state.phi + self.command.steering_rate/self.rate_hz
             self.state.phi = max(min(self.state.phi, self.max_steering_angle), -self.max_steering_angle)

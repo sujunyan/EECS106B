@@ -30,7 +30,7 @@ class SinusoidPlanner():
         self.max_u1 = max_u1
         self.max_u2 = max_u2
         self.max_y = 0.5
-        self.theta_limit = 0.03
+        self.theta_limit = 0.05
 
     def plan_to_pose(self, start_state, goal_state, dt = 0.01, delta_t=2):
         """
