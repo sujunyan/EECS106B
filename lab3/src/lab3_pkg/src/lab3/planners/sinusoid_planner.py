@@ -170,7 +170,7 @@ class SinusoidPlanner():
         curr_state = copy(goal_state_phi)
         t = path[-1][0] + dt
         while not rospy.is_shutdown():
-            u1,u2 = self.max_u1, 0
+            u1,u2 = self.max_u1/4.0 , 0
             cmd_u = BicycleCommandMsg(u1, u2)
             path.append([t,cmd_u,curr_state])
             curr_state = BicycleStateMsg(
@@ -181,6 +181,7 @@ class SinusoidPlanner():
             )
             t += dt
             delta_theta = abs(curr_state.theta - goal_state.theta)
+            print("In steer_theta, delta_theta is %f"%(delta_theta))
             if delta_theta < self.theta_limit:
                 break
 

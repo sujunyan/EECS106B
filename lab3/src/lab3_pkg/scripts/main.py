@@ -16,7 +16,8 @@ from lab3_pkg.msg import BicycleCommandMsg, BicycleStateMsg
 
 from lab3.planners import SinusoidPlanner
 
-ros_rate = 20
+ros_rate = 50
+delta_t = 12
 class Exectutor(object):
     def __init__(self):
         """
@@ -60,7 +61,7 @@ class Exectutor(object):
     def cmd(self, msg):
         """
         Sends a command to the turtlebot / turtlesim
-
+c
         Parameters
         ----------
         msg : :obj:`BicycleCommandMsg`
@@ -123,7 +124,7 @@ class Exectutor(object):
   
         plt.figure(2)
         desired_x, true_x = [a[0] for a in self.desired_state_list],[a[0] for a in self.true_state_list]
-        desiredtd_y, true_y = [a[1] for a in self.desired_state_list],[a[1] for a in self.true_state_list]
+        desired_y, true_y = [a[1] for a in self.desired_state_list],[a[1] for a in self.true_state_list]
         plt.plot(desired_x,desired_y)
         plt.plot(true_x,true_y)
         plt.ylabel('y')
@@ -163,7 +164,7 @@ if __name__ == '__main__':
 
     p = SinusoidPlanner(0.3, 0.3, 2, 3)
     goalState = BicycleStateMsg(args.x, args.y, args.theta, args.phi)
-    plan = p.plan_to_pose(ex.state, goalState, 1.0/ros_rate, 5)
+    plan = p.plan_to_pose(ex.state, goalState, 1.0/ros_rate, delta_t)
     
     print "Predicted Initial State"
     print plan[0][2]
@@ -173,6 +174,6 @@ if __name__ == '__main__':
     ex.execute(plan)
     print "Final State"
     print ex.state
-    #ex.plot()
+    ex.plot()
 
 
