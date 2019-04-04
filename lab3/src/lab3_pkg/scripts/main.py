@@ -30,7 +30,7 @@ class Exectutor(object):
         self.rate = rospy.Rate(ros_rate)
         self.state = BicycleStateMsg()
         self.real_vel = Twist()
-        self.stablize_flag = True # if we need to implement the paper about stablization
+        self.stablize_flag = False # if we need to implement the paper about stablization
         self.length = 0.3
         rospy.on_shutdown(self.shutdown)
 
@@ -53,13 +53,18 @@ class Exectutor(object):
         if len(plan) == 0:
             return
 
-        gamma = 1
+        gamma = 0.5
         for (t, cmd, state,fdk) in plan:
             if self.stablize_flag:
                 (u1,u2) = cmd.linear_velocity,cmd.steering_rate
                 x0 = self.state2array(state)
                 x = self.state2array(self.state)
-                u = - gamma * fdk * (x - x0)
+                err = np.matrix((x - x0))
+                #print(err.transpose())
+                u =  gamma * fdk * err.transpose()
+                print(fdk)
+                u1,u2 = u1 + u[0] , u2 + u[1]
+                #print(u)
                 cmd = BicycleCommandMsg(u1,u2)
             self.cmd(cmd) 
             # store the data for plotting

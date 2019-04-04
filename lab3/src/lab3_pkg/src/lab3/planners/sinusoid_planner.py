@@ -108,8 +108,6 @@ class SinusoidPlanner():
         print("\nGenerating y_path...") 
         goal_state_y  = goal_state
         start_state_y = alpha_path[-1][2]
-        print(alpha_path)
-        #print(start_state_y,goal_state_y)
         n = abs(goal_state_y.y - start_state_y.y) // self.max_y + 1
         n = int(n)
         delta_y = (goal_state_y.y - start_state_y.y) / n
@@ -341,9 +339,6 @@ class SinusoidPlanner():
         start_state_v = self.state2v(start_state)
         goal_state_v = self.state2v(goal_state)
         delta_y = goal_state_v[3] - start_state_v[3]
-        #print("\n")
-        #print("In steer, start ",start_state,"goal",goal_state)
-        #print("\n")
 
         omega = 2 * np.pi / delta_t
 
@@ -379,7 +374,6 @@ class SinusoidPlanner():
             init_guess = np.array([delta_y*2, delta_y*2])
             while not rospy.is_shutdown():
                 sol = optimize.root(func1,init_guess,method='hybr')
-                #print("sol.success\n",sol.success,sol.message)
                 if (sol.success):
                     break
                 else:
@@ -387,7 +381,6 @@ class SinusoidPlanner():
                     init_guess[1] = max_a2 * np.random.rand()
                     print("Find root failed, because %s "%(sol.message))
                     print("change initial guess to (%f,%f) and try again..."%(init_guess[0],init_guess[1]))
-                    #print(sol.x)
             return sol.x
 
 
@@ -469,8 +462,7 @@ class SinusoidPlanner():
                 self.limit_flag = True
             return BicycleCommandMsg(u1, u2)
 
-        def AB(cmd_u,state):
-            pass
+        def AB(cmd,state):
             (u1,u2) = cmd.linear_velocity,cmd.steering_rate
             theta = state.theta
             phi = state.phi
@@ -490,19 +482,18 @@ class SinusoidPlanner():
         mul = exp(- self.alpha * dt)
         for i, (t, v1, v2) in enumerate(path):
             cmd_u = v2cmd(v1, v2, curr_state)
-            A,B = AB(cmd_u,state)
+            A,B = AB(cmd_u,curr_state)
 
             # calculate the feedback
             if i>=1:
                 PHI = np.eye(4) + 0.5 * (A + last_A) # the estimated state transition matrix
-                Hc = 0.5 * (last_B* last_B.transpose()) 
-                    + 0.5 * mul * PHI * B * B.transpose() * PHI
+                Hc = 0.5 * (last_B* last_B.transpose()) + 0.5 * mul * PHI * B * B.transpose() * PHI
                 Pc = np.linalg.pinv(Hc)
                 feedback = last_B.transpose() * Pc
-                path[i-1][4] = feedback
+                path[i-1][3] = feedback
 
             last_A,last_B =  A,B
-            path[i] = [t, cmd_u, curr_state, np.zeros(2,4)]
+            path[i] = [t, cmd_u, curr_state, np.zeros((2,4))]
             # TODO should add limitation to u
             #if self.limit_flag:
                 #return path
