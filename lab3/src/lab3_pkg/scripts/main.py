@@ -53,15 +53,19 @@ class Exectutor(object):
         if len(plan) == 0:
             return
 
-        for (t, cmd, state) in plan:
+        gamma = 1
+        for (t, cmd, state,fdk) in plan:
             if self.stablize_flag:
                 (u1,u2) = cmd.linear_velocity,cmd.steering_rate
+                x0 = self.state2array(state)
+                x = self.state2array(self.state)
+                u = - gamma * fdk * (x - x0)
                 cmd = BicycleCommandMsg(u1,u2)
             self.cmd(cmd) 
             # store the data for plotting
             self.t_list.append(t)
-            self.desired_state_list.append([state.x,state.y,state.theta,state.phi])
-            self.true_state_list.append([self.state.x, self.state.y, self.state.theta, self.state.phi])
+            self.desired_state_list.append(self.state2array(state))
+            self.true_state_list.append(self.state2array(self.state))
 
             # store the angular velocity
             self.true_w.append(self.real_vel.angular.z)
@@ -72,7 +76,8 @@ class Exectutor(object):
             if rospy.is_shutdown():
                 break
         self.cmd(BicycleCommandMsg())
-
+    def state2array(self,state):
+        return np.array([state.x,state.y,state.theta,state.phi])
     def cmd(self, msg):
         """
         Sends a command to the turtlebot / turtlesim
@@ -156,7 +161,7 @@ c
         plt.xlabel('x')
         plt.legend(["desired","true"])
 
-        self.plot_vel()
+        #self.plot_vel()
         plt.show()
 
 

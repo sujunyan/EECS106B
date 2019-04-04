@@ -496,8 +496,9 @@ class SinusoidPlanner():
             if i>=1:
                 PHI = np.eye(4) + 0.5 * (A + last_A) # the estimated state transition matrix
                 Hc = 0.5 * (last_B* last_B.transpose()) 
-                    + mul * PHI * B * B.transpose() * PHI
-                #Pc = 
+                    + 0.5 * mul * PHI * B * B.transpose() * PHI
+                Pc = np.linalg.pinv(Hc)
+                feedback = last_B.transpose() * Pc
                 path[i-1][4] = feedback
 
             last_A,last_B =  A,B
