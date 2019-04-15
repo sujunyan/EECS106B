@@ -1,5 +1,9 @@
 #include <ros/ros.h>
+#include <pcl/common/common_headers.h>
+#include <pcl/visualization/pcl_visualizer.h>
+#include <pcl/visualization/common/common.h>
 
+typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
 class PointCloudAnalyzer
 {
 private:
@@ -10,7 +14,10 @@ public:
     void start();
 private:
     void setup_parameter();
-    void callback(const PointCloud::ConstPtr& msg)
+    void setup_vis();
+    static void callback(const PointCloud::ConstPtr& msg);
+
+	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer;
 
     ros::NodeHandle nh;
     ros::Publisher use_case_pub;

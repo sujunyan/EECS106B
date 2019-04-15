@@ -205,13 +205,26 @@ add_definitions(${PCL_DEFINITIONS})
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
 
-add_executable(pcl_analyze src/pcl_analyze.cpp)
-add_executable(auto_log src/auto_log.cpp)
+set(HEADERS
+  "${CMAKE_CURRENT_SOURCE_DIR}/inc/PointCloudAnalyzer.hpp"
+  )
 
-target_link_libraries(pcl_analyze ${catkin_LIBRARIES} ${PCL_LIBRARIES})
-target_link_libraries(auto_log ${catkin_LIBRARIES} ${PCL_LIBRARIES})
-add_dependencies(pcl_analyze point_cloud_analyzer_generate_messages_cpp)
+set(SRC 
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/PointCloudAnalyzer.cpp"
+)
 
-add_executable(pcl_processing src/pcl_processing.cpp)
-target_link_libraries(pcl_processing ${catkin_LIBRARIES} ${PCL_LIBRARIES})
-add_dependencies(pcl_processing point_cloud_analyzer_generate_messages_cpp)
+#add_executable(pcl_analyze src/pcl_analyze.cpp)
+#target_link_libraries(pcl_analyze ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+#add_dependencies(pcl_analyze point_cloud_analyzer_generate_messages_cpp)
+#
+#add_executable(auto_log src/auto_log.cpp)
+#target_link_libraries(auto_log ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+#
+#add_executable(pcl_processing src/pcl_processing.cpp)
+#target_link_libraries(pcl_processing ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+#add_dependencies(pcl_processing point_cloud_analyzer_generate_messages_cpp)
+
+add_executable(point_cloud_analyzer src/main.cpp ${SRC} ${HEADER})
+target_link_libraries(point_cloud_analyzer ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+add_dependencies(point_cloud_analyzer point_cloud_analyzer_generate_messages_cpp)
+target_compile_options(point_cloud_analyzer PRIVATE "-w")

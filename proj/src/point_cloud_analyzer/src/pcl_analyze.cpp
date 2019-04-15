@@ -17,7 +17,6 @@
 #include <pcl/visualization/common/common.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/features/integral_image_normal.h>
-
 #include <pcl/console/parse.h>
 
 // Global variables
