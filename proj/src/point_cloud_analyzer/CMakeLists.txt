@@ -120,7 +120,11 @@ include_directories(
 # include
   ${catkin_INCLUDE_DIRS}
 )
-include_directories(${PCL_INCLUDE_DIRS})
+include_directories(
+  ${PCL_INCLUDE_DIRS}
+  "${CMAKE_CURRENT_LIST_DIR}/inc"
+  "${CMAKE_CURRENT_LIST_DIR}/royale/include"
+)
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 ## Declare a C++ library
