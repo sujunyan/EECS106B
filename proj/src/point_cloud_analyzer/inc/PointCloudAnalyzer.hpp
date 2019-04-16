@@ -2,6 +2,8 @@
 #include <pcl/common/common_headers.h>
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/visualization/common/common.h>
+#include "sensor_msgs/PointCloud2.h"
+
 
 typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
 class PointCloudAnalyzer
@@ -15,7 +17,7 @@ public:
 private:
     void setup_parameter();
     void setup_vis();
-    static void callback(const PointCloud::ConstPtr& msg);
+    void callback(const sensor_msgs::PointCloud2ConstPtr& msg);
 
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer;
 
@@ -26,8 +28,6 @@ private:
 	ros::Publisher exposure_pub;
     
     ros::Subscriber point_cloud_sub;
-
-
 };
 
 

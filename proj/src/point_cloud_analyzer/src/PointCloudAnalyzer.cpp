@@ -2,18 +2,15 @@
 #include "std_msgs/String.h"
 #include "std_msgs/Float32.h"
 #include "std_msgs/UInt32.h"
-
+#include "sensor_msgs/PointCloud2.h"
 
 #include <pcl/point_types.h>
+#include <pcl_conversions/pcl_conversions.h>	
 #include <pcl_ros/point_cloud.h>
 #include <pcl/common/common_headers.h>
-#include <pcl/features/normal_3d.h>
-#include <pcl/io/pcd_io.h>
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/visualization/common/common.h>
-#include <pcl/filters/voxel_grid.h>
-#include <pcl/features/integral_image_normal.h>
-#include <pcl/console/parse.h>
+//#include <pcl/filters/voxel_grid.h>
 
 PointCloudAnalyzer::PointCloudAnalyzer(/* args */)
 {
@@ -26,11 +23,12 @@ PointCloudAnalyzer::~PointCloudAnalyzer()
 }
 
 void PointCloudAnalyzer::setup_parameter(){
+	std::cout<<"setting up parameters \n";
     use_case_pub = nh.advertise<std_msgs::String>("/use_case", 1);
     max_filter_pub = nh.advertise<std_msgs::Float32>("/max_filter", 1);
     min_filter_pub = nh.advertise<std_msgs::Float32>("/min_filter", 1);
     exposure_pub = nh.advertise<std_msgs::UInt32>("/expo_time", 1);
-	sleep(3);
+	sleep(5);
 
 	std_msgs::String mode_msg;
 	mode_msg.data = "MODE_5_45FPS_500";
@@ -55,9 +53,10 @@ void PointCloudAnalyzer::setup_parameter(){
 
 void PointCloudAnalyzer::setup_vis(){
 
+	std::cout<<"setting up vis \n";
 	pcl::PointCloud<pcl::PointXYZ>::Ptr basic_cloud_ptr (new pcl::PointCloud<pcl::PointXYZ>);
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr point_cloud_ptr (new pcl::PointCloud<pcl::PointXYZRGB>);
-	std::cout << "Loading point cloud\n\n";
+	std::cout << "Creating point cloud\n\n";
 
 	basic_cloud_ptr->width = (int) basic_cloud_ptr->points.size ();
 	basic_cloud_ptr->height = 1;
@@ -77,23 +76,36 @@ void PointCloudAnalyzer::setup_vis(){
 	viewer->initCameraParameters ();
 	viewer->removeCoordinateSystem();
 
-	std::cout << "Loaded point cloud\n";
+	std::cout << "Created point cloud\n";
 }
 
+void PointCloudAnalyzer::callback(const sensor_msgs::PointCloud2ConstPtr& msg)
+{
+	std::cout << "PointCloud message recieved\n";
+
+	pcl::PCLPointCloud2 pcl_pc2;
+    pcl_conversions::toPCL(*msg,pcl_pc2);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_msg(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::fromPCLPointCloud2(pcl_pc2,*pcl_msg);
+
+	printf ("Cloud: width = %d, height = %d\n", pcl_msg->width, pcl_msg->height);
+	viewer->updatePointCloud(pcl_msg, "cloud");
+	viewer->updatePointCloud(pcl_msg, "deformed");
+}
+
+
+
 void PointCloudAnalyzer::start(){
-	point_cloud_sub = nh.subscribe<PointCloud>("/royale_camera_driver/point_cloud", 1, PointCloudAnalyzer::callback);
+	point_cloud_sub = nh.subscribe<sensor_msgs::PointCloud2>("/royale_camera_driver/point_cloud", 1, &PointCloudAnalyzer::callback, this);
+	//point_cloud_sub = nh.subscribe<sensor_msgs::PointCloud2>("/royale_camera_driver/point_cloud", 10, callback );
 	ros::Rate r(10); // 10 hz
 	while (!viewer->wasStopped ())
 	{
 		viewer->spinOnce (100);
-		//boost::this_thread::sleep (boost::posix_time::microseconds (100000));
 		ros::spinOnce();
-		r.sleep();
+		r.sleep(); // TODO might has a bug
 	}
 }
 
-void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
-{
-	std::cout << "PointCloud message recieved\n";
-}
+
 
