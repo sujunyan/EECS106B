@@ -90,28 +90,17 @@ def get_trajectory(task, ar_marker_num, num_way, controller_name):
 
         path = LinearPath(limb,kin,total_time,ar_marker_num,start_pos,final_pos) # ar_marker_num might be redundent
     elif task == 'circle':
-<<<<<<< HEAD
-
-=======
->>>>>>> fa246262fdedbf1e200fb453ed206eb8ce429d18
-
-
         center_pos = np.array([0.730, 0.253, 0.140])
 
         h_offset = 0.1
         #center_pos = lookup_tag(ar_marker_num[0])
 
         """
-<<<<<<< HEAD
-
-=======
         h_offset = 0.1
         center_pos = lookup_tag(ar_marker_num[0])
         center_pos = center_pos[0]
         print(center_pos)
->>>>>>> fbab7416a8b73571cd5b75b976c515774a987fa0
         center_pos[2] += h_offset
->>>>>>> fa246262fdedbf1e200fb453ed206eb8ce429d18
         """
         
         
@@ -127,13 +116,6 @@ def get_trajectory(task, ar_marker_num, num_way, controller_name):
         #center_pos = np.array([0.7, 0.23, 0]) # left_hand
         r = 0.1
         path = CircularPath(limb,kin,total_time,ar_marker_num,center_pos,r)
-<<<<<<< HEAD
-
-
-
-
-=======
->>>>>>> fa246262fdedbf1e200fb453ed206eb8ce429d18
     elif task == 'square':
         
         """
@@ -141,36 +123,15 @@ def get_trajectory(task, ar_marker_num, num_way, controller_name):
         h_offset = 0.1
         print(tag_pos)
         for i in range(len(tag_pos)):
-<<<<<<< HEAD
-
-            tag_pos[i] += h_offset
-        #assert(len(tag_pos) == 4)
-        """
-=======
             tag_pos[i] = tag_pos[i][0]
             tag_pos[i][2] += h_offset
             """
->>>>>>> fa246262fdedbf1e200fb453ed206eb8ce429d18
         corners = [np.array([0.73,0.47,0]), np.array([0.73,0.25,0.1])
                 ,np.array([0.55, 0.25, 0]), np.array([0.53, 0.47, 0.1])]
 
         #corners = [np.array([0.73,0.47,0]), np.array([0.73,0.25,-0.1])
                 #,np.array([0.55, 0.25, 0]), np.array([0.53, 0.47, 0.1])]
         #corners = tag_pos
-<<<<<<< HEAD
-
-
-        #tag_pos[i] = tag_pos[i][0]
-        #tag_pos[i][2] += h_offset
-            
-        #corners = [np.array([0.73,0.47,0]), np.array([0.73,0.25,0.1])
-        #        ,np.array([0.55, 0.25, 0]), np.array([0.53, 0.47, 0.1])]
-        #corners = [np.array([0.73,0.47,0]), np.array([0.73,0.25,-0.1])
-                #,np.array([0.55, 0.25, 0]), np.array([0.53, 0.47, 0.1])]
-        #corners = tag_pos
-
-=======
->>>>>>> fa246262fdedbf1e200fb453ed206eb8ce429d18
         length = len(corners)
         paths = [LinearPath(limb,kin,total_time,ar_marker_num,corners[i],corners[(i+1)%length]) for i in range(length)]
         path = MultiplePaths(paths)

@@ -9,14 +9,10 @@ import math
 import matplotlib.pyplot as plt
 from utils.utils import *
 
-try:
-    import rospy
-    from moveit_msgs.msg import RobotTrajectory
-    from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
-    from geometry_msgs.msg import Point
-except:
-    print("Try to import ROS failed!")
-    pass
+import rospy
+from moveit_msgs.msg import RobotTrajectory
+from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
+from geometry_msgs.msg import Point
 
 class MotionPath(object):
     def __init__(self, limb, kin, total_time,ar_marker_num):
@@ -260,7 +256,6 @@ class MotionPath(object):
         tag_pos, _ = listener.lookupTransform(from_frame, to_frame, t)
         return vec(tag_pos)
 
-class LinearPath(MotionPath):
     def __init__(self,limb,kin,total_time,ar_marker_num,start_pos,final_pos):
         """
         Construnction function for Motion Path
@@ -268,11 +263,6 @@ class LinearPath(MotionPath):
         The path goes from current position to an ar_tag
         """
         super(LinearPath,self).__init__(limb,kin,total_time,ar_marker_num)
-        #self.get_tag_pos()
-        #assert(len(tag_pos) >= 2)
-        #print tag_pos
-        #self._final_pos = self.tag_pos[0][0] # 3x vector np.array
-        #self._start_pos = self.tag_pos[1][0]
         self._final_pos = final_pos
         self._start_pos = start_pos
         h = - 0.0
@@ -346,198 +336,4 @@ class LinearPath(MotionPath):
         pos_t   = self.target_position(t)
         return (pos_t - 2*pos_t_1 + pos_t_2) / (2*delta_t)
 
-class CircularPath(MotionPath):
-    def __init__(self,limb,kin,total_time,ar_marker_num,center_pos,r):
-        """
-        Remember to call the constructor of MotionPath
 
-        Parameters
-        ----------
-        ????? You're going to have to fill these in how you see fit
-        """
-        super(CircularPath,self).__init__(limb,kin,total_time,ar_marker_num)
-
-        self._center_pos = center_pos
-
-        h = - 0.0
-
-        self._center_pos[2]+=h
-        self.delta_t = 0.01
-        self.r = r
-
-
-
-
-
-
-
-
-    def target_position(self, time):
-        """
-        Returns where the arm end effector should be at time t
-
-        Parameters
-        ----------
-        time : float
-
-        Returns
-        -------
-        3x' :obj:`numpy.ndarray`
-           desired x,y,z position in workspace coordinates of the end effector
-        """
-        r = self.r
-        """
-<<<<<<< HEAD
-
-<<<<<<< HEAD
-
-        target_pos = np.array(self._center_pos)
-        """
-
-        target_pos = np.array(self._center_pos)
-
-=======
-        target_pos = np.array(self._center_pos)
->>>>>>> fa246262fdedbf1e200fb453ed206eb8ce429d18
-        ratio = time / self.total_time
-
-        target_pos[0] = self._center_pos[0] + r * math.cos(ratio * 2 * math.pi + math.pi/4)
-        target_pos[1] = self._center_pos[1] + r * math.sin(ratio * 2 * math.pi + math.pi/4)
-        #print target_pos, r, ratio, self._center_pos[0], r * math.cos(ratio * 2 * math.pi)
-        return target_pos
-
-
-    def target_velocity(self, time):
-        """
-        Returns the arm's desired velocity in workspace coordinates
-        at time t.  You should NOT simply take a finite difference of
-        self.target_position()
-
-        Parameters
-        ----------
-        time : float
-
-        Returns
-        -------
-        3x' :obj:`numpy.ndarray`
-           desired x,y,z velocity in workspace coordinates of the end effector
-        """
-        t = time
-        delta_t = self.delta_t
-        pos_t_1 = self.target_position(t-delta_t)
-        pos_t   = self.target_position(t)
-        return (pos_t - pos_t_1) / delta_t
-
-    def target_acceleration(self, time):
-        """
-        Returns the arm's desired x,y,z acceleration in workspace coordinates
-        at time t.  You should NOT simply take a finite difference of
-        self.target_velocity()
-
-        Parameters
-        ----------
-        time : float
-
-        Returns
-        -------
-        3x' :obj:`numpy.ndarray`
-           desired acceleration in workspace coordinates of the end effector
-        """
-        t = time
-        delta_t = self.delta_t
-        pos_t_2 = self.target_position(t-2*delta_t)
-        pos_t_1 = self.target_position(t-delta_t)
-        pos_t   = self.target_position(t)
-        return (pos_t - 2*pos_t_1 + pos_t_2) / (2*delta_t)
-
-
-class MultiplePaths(MotionPath):
-    """
-    Remember to call the constructor of MotionPath
-
-    You can implement multiple paths a couple ways.  The way I chose when I took
-    the class was to create several different paths and pass those into the
-    MultiplePaths object, which would determine when to go onto the next path.
-    """
-    def __init__(self, paths):
-        """
-        parameter
-        ---------
-        paths: list of path (MotionPath)
-        """
-        self.paths = paths
-        self.total_time = 0
-        for path in paths:
-            self.total_time += path.total_time
-        path = paths[0]
-        super(MultiplePaths,self).__init__(path.limb,path.kin,self.total_time,path.ar_marker_num)
-
-
-    def get_current_path(self, time):
-        """
-        parameter
-        -------
-        time : float
-
-        returns
-        ------
-        time : float; reduced time in correspoding path
-        path : MotionPath
-        """
-        for path in self.paths:
-            if (time > path.total_time):
-                time -= path.total_time
-                continue
-            else:
-                return (time,path)
-
-
-    def target_position(self, time):
-        """
-        Returns where the arm end effector should be at time t
-
-        Parameters
-        ----------
-        time : float
-
-        Returns
-        -------
-        3x' :obj:`numpy.ndarray`
-            desired position in workspace coordinates of the end effector
-        """
-        (t,path) = self.get_current_path(time)
-        return path.target_position(t)
-
-    def target_velocity(self, time):
-        """
-        Returns the arm's desired velocity in workspace coordinates
-        at time t
-
-        Parameters
-        ----------
-        time : float
-
-        Returns
-        -------
-        3x' :obj:`numpy.ndarray`
-            desired velocity in workspace coordinates of the end effector
-        """
-        (t,path) = self.get_current_path(time)
-        return path.target_velocity(t)
-
-    def target_acceleration(self, time):
-        """
-        Returns the arm's desired acceleration in workspace coordinates
-        at time t
-
-        Parameters
-        ----------
-        time : float
-
-        Returns
-        -------
-        3x' :obj:`numpy.ndarray`
-            desired acceleration in workspace coordinates of the end effector
-        """
-        (t,path) = self.get_current_path(time)
-        return path.target_acceleration(t)
