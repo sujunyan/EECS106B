@@ -36,10 +36,10 @@ def get_trajectory(task, num_way):
     -------
     :obj:`moveit_msgs.msg.RobotTrajectory`
     """
-    if task == 'line':
+    if task == 'scan':
         start_pos = np.array([0.676, 0.339, 0.202])
         final_pos = np.array([0.617, 0.812 , 0.169])
-        path = LinearPath(limb,kin,total_time,ar_marker_num,start_pos,final_pos) # ar_marker_num might be redundent
+        path = ScanPath(limb,kin,total_time,ar_marker_num,start_pos,final_pos) # ar_marker_num might be redundent
     else:
         raise ValueError('task {} not recognized'.format(task))
     return path.to_robot_trajectory(num_way, True)
@@ -47,8 +47,8 @@ def get_trajectory(task, num_way):
 
 def args_parse():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-task', '-t', type=str, default='line', help=
-        'Options: line, circle, square.  Default: line'
+    parser.add_argument('-task', '-t', type=str, default='scan', help=
+        'Options: scan.  Default: scan'
     )
 
     parser.add_argument('-arm', '-a', type=str, default='left', help=
@@ -64,7 +64,7 @@ def args_parse():
         """after how many seconds should the controller terminate if it hasn\'t already.
         Default: None"""
     )
-    parser.add_argument('-num_way', type=int, default=300, help=
+    parser.add_argument('-num_way', type=int, default=100, help=
         'How many waypoints for the :obj:`moveit_msgs.msg.RobotTrajectory`.  Default: 300'
     )
     parser.add_argument('--moveit', action='store_true', help=

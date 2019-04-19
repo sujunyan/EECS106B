@@ -367,11 +367,6 @@ class CircularPath(MotionPath):
 
 
 
-
-
-
-
-
     def target_position(self, time):
         """
         Returns where the arm end effector should be at time t
@@ -386,19 +381,8 @@ class CircularPath(MotionPath):
            desired x,y,z position in workspace coordinates of the end effector
         """
         r = self.r
-        """
-<<<<<<< HEAD
-
-<<<<<<< HEAD
-
-        target_pos = np.array(self._center_pos)
-        """
-
         target_pos = np.array(self._center_pos)
 
-=======
-        target_pos = np.array(self._center_pos)
->>>>>>> fa246262fdedbf1e200fb453ed206eb8ce429d18
         ratio = time / self.total_time
 
         target_pos[0] = self._center_pos[0] + r * math.cos(ratio * 2 * math.pi + math.pi/4)

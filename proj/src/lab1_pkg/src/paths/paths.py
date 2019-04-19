@@ -29,6 +29,7 @@ class MotionPath(object):
         self.kin = kin
         self.total_time = total_time
         self.ar_marker_num = ar_marker_num
+        self.delta_t =  0.01
 
     def target_position(self, time):
         """
@@ -59,7 +60,11 @@ class MotionPath(object):
         3x' :obj:`numpy.ndarray`
             desired velocity in workspace coordinates of the end effector
         """
-        pass
+        t = time
+        delta_t = self.delta_t
+        pos_t_1 = self.target_position(t-delta_t)
+        pos_t   = self.target_position(t)
+        return (pos_t - pos_t_1) / delta_t
 
     def target_acceleration(self, time):
         """
@@ -75,7 +80,12 @@ class MotionPath(object):
         3x' :obj:`numpy.ndarray`
             desired acceleration in workspace coordinates of the end effector
         """
-        pass
+        t = time
+        delta_t = self.delta_t
+        pos_t_2 = self.target_position(t-2*delta_t)
+        pos_t_1 = self.target_position(t-delta_t)
+        pos_t   = self.target_position(t)
+        return (pos_t - 2*pos_t_1 + pos_t_2) / (2*delta_t)
 
     def plot(self, num=300):
         times = np.linspace(0, self.total_time, num=num)
@@ -256,27 +266,6 @@ class MotionPath(object):
         tag_pos, _ = listener.lookupTransform(from_frame, to_frame, t)
         return vec(tag_pos)
 
-    def __init__(self,limb,kin,total_time,ar_marker_num,start_pos,final_pos):
-        """
-        Construnction function for Motion Path
-        Get the ar_tag position from the node "tag_pub.py"
-        The path goes from current position to an ar_tag
-        """
-        super(LinearPath,self).__init__(limb,kin,total_time,ar_marker_num)
-        self._final_pos = final_pos
-        self._start_pos = start_pos
-        h = - 0.0
-        self._start_pos[2] +=h
-        self._final_pos[2] +=h
-        self._path_diff = self._final_pos - self._start_pos
-        self.delta_t = 0.01
-        """
-        print("\nLinearPath Created with start_pos,final_pos,path_diff")
-        print(self._start_pos)
-        print(self._final_pos)
-        print(self._path_diff)
-        """
-
     def target_position(self, time):
         """
         Returns where the arm end effector should be at time t
@@ -336,4 +325,87 @@ class MotionPath(object):
         pos_t   = self.target_position(t)
         return (pos_t - 2*pos_t_1 + pos_t_2) / (2*delta_t)
 
+class ScanPath(MotionPath):
+    def __init__(self, limb, kin, total_time, ar_marker_num,
+                start_pos,final_pos, delta_xyz = (0.05,0.05,0.01)):
+        """
+        Parameters
+        ----------
+        limb : :obj:`baxter_interface.Limb` or :obj:`intera_interface.Limb`
+        kin : :obj:`baxter_pykdl.baxter_kinematics` or :obj:`sawyer_pykdl.sawyer_kinematics`
+            must be the same arm as limb
+        total_time : float
+            number of seconds you wish the trajectory to run for
+        start_pos : 3x1 np.array
+        final_pos : 3x1 np.array
+        """
+        super(ScanPath,self).__init__(limb,kin,total_time,ar_marker_num)
+        self.start_pos = start_pos
+        self.final_pos = final_pos
+        
+        self.delta_x, self.delta_y, self.delta_z = delta_xyz
+        self.cur_xy = np.array([0,0])
+        self.duration_up = 2 # the duration of one up motion
+        self.duration_down = 2 # the duration of one down motion
+        self.duration_xy = 2 # the duration of motion in xy plane
+        self.duration = self.duration_down + self.duration_up + self.duration_xy
 
+        delta_pos = final_pos - start_pos
+        self.num_x = int(delta_pos[0] / self.delta_x)
+        self.num_y = int(delta_pos[1] / self.delta_y)
+        self.total_time = self.duration * (self.num_x * self.num_y)
+
+
+    def target_position(self, time:float):
+        """
+        Returns where the arm end effector should be at time t
+
+        Parameters
+        ----------
+        time : float
+
+        Returns
+        -------
+        3x' :obj:`numpy.ndarray`
+           desired x,y,z position in workspace coordinates of the end effector
+        """
+        t0 = time % self.duration
+        def is_xy_motion():
+            return (t0 < self.duration_xy)
+        def is_down_motion():
+            return (t0 < self.duration_xy + self.duration_down and t0 >= self.duration_xy)
+        def is_up_motion():
+            return (t0 < self.duration and t0 >= self.duration_down + self.duration_xy)
+
+        if (is_xy_motion()):
+            self.next_xy0 = self.next_xy()
+            target_xy = t0/float(self.duration) * (self.next_xy0 - self.cur_xy) \
+                        + self.cur_xy
+            return np.array([target_xy[0], target_xy[1], start_pos[2] ])
+        elif (is_down_motion()):
+            self.cur_xy = self.next_xy0
+        elif (is_up_motion()):
+            pass
+        else:
+            raise ValueError("Should not reach here!")
+        
+
+        return super().target_position(time)
+
+    def next_xy(self):
+        """
+        returns the next [x,y] based on current position
+        """
+        x,y = self.cur_xy
+        # if x is at the end
+        if (x == self.num_x and y == self.num_y):
+            return self.cur_xy
+        elif (y == self.num_y):
+            return np.array([x+1,0]) # if y is about to excess
+        else:
+            return np.array([x,y+1])
+
+        
+
+    def to_robot_trajectory(self, num_waypoints:int=100, jointspace=True):
+       return super().to_robot_trajectory(num_waypoints * num_x * num_y,jointspace)
