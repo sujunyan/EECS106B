@@ -72,12 +72,23 @@ class DataRecorder():
         """
         Script to command soft finger.  You can send commands to both fingers, but only the right is attached.
         """
+        self.run_name = 'SystemIdetification_data.csv' 
         self.cmd_pub.publish(SoftGripperCmd(150,150))
         rospy.sleep(3)
         self.cmd_pub.publish(SoftGripperCmd(0,0))
         rospy.sleep(3)
         self.shutdown()
+    
+    def calibrate(self):
+        self.run_name = 'calibration_data.csv' 
+        step_size = 20
+        max_cmd = 200
+        for i in range(0,step_size,max_cmd):
+            self.cmd_pub.publish(SoftGripperCmd(i,i))
+            rospy.sleep(3)
+        self.shutdown()
 
+    
     def shutdown(self):
         """
         Stops the finger and flushes whenever you exit
@@ -88,4 +99,4 @@ class DataRecorder():
 if __name__ == '__main__':
     rospy.init_node('data_recorder')
     dr = DataRecorder('tmp.csv')
-    dr.record_data()
+    dr.calibrate()
