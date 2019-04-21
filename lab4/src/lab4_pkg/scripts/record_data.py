@@ -4,6 +4,7 @@ Script to record data on the soft finger
 Author: Chris Correa
 """
 import numpy as np
+import random
 import pandas as pd
 import csv
 import os
@@ -68,15 +69,16 @@ class DataRecorder():
         filename = os.path.join(os.path.dirname(os.path.realpath('__file__')), 'data', self.run_name)
         df.to_csv(filename)
 
-    def record_data(self):
+    def record_data(self,file_name):
         """
         Script to command soft finger.  You can send commands to both fingers, but only the right is attached.
         """
-        self.run_name = 'SystemIdetification_data.csv' 
-        self.cmd_pub.publish(SoftGripperCmd(150,150))
-        rospy.sleep(3)
-        self.cmd_pub.publish(SoftGripperCmd(0,0))
-        rospy.sleep(3)
+        data_num = 5
+        self.run_name = file_name 
+        for i in range (data_num):
+            pwm_value = random.randint(1,200)
+            self.cmd_pub.publish(SoftGripperCmd(pwm_value,pwm_value))
+            rospy.sleep(3)
         self.shutdown()
     
     def calibrate(self):
@@ -97,6 +99,11 @@ class DataRecorder():
         self.flush()
 
 if __name__ == '__main__':
+    random.seed(0)
     rospy.init_node('data_recorder')
     dr = DataRecorder('tmp.csv')
     dr.calibrate()
+    num_data_set = 5
+    for i in range(num_data_set):
+        dr.record_data("data_%d.csv"%(i))
+    
