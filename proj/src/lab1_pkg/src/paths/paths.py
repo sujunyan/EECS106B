@@ -379,18 +379,23 @@ class ScanPath(MotionPath):
 
         if (is_xy_motion()):
             self.next_xy0 = self.next_xy()
-            target_xy = t0/float(self.duration) * (self.next_xy0 - self.cur_xy) \
+            target_xy = t0/float(self.duration_xy) * (self.next_xy0 - self.cur_xy) \
                         + self.cur_xy
             return np.array([target_xy[0], target_xy[1], start_pos[2] ])
         elif (is_down_motion()):
             self.cur_xy = self.next_xy0
+            delta_z = (t0 - self.duration_xy) / float(self.duration_down) * self.delta_z  
+            target_z = start_pos[2] - delta_z
+            return np.array([self.cur_xy[0], self.cur_xy[1], target_z ])
         elif (is_up_motion()):
-            pass
+            delta_z = (t0 - self.duration_xy - self.duration_down) / float(self.duration_up) * self.delta_z  
+            delta_z = self.delta_z - delta_z
+            target_z = start_pos[2] - delta_z
+            return np.array([self.cur_xy[0], self.cur_xy[1], target_z ])
         else:
             raise ValueError("Should not reach here!")
         
 
-        return super().target_position(time)
 
     def next_xy(self):
         """
@@ -406,6 +411,5 @@ class ScanPath(MotionPath):
             return np.array([x,y+1])
 
         
-
     def to_robot_trajectory(self, num_waypoints:int=100, jointspace=True):
        return super().to_robot_trajectory(num_waypoints * num_x * num_y,jointspace)
