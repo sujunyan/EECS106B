@@ -77,15 +77,17 @@ class DataRecorder():
         self.run_name = file_name 
         for i in range (data_num):
             pwm_value = random.randint(1,200)
+            print('input pwm', pwm_value)
             self.cmd_pub.publish(SoftGripperCmd(pwm_value,pwm_value))
-            rospy.sleep(3)
+            rospy.sleep(1)
         self.shutdown()
     
     def calibrate(self):
         self.run_name = 'calibration_data.csv' 
         step_size = 20
         max_cmd = 200
-        for i in range(0,step_size,max_cmd):
+        for i in range(0,max_cmd,step_size):
+            print('input pwm', i)
             self.cmd_pub.publish(SoftGripperCmd(i,i))
             rospy.sleep(3)
         self.shutdown()
@@ -102,8 +104,9 @@ if __name__ == '__main__':
     random.seed(0)
     rospy.init_node('data_recorder')
     dr = DataRecorder('tmp.csv')
-    dr.calibrate()
-    num_data_set = 5
+    #dr.calibrate()
+    num_data_set = 20
     for i in range(num_data_set):
+        pass
         dr.record_data("data_%d.csv"%(i))
     
