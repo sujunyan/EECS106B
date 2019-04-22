@@ -10,7 +10,7 @@ import time
 import numpy as np
 import signal
 import time
-from paths.paths import *
+from paths.paths import ScanPath
 from utils.utils import *
 from path_planner import PathPlanner
 
@@ -36,10 +36,12 @@ def get_trajectory(task, num_way):
     -------
     :obj:`moveit_msgs.msg.RobotTrajectory`
     """
+    ar_marker_num = None    
     if task == 'scan':
-        start_pos = np.array([0.676, 0.339, 0.202])
-        final_pos = np.array([0.617, 0.812 , 0.169])
-        path = ScanPath(limb,kin,total_time,ar_marker_num,start_pos,final_pos) # ar_marker_num might be redundent
+        start_pos = np.array([0.474, -0.4 , -0.04])
+        final_pos = np.array([0.82, -0.6 , -0.04])
+        path = ScanPath(limb,kin,total_time,ar_marker_num,\
+                        start_pos,final_pos,delta_xyz = (0.05,0.05,0.02)) # ar_marker_num might be redundent
     else:
         raise ValueError('task {} not recognized'.format(task))
     return path.to_robot_trajectory(num_way, True)
@@ -51,8 +53,8 @@ def args_parse():
         'Options: scan.  Default: scan'
     )
 
-    parser.add_argument('-arm', '-a', type=str, default='left', help=
-        'Options: left, right.  Default: left'
+    parser.add_argument('-arm', '-a', type=str, default='right', help=
+        'Options: left, right.  Default: right'
     )
     parser.add_argument('-rate', type=int, default=200, help="""
         This specifies how many ms between loops.  It is important to use a rate
@@ -81,7 +83,7 @@ if __name__ == "__main__":
 
     """
     args = args_parse()
-    rospy.init_node('Unnamed node...')
+    rospy.init_node('Unnamed_node')
     limb = baxter_interface.Limb(args.arm)
     kin = baxter_kinematics(args.arm)
     total_time = 5 # seconds
@@ -90,7 +92,12 @@ if __name__ == "__main__":
     planner = PathPlanner('{}_arm'.format(args.arm))
 
     robot_trajectory = get_trajectory(args.task, args.num_way)
+
+    with open("robot_trajectory","w+") as f:
+        print >>f, robot_trajectory
+        #print("robot_trajectory")
     # Execute to the start point
+    print(robot_trajectory.joint_trajectory.points[0].positions)
     plan = planner.plan_to_joint_pos(robot_trajectory.joint_trajectory.points[0].positions)
     planner.execute_plan(plan)
 

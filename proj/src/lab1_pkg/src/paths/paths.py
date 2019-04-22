@@ -211,15 +211,19 @@ class MotionPath(object):
             joint values to achieve the passed in workspace position
         """
         ik_attempts, theta = 0, None
+        #print("Trying IK with point (%f, %f, %f)"%tuple(x))
         while theta is None and not rospy.is_shutdown():
             theta = self.kin.inverse_kinematics(
                 position=x,
                 orientation=[0, 1, 0, 0]
             )
+            if theta is None:
+                print("IK not found with attempt times %d"%(ik_attempts))
             ik_attempts += 1
             if ik_attempts > max_ik_attempts:
                 print("\n IK failed with point")
                 print(x)
+                raise ValueError("IK failed with point (%f, %f, %f)"%tuple(x))
                 rospy.signal_shutdown(
                     'MAX IK ATTEMPTS EXCEEDED AT x(t)={}'.format(x)
                 )
@@ -325,6 +329,7 @@ class MotionPath(object):
         pos_t   = self.target_position(t)
         return (pos_t - 2*pos_t_1 + pos_t_2) / (2*delta_t)
 
+
 class ScanPath(MotionPath):
     def __init__(self, limb, kin, total_time, ar_marker_num,
                 start_pos,final_pos, delta_xyz = (0.05,0.05,0.01)):
@@ -345,18 +350,18 @@ class ScanPath(MotionPath):
         
         self.delta_x, self.delta_y, self.delta_z = delta_xyz
         self.cur_xy = np.array([0,0])
-        self.duration_up = 2 # the duration of one up motion
-        self.duration_down = 2 # the duration of one down motion
-        self.duration_xy = 2 # the duration of motion in xy plane
+        self.duration_up = 1 # the duration of one up motion
+        self.duration_down = 1 # the duration of one down motion
+        self.duration_xy = 1 # the duration of motion in xy plane
         self.duration = self.duration_down + self.duration_up + self.duration_xy
 
         delta_pos = final_pos - start_pos
-        self.num_x = int(delta_pos[0] / self.delta_x)
-        self.num_y = int(delta_pos[1] / self.delta_y)
+        self.num_x = int(abs(delta_pos[0] / self.delta_x))
+        self.num_y = int(abs(delta_pos[1] / self.delta_y))
         self.total_time = self.duration * (self.num_x * self.num_y)
 
 
-    def target_position(self, time:float):
+    def target_position(self, time):
         """
         Returns where the arm end effector should be at time t
 
@@ -369,6 +374,7 @@ class ScanPath(MotionPath):
         3x' :obj:`numpy.ndarray`
            desired x,y,z position in workspace coordinates of the end effector
         """
+
         t0 = time % self.duration
         def is_xy_motion():
             return (t0 < self.duration_xy)
@@ -376,22 +382,33 @@ class ScanPath(MotionPath):
             return (t0 < self.duration_xy + self.duration_down and t0 >= self.duration_xy)
         def is_up_motion():
             return (t0 < self.duration and t0 >= self.duration_down + self.duration_xy)
+        def grid_to_true(xy):
+            """
+            convert xy in the grid to to true xy
+            """
+            x = xy[0] * self.delta_x + self.start_pos[0]
+            y = xy[1] * self.delta_y + self.start_pos[1]
+            return np.array([x,y])
 
+        start_pos = self.start_pos
         if (is_xy_motion()):
             self.next_xy0 = self.next_xy()
             target_xy = t0/float(self.duration_xy) * (self.next_xy0 - self.cur_xy) \
                         + self.cur_xy
+            target_xy =  grid_to_true(target_xy)
             return np.array([target_xy[0], target_xy[1], start_pos[2] ])
         elif (is_down_motion()):
             self.cur_xy = self.next_xy0
             delta_z = (t0 - self.duration_xy) / float(self.duration_down) * self.delta_z  
             target_z = start_pos[2] - delta_z
-            return np.array([self.cur_xy[0], self.cur_xy[1], target_z ])
+            target_xy =  grid_to_true(self.cur_xy)
+            return np.array([target_xy[0], target_xy[1], target_z ])
         elif (is_up_motion()):
             delta_z = (t0 - self.duration_xy - self.duration_down) / float(self.duration_up) * self.delta_z  
             delta_z = self.delta_z - delta_z
             target_z = start_pos[2] - delta_z
-            return np.array([self.cur_xy[0], self.cur_xy[1], target_z ])
+            target_xy =  grid_to_true(self.cur_xy)
+            return np.array([target_xy[0], target_xy[1], target_z ])
         else:
             raise ValueError("Should not reach here!")
         
@@ -411,5 +428,5 @@ class ScanPath(MotionPath):
             return np.array([x,y+1])
 
         
-    def to_robot_trajectory(self, num_waypoints:int=100, jointspace=True):
-       return super().to_robot_trajectory(num_waypoints * num_x * num_y,jointspace)
+    def to_robot_trajectory(self, num_waypoints =100, jointspace=True):
+       return super(ScanPath,self).to_robot_trajectory(num_waypoints * self.num_x * self.num_y,jointspace)

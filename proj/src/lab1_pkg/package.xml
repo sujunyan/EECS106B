@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>lab1_pkg</name>
-  <version>0.0.0</version>
+  <version>0.1.0</version>
   <description>The EE106B lab1 package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
@@ -40,7 +40,7 @@
   <!-- Use test_depend for packages you need only for testing: -->
   <!--   <test_depend>gtest</test_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
-
+  <build_depend>rospy</build_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

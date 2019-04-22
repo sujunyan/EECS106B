@@ -31,7 +31,7 @@ import numpy as np
 import PyKDL
 
 import rospy
-
+from math import *
 import baxter_interface
 
 from baxter_kdl.kdl_parser import kdl_tree_from_urdf_model
@@ -168,7 +168,6 @@ class baxter_kinematics(object):
             result = np.array([float(angle) for angle in result_angles])
             return result
         else:
-            print 'No IK Solution Found'
             return None
 
     def jacobian(self,joint_values = None):
