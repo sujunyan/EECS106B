@@ -13,16 +13,19 @@ import time
 from paths.paths import ScanPath
 from utils.utils import *
 from path_planner import PathPlanner
-
+import json
+import yaml
 
 import rospy
 import tf
 import baxter_interface
 import moveit_commander
-from moveit_msgs.msg import DisplayTrajectory, RobotState
+from moveit_msgs.msg import DisplayTrajectory, RobotState, RobotTrajectory
 from baxter_pykdl import baxter_kinematics
+from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
+from geometry_msgs.msg import Point
 
-def get_trajectory(task, num_way):
+def get_trajectory(task, num_way, saved_file):
     """
     Returns an appropriate robot trajectory for the specified task.  You should
     be implementing the path functions in paths.py and call them here
@@ -36,7 +39,30 @@ def get_trajectory(task, num_way):
     -------
     :obj:`moveit_msgs.msg.RobotTrajectory`
     """
+    def str2floatList(s):
+        l = s.split()
+        return map(float,l)
     ar_marker_num = None    
+    if (saved_file):
+        with open(saved_file,'r+') as f:
+            s = f.read()
+            y = yaml.load(s)
+            traj = JointTrajectory()
+            traj.joint_names = y['joint_trajectory']['joint_names']
+            points = []
+            for p in y['joint_trajectory']['points']:
+                point = JointTrajectoryPoint()
+                point.positions = str2floatList(p['positions'][0])
+                point.velocities = str2floatList(p['velocities'][0])
+                point.accelerations = str2floatList(p['accelerations'][0])
+                point.time_from_start.secs = float(p['time_from_start']['secs'])
+                point.time_from_start.nsecs = float(p['time_from_start']['nsecs'])
+                points.append(point)
+            traj.points = points
+        robot_traj = RobotTrajectory()
+        robot_traj.joint_trajectory = traj
+        return robot_traj
+
     if task == 'scan':
         start_pos = np.array([0.474, -0.4 , -0.04])
         final_pos = np.array([0.82, -0.6 , -0.04])
@@ -50,7 +76,7 @@ def get_trajectory(task, num_way):
 def args_parse():
     parser = argparse.ArgumentParser()
     parser.add_argument('-task', '-t', type=str, default='scan', help=
-        'Options: scan.  Default: scan'
+        'Options: scan,  Default: scan'
     )
 
     parser.add_argument('-arm', '-a', type=str, default='right', help=
@@ -74,6 +100,9 @@ def args_parse():
         the real robot"""
     )
     parser.add_argument('--store', action='store_true', help='store the trajectory')
+    parser.add_argument('--saved', type=str, default=None, help=
+        'use the saved trajectory'
+    )
     return parser.parse_args()
     
 if __name__ == "__main__":
@@ -91,12 +120,17 @@ if __name__ == "__main__":
 
     planner = PathPlanner('{}_arm'.format(args.arm))
 
-    robot_trajectory = get_trajectory(args.task, args.num_way)
-
-    with open("robot_trajectory","w+") as f:
-        print >>f, robot_trajectory
+    robot_trajectory = get_trajectory(args.task, args.num_way, args.saved)
+    if args.store:
+        print("storing the robot_trajectory")
+        with open("scan","w+") as f:
+            def msg2json(msg):
+                y = yaml.load(str(msg))
+                return json.dumps(y,indent=4)
+            print >>f, str(robot_trajectory)
         #print("robot_trajectory")
     # Execute to the start point
+    
     print(robot_trajectory.joint_trajectory.points[0].positions)
     plan = planner.plan_to_joint_pos(robot_trajectory.joint_trajectory.points[0].positions)
     planner.execute_plan(plan)
@@ -116,4 +150,4 @@ if __name__ == "__main__":
     # uses MoveIt! to execute the trajectory.  make sure to view it in RViz before running this.
     # the lines above will display the trajectory in RViz
     planner.execute_plan(robot_trajectory)
-
+    
