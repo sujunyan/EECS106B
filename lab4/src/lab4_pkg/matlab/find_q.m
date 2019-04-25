@@ -23,7 +23,7 @@ for index = 2:numel(t)
 end
 origin_used_t = toc(tStart);
 tStart = tic;
-%% a faster way to find q
+%% other way to find q
 % n = size(t,1);
 % q_ode_0 = [q0; dq0];
 % [~,qq] = ode45(@q_ode_dynamics0, t, q_ode_0);

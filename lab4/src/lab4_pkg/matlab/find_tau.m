@@ -23,8 +23,8 @@ for index = 2:numel(t)
 end
 origin_used_t = toc(tStart);
 tStart = tic;
-%% a faster way to find tau
-n = size(t,1);
+%% other way to find tau
+%n = size(t,1);
 % tau_ode_0 = [tau0; dtau0];
 % [~,tautau] = ode45(@tau_ode_dynamics0, t, tau_ode_0);
 % now_used_t = toc(tStart);

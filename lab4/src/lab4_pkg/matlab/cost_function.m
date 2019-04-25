@@ -22,6 +22,6 @@ qhat = find_q(tau, t, K, D, q0, dq0);
 error = qhat - q;
 % used_t = toc(tStart);
 %fprintf("cost_function used %f s\n",used_t);
-fprintf("%.12f \t %.12f \t %.12f \t %.12f\n",K,D,alpha,gamma)
+%fprintf("%.12f \t %.12f \t %.12f \t %.12f\n",K,D,alpha,gamma)
 end
 
