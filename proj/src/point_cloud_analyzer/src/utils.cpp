@@ -28,3 +28,14 @@ pcl::PointXYZRGB findCenter(const PointCloud::ConstPtr& msg)
 	
     return track_point;
 }
+
+
+float get2Ddistance(const pcl::PointXYZRGB& a, const pcl::PointXYZRGB& b)
+{
+	return pow(a.x - b.x, 2) + pow(a.y - b.y, 2);
+}
+
+float get3Ddistance(const pcl::PointXYZRGB& a, const pcl::PointXYZRGB& b)
+{
+    return sqrt(pow(a.x - b.x, 2.0) + pow(a.y - b.y, 2.0) + pow(a.z - b.z, 2.0));
+}
