@@ -11,6 +11,7 @@
 #include <pcl/common/common_headers.h>
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/visualization/common/common.h>
+#include <pcl/features/integral_image_normal.h>
 
 //#include <pcl/filters/voxel_grid.h>
 pcl::PointXYZRGB findCenter(const PointCloud::ConstPtr& msg);
@@ -18,8 +19,19 @@ float get2Ddistance(const pcl::PointXYZRGB& a, const pcl::PointXYZRGB& b);
 float get3Ddistance(const pcl::PointXYZRGB& a, const pcl::PointXYZRGB& b);
 float radius2d_membrane = 0.0012;
 float radius3d_deform_limit = 0.028;
+
 PointCloud::Ptr full_membrane;
+PointCloud::Ptr deformed_membrane;
+pcl::PointCloud<pcl::Normal>::Ptr normals;
 pcl::PointXYZRGB center_point;
+
+pcl::PointXYZRGB calibrate_point;    //these two used to find a point, when membrane move to this point,
+                                     //adjust it deform
+float relative_z = 0.09;              
+
+
+
+
 
 PointCloudAnalyzer::PointCloudAnalyzer(/* args */)
 {
@@ -65,6 +77,7 @@ void PointCloudAnalyzer::setup_vis(){
 	std::cout<<"setting up vis \n";
 	pcl::PointCloud<pcl::PointXYZ>::Ptr basic_cloud_ptr (new pcl::PointCloud<pcl::PointXYZ>);
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr point_cloud_ptr (new pcl::PointCloud<pcl::PointXYZRGB>);
+	
 	std::cout << "Creating point cloud\n\n";
 
 	basic_cloud_ptr->width = (int) basic_cloud_ptr->points.size ();
@@ -77,9 +90,11 @@ void PointCloudAnalyzer::setup_vis(){
 	viewer->setBackgroundColor (0, 0, 0);
 	viewer->addPointCloud<pcl::PointXYZRGB> (point_cloud_ptr, "cloud");
 	viewer->addPointCloud<pcl::PointXYZRGB> (point_cloud_ptr, "deformed");
+    //viewer->addPointCloudNormals<pcl::PointXYZRGB, pcl::Normal> (point_cloud_ptr, normals, 10, 0.02, "normals");
+
 	viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "cloud");
 	viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "deformed");
-
+    
 	// viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_LUT, pcl::visualization::PCL_VISUALIZER_LUT_JET, "cloud");
 	viewer->addCoordinateSystem (1.0);
 	viewer->initCameraParameters ();
@@ -100,6 +115,10 @@ PointCloud::Ptr PointCloudAnalyzer::Genfullmem(const PointCloud::ConstPtr& msg)
     
     center_point = findCenter(full_membrane);
 
+    pcl::copyPoint(calibrate_point, center_point);
+
+    calibrate_point.z = relative_z;
+
     for (int c = 0; c < msg->width; c++) {
 		for (int r = 0; r < msg->height; r++) {
 			if (pcl::isFinite(full_membrane->at(c, r))) {
@@ -112,19 +131,63 @@ PointCloud::Ptr PointCloudAnalyzer::Genfullmem(const PointCloud::ConstPtr& msg)
 					full_membrane->at(c, r).x = msg->at(c, r).x;
 					full_membrane->at(c, r).y = msg->at(c, r).y;
 					full_membrane->at(c, r).z = msg->at(c, r).z;	
-					
 					full_membrane->at(c, r).rgb = *reinterpret_cast<float*>(&white);
 
-					// 3D radius to check deformation
-					//if (radius3d < radius3d_deform_limit) {
-					//	full_membrane->at(c, r).rgb = *reinterpret_cast<float*>(&green);
-					//}							
+					
 			}
 		}
 	}  
 	
   }
     return full_membrane;
+}
+
+
+
+
+PointCloud::Ptr PointCloudAnalyzer::Gendeformem(const PointCloud::Ptr& msg)
+{   
+
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr deformed_membrane (new pcl::PointCloud<pcl::PointXYZRGB>);
+    deformed_membrane->width = msg->width;
+	deformed_membrane->height = msg->height;
+	deformed_membrane->resize(full_membrane->height*full_membrane->width);
+
+	for (int c = 0; c < msg->width; c++) {
+		for (int r = 0; r < msg->height; r++) {
+			if (pcl::isFinite(msg->at(c, r))) {
+                    
+                    //get 3D deformation area
+					float radius3d = get3Ddistance(msg->at(c,r), calibrate_point);
+
+			         if (radius3d < radius3d_deform_limit) {
+                     
+                    deformed_membrane->at(c, r).x = msg->at(c, r).x;
+					deformed_membrane->at(c, r).y = msg->at(c, r).y;
+					deformed_membrane->at(c, r).z = msg->at(c, r).z;
+
+	                deformed_membrane->at(c, r).rgb = *reinterpret_cast<float*>(&green);
+
+	                 }
+			
+	             }
+           }
+     }
+    return deformed_membrane;
+}
+
+pcl::PointCloud<pcl::Normal>::Ptr PointCloudAnalyzer::Getnormal(PointCloud::Ptr& msg)
+{
+	pcl::PointCloud<pcl::Normal>::Ptr normals (new pcl::PointCloud<pcl::Normal>);
+  	pcl::IntegralImageNormalEstimation<pcl::PointXYZRGB, pcl::Normal> ne;
+  	ne.setNormalEstimationMethod(ne.AVERAGE_3D_GRADIENT);
+  	ne.setMaxDepthChangeFactor(0.02f);
+  	ne.setNormalSmoothingSize(10.0f);
+  	ne.setInputCloud(msg);
+  	ne.compute(*normals);
+    
+    return normals;
+
 }
 
 
@@ -136,11 +199,18 @@ void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
     printf ("Cloud: width = %d, height = %d\n", msg->width, msg->height);
    
         
-    PointCloud::Ptr full_membrane = Genfullmem(msg);
-    
+    full_membrane = Genfullmem(msg);
+    normals = Getnormal(full_membrane);
+    deformed_membrane = Gendeformem(full_membrane);
+   
+
+
    
     viewer->updatePointCloud(full_membrane, "cloud");
+    viewer->updatePointCloud(deformed_membrane, "deformed");
 
+    viewer->removePointCloud("normals", 0);
+    viewer->addPointCloudNormals<pcl::PointXYZRGB, pcl::Normal> (full_membrane, normals, 10, 0.005, "normals");
 }
 
 void PointCloudAnalyzer::start(){
