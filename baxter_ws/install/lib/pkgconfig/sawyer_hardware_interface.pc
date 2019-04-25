@@ -1,0 +1,8 @@
+prefix=/scratch/shared/baxter_ws/install
+
+Name: sawyer_hardware_interface
+Description: Description of sawyer_hardware_interface
+Version: 5.2.0
+Cflags: -I/scratch/shared/baxter_ws/install/include
+Libs: -L/scratch/shared/baxter_ws/install/lib 
+Requires: hardware_interface roscpp

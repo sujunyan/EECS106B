@@ -1,0 +1,8 @@
+prefix=/scratch/shared/baxter_ws/install
+
+Name: intera_interface
+Description: Description of intera_interface
+Version: 5.2.0
+Cflags: -I/scratch/shared/baxter_ws/install/include
+Libs: -L/scratch/shared/baxter_ws/install/lib 
+Requires: cv_bridge rospy actionlib sensor_msgs std_msgs control_msgs trajectory_msgs dynamic_reconfigure intera_core_msgs intera_motion_msgs

@@ -1,0 +1,112 @@
+[baxter] origin/HEAD -> origin/master
+[baxter]   origin/development
+[baxter]   origin/gazebo_dev
+[baxter]   origin/master
+[baxter]   origin/release-0.6.1
+[baxter]   origin/release-0.6.1-catkinized
+[baxter]   origin/release-0.6.1-demo
+[baxter]   origin/release-0.6.2
+[baxter]   origin/release-0.6.2-catkinized
+[baxter]   origin/release-0.7.0
+[baxter]   origin/release-1.0.0
+[baxter]   origin/release-1.1.0
+[baxter]   origin/release-1.1.1
+[baxter]   origin/release-1.2.0
+[baxter]   origin/user_contributions
+[baxter_common] origin/HEAD -> origin/master
+[baxter_common]   origin/arg_grippers_xacro
+[baxter_common]   origin/b6eb091
+[baxter_common]   origin/development
+[baxter_common]   origin/gazebo_development
+[baxter_common]   origin/kinetic-devel
+[baxter_common]   origin/kinetic_optional_gripper
+[baxter_common]   origin/master
+[baxter_common]   origin/none_finger_tip
+[baxter_common]   origin/optional_gripper
+[baxter_common]   origin/release-0.7.0
+[baxter_common]   origin/release-1.0.0
+[baxter_common]   origin/release-1.0.1
+[baxter_common]   origin/release-1.1.0
+[baxter_common]   origin/release-1.1.1
+[baxter_common]   origin/release-1.2.0
+[baxter_examples] origin/HEAD -> origin/master
+[baxter_examples]   origin/development
+[baxter_examples]   origin/master
+[baxter_examples]   origin/release-0.7.0
+[baxter_examples]   origin/release-1.0.0
+[baxter_examples]   origin/release-1.1.0
+[baxter_examples]   origin/release-1.1.1
+[baxter_examples]   origin/release-1.2.0
+[baxter_examples]   origin/xacro_kinetic
+[baxter_interface] origin/HEAD -> origin/master
+[baxter_interface]   origin/development
+[baxter_interface]   origin/master
+[baxter_interface]   origin/release-0.7.0
+[baxter_interface]   origin/release-1.0.0
+[baxter_interface]   origin/release-1.1.0
+[baxter_interface]   origin/release-1.1.1
+[baxter_interface]   origin/release-1.2.0
+[baxter_simulator] origin/HEAD -> origin/master
+[baxter_simulator]   origin/add_dep_robot_state
+[baxter_simulator]   origin/development
+[baxter_simulator]   origin/forward_group_sim_controllers
+[baxter_simulator]   origin/indigo-optional-grippers
+[baxter_simulator]   origin/kinetic-devel
+[baxter_simulator]   origin/kinetic-optional-grippers
+[baxter_simulator]   origin/master
+[baxter_simulator]   origin/release-0.7.0
+[baxter_simulator]   origin/release-0.8.0
+[baxter_simulator]   origin/release-0.8.1
+[baxter_simulator]   origin/release-0.9.0
+[baxter_simulator]   origin/release-0.9.1
+[baxter_simulator]   origin/release-1.2.0
+[baxter_simulator]   origin/release-1.2.1
+[baxter_simulator]   origin/release-1.2.12
+[baxter_tools] origin/HEAD -> origin/master
+[baxter_tools]   origin/development
+[baxter_tools]   origin/master
+[baxter_tools]   origin/release-0.7.0
+[baxter_tools]   origin/release-1.0.0
+[baxter_tools]   origin/release-1.1.0
+[baxter_tools]   origin/release-1.1.1
+[baxter_tools]   origin/release-1.2.0
+[intera_common] origin/HEAD -> origin/master
+[intera_common]   origin/collision_avoidance_torque
+[intera_common]   origin/development
+[intera_common]   origin/intera-tests-5.1.0
+[intera_common]   origin/intera-tests-5.2.2
+[intera_common]   origin/io_pkg_update
+[intera_common]   origin/master
+[intera_common]   origin/release-5.0.4
+[intera_common]   origin/release-5.1.0
+[intera_common]   origin/release-5.2.0
+[intera_common]   origin/release-5.3.0
+[intera_sdk] origin/HEAD -> origin/master
+[intera_sdk]   origin/development
+[intera_sdk]   origin/intera-tests-5.1.0
+[intera_sdk]   origin/jtas_debug_info
+[intera_sdk]   origin/master
+[intera_sdk]   origin/mpk_setRngSeedOption
+[intera_sdk]   origin/release-5.0.4
+[intera_sdk]   origin/release-5.1.0
+[intera_sdk]   origin/release-5.2.0
+[intera_sdk]   origin/release-5.3.0
+[intera_sdk]   origin/urdf_kinetic_fix
+[moveit_robots] origin/HEAD -> origin/kinetic-devel
+[moveit_robots]   origin/indigo-devel
+[moveit_robots]   origin/kinetic-devel
+[sawyer_moveit] origin/HEAD -> origin/master
+[sawyer_moveit]   origin/development
+[sawyer_moveit]   origin/master
+[sawyer_moveit]   origin/release-5.0.4
+[sawyer_moveit]   origin/release-5.1.0
+[sawyer_moveit]   origin/release-5.2.0
+[sawyer_moveit]   origin/release-5.3.0
+[sawyer_robot] origin/HEAD -> origin/master
+[sawyer_robot]   origin/add_cognex_strobe
+[sawyer_robot]   origin/development
+[sawyer_robot]   origin/master
+[sawyer_robot]   origin/release-5.0.4
+[sawyer_robot]   origin/release-5.1.0
+[sawyer_robot]   origin/release-5.2.0
+[sawyer_robot]   origin/release-5.3.0

@@ -207,10 +207,12 @@ add_definitions(${PCL_DEFINITIONS})
 
 set(HEADERS
   "${CMAKE_CURRENT_SOURCE_DIR}/inc/PointCloudAnalyzer.hpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/inc/utils.hpp"
   )
 
 set(SRC 
   "${CMAKE_CURRENT_SOURCE_DIR}/src/PointCloudAnalyzer.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/utils.cpp"
 )
 
 #add_executable(pcl_analyze src/pcl_analyze.cpp)

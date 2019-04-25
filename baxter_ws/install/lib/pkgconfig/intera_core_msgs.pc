@@ -1,0 +1,8 @@
+prefix=/scratch/shared/baxter_ws/install
+
+Name: intera_core_msgs
+Description: Description of intera_core_msgs
+Version: 5.2.0
+Cflags: -I/scratch/shared/baxter_ws/install/include
+Libs: -L/scratch/shared/baxter_ws/install/lib 
+Requires: message_runtime std_msgs geometry_msgs sensor_msgs actionlib_msgs

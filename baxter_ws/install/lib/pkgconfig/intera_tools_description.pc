@@ -1,0 +1,8 @@
+prefix=/scratch/shared/baxter_ws/install
+
+Name: intera_tools_description
+Description: Description of intera_tools_description
+Version: 5.2.0
+Cflags: 
+Libs: -L/scratch/shared/baxter_ws/install/lib 
+Requires: 

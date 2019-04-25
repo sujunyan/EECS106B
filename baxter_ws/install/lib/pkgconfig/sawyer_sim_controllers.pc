@@ -1,0 +1,8 @@
+prefix=/scratch/shared/baxter_ws/install
+
+Name: sawyer_sim_controllers
+Description: Description of sawyer_sim_controllers
+Version: 5.2.0
+Cflags: -I/scratch/shared/baxter_ws/install/include
+Libs: -L/scratch/shared/baxter_ws/install/lib -lsawyer_sim_controllers
+Requires: sawyer_hardware_interface roscpp
