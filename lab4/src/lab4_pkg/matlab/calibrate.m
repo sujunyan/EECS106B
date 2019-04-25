@@ -10,7 +10,7 @@ R2 = 1; % should be R2 = 47k in real, but doesnot matter
 R_flex = (1024*ones(n,1)./flex - ones(n,1) ) * R2;
 
 f = fit(R_flex,angle,'poly1');
-%plot(f,R_flex,angle);
+% plot(f,R_flex,angle);
 
 %% Generate the matlab function flex2angle
 syms flex;
