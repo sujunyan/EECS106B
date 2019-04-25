@@ -6,6 +6,9 @@
 #include <math.h>
 
 
-typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
+typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloud;
 
 pcl::PointXYZRGB findCenter(const PointCloud::ConstPtr& msg);
+
+float get2Ddistance(const pcl::PointXYZRGB& a, const pcl::PointXYZRGB& b);
+float get3Ddistance(const pcl::PointXYZRGB& a, const pcl::PointXYZRGB& b);

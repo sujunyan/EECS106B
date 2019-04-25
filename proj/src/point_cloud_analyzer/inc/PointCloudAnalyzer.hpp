@@ -14,7 +14,8 @@
 #include <utils.hpp>
 
 
-typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
+typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloud;
+
 class PointCloudAnalyzer
 {
 private:
@@ -27,7 +28,7 @@ private:
     void setup_parameter();
     void setup_vis();
     void callback(const PointCloud::ConstPtr& msg);
-
+    PointCloud::Ptr Genfullmem(const PointCloud::ConstPtr& msg);
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer;
     
     ros::NodeHandle nh;
@@ -54,11 +55,10 @@ private:
     uint8_t b_red = 113;
     uint32_t red = ((uint32_t) r_red << 16 | (uint32_t)g_red << 8 | (uint32_t)b_red);
     
-
-
-    float radius3d_deform_limit = 0.028;
-
-    pcl::PointXYZRGB track_point;
+    PointCloud::Ptr full_membrane;
+    pcl::PointXYZRGB center_point;
+    
+    //pcl::PointXYZRGB track_point;
 };
 
 
