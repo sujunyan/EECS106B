@@ -51,7 +51,7 @@ for col=1:length(dataArray)-1
 end
 numericData = NaN(size(dataArray{1},1),size(dataArray,2));
 
-for col=[1,2,3,4,5,6,7,8,9,10,11]
+for col=[1,2,3,4,5,6,7,8,9,10,11,12]
     % Converts text in the input cell array to numbers. Replaced non-numeric
     % text with NaN.
     rawData = dataArray{col};
@@ -87,15 +87,15 @@ end
 
 %% Create output variable
 data = table;
-data.time = cell2mat(raw(:, 1));
-data.left_pwm = cell2mat(raw(:, 2));
-data.right_pwm = cell2mat(raw(:, 3));
-data.left_pressure = cell2mat(raw(:, 4));
-data.right_pressure = cell2mat(raw(:, 5));
-data.left_flex = cell2mat(raw(:, 6));
-data.right_flex = cell2mat(raw(:, 7));
-data.base_pos_x = cell2mat(raw(:, 8));
-data.base_pos_y = cell2mat(raw(:, 9));
-data.tip_pos_x = cell2mat(raw(:, 10));
-data.tip_pos_y = cell2mat(raw(:, 11));
+data.time = cell2mat(raw(:, 2));
+data.left_pwm = cell2mat(raw(:, 3));
+data.right_pwm = cell2mat(raw(:, 4));
+data.left_pressure = cell2mat(raw(:, 5));
+data.right_pressure = cell2mat(raw(:, 6));
+data.left_flex = cell2mat(raw(:, 7));
+data.right_flex = cell2mat(raw(:, 8));
+data.base_pos_x = cell2mat(raw(:, 9));
+data.base_pos_y = cell2mat(raw(:, 10));
+data.tip_pos_x = cell2mat(raw(:, 11));
+data.tip_pos_y = cell2mat(raw(:, 12));
 
