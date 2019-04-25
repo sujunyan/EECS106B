@@ -1,0 +1,8 @@
+prefix=/scratch/shared/baxter_ws/install
+
+Name: sawyer_moveit_config
+Description: Description of sawyer_moveit_config
+Version: 5.2.0
+Cflags: 
+Libs: -L/scratch/shared/baxter_ws/install/lib 
+Requires: 

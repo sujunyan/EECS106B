@@ -1,0 +1,8 @@
+prefix=/scratch/shared/baxter_ws/install
+
+Name: sawyer_sim_examples
+Description: Description of sawyer_sim_examples
+Version: 5.2.0
+Cflags: 
+Libs: -L/scratch/shared/baxter_ws/install/lib 
+Requires: rospy intera_core_msgs gazebo_msgs

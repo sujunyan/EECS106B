@@ -1,4 +1,5 @@
 #include "PointCloudAnalyzer.hpp"
+
 #include "std_msgs/String.h"
 #include "std_msgs/Float32.h"
 #include "std_msgs/UInt32.h"
@@ -10,7 +11,12 @@
 #include <pcl/common/common_headers.h>
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/visualization/common/common.h>
+
 //#include <pcl/filters/voxel_grid.h>
+pcl::PointXYZRGB findCenter(const PointCloud::ConstPtr& msg);
+
+float radius2d_membrane = 0.0012;
+float radius3d_deform_limit = 0.028;
 
 PointCloudAnalyzer::PointCloudAnalyzer(/* args */)
 {
@@ -65,7 +71,7 @@ void PointCloudAnalyzer::setup_vis(){
 
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer0 (new pcl::visualization::PCLVisualizer ("3D Viewer"));
 	viewer = viewer0;
-	viewer->setBackgroundColor (255, 255, 255);
+	viewer->setBackgroundColor (0, 0, 0);
 	viewer->addPointCloud<pcl::PointXYZRGB> (point_cloud_ptr, "cloud");
 	viewer->addPointCloud<pcl::PointXYZRGB> (point_cloud_ptr, "deformed");
 	viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "cloud");
@@ -79,24 +85,63 @@ void PointCloudAnalyzer::setup_vis(){
 	std::cout << "Created point cloud\n";
 }
 
-void PointCloudAnalyzer::callback(const sensor_msgs::PointCloud2ConstPtr& msg)
+void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
 {
 	std::cout << "PointCloud message recieved\n";
 
-	pcl::PCLPointCloud2 pcl_pc2;
-    pcl_conversions::toPCL(*msg,pcl_pc2);
-    pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_msg(new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::fromPCLPointCloud2(pcl_pc2,*pcl_msg);
+    printf ("Cloud: width = %d, height = %d\n", msg->width, msg->height);
 
-	printf ("Cloud: width = %d, height = %d\n", pcl_msg->width, pcl_msg->height);
-	viewer->updatePointCloud(pcl_msg, "cloud");
-	viewer->updatePointCloud(pcl_msg, "deformed");
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr full_membrane (new pcl::PointCloud<pcl::PointXYZRGB>);
+
+    full_membrane->width = msg->width;
+	full_membrane->height = msg->height;
+	full_membrane->resize(full_membrane->height*full_membrane->width);
+    
+    pcl::PointXYZRGB track_point;
+
+    track_point = findCenter(msg);
+    
+    std::cout << "test track_point"<< track_point.x <<" "<<track_point.y <<" "<<track_point.z<<"\n";
+
+
+	 //0.028;
+
+	// Create the point cloud for the full membrane
+	for (int c = 0; c < msg->width; c++) {
+		for (int r = 0; r < msg->height; r++) {
+			if (pcl::isFinite(full_membrane->at(c, r))) {
+				float radius_2d_squared = pow(msg->at(c, r).x - track_point.x, 2.0) + pow(msg->at(c, r).y - track_point.y, 2.0);
+				float radius3d = sqrt(pow(msg->at(c, r).x - track_point.x, 2.0) + pow(msg->at(c, r).y - track_point.y, 2.0) + pow(msg->at(c, r).z - 0.09, 2.0));
+                //std::cout << "test radius_2d_squared"<< radius_2d_squared <<"radius2d_membran"<<radius2d_membrane <<"\n";
+				if (radius_2d_squared < radius2d_membrane) {
+
+					full_membrane->at(c, r).x = msg->at(c, r).x;
+					full_membrane->at(c, r).y = msg->at(c, r).y;
+					full_membrane->at(c, r).z = msg->at(c, r).z;	
+					
+					full_membrane->at(c, r).rgb = *reinterpret_cast<float*>(&white);
+
+					// 3D radius to check deformation
+					if (radius3d < radius3d_deform_limit) {
+						full_membrane->at(c, r).rgb = *reinterpret_cast<float*>(&green);
+					}
+				//}				
+			}
+		}
+	}
+	
+
+
+	
+
+	viewer->updatePointCloud(full_membrane, "cloud");
+	//viewer->updatePointCloud(pcl_msg, "deformed");
 }
 
 
 
 void PointCloudAnalyzer::start(){
-	point_cloud_sub = nh.subscribe<sensor_msgs::PointCloud2>("/royale_camera_driver/point_cloud", 1, &PointCloudAnalyzer::callback, this);
+	point_cloud_sub = nh.subscribe<pcl::PointCloud<pcl::PointXYZ>>("/royale_camera_driver/point_cloud", 1, &PointCloudAnalyzer::callback, this);
 	//point_cloud_sub = nh.subscribe<sensor_msgs::PointCloud2>("/royale_camera_driver/point_cloud", 10, callback );
 	ros::Rate r(10); // 10 hz
 	while (!viewer->wasStopped ())
