@@ -12,6 +12,7 @@ function [error] = cost_function(K, D, alpha, gamma, t, u, q, q0, dq0, tau0, dta
 %   tau0 is the initial torque (probably zero)
 %   dtau0 is the initial jerk (probably zero)
 
+tStart = tic;
 % Integrate to find tau as a function of time
 tau = find_tau(u, t, alpha, gamma, tau0, dtau0);
 
@@ -19,6 +20,7 @@ tau = find_tau(u, t, alpha, gamma, tau0, dtau0);
 qhat = find_q(tau, t, K, D, q0, dq0);
 
 error = qhat - q;
-
+% used_t = toc(tStart);
+%fprintf("cost_function used %f s\n",used_t);
 end
 
