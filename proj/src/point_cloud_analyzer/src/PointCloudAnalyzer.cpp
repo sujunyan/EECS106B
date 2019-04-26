@@ -25,6 +25,7 @@ float get3Ddistance(const pcl::PointXYZRGB& a, const pcl::PointXYZRGB& b);
 float radius2d_membrane = 0.0012;
 float radius3d_deform_limit = 0.028;
 
+PointCloud::Ptr map_ptr;
 PointCloud::Ptr full_membrane;
 PointCloud::Ptr deformed_membrane;
 PointCloud::Ptr contact_membrane;
@@ -85,6 +86,8 @@ void PointCloudAnalyzer::setup_vis(){
 	std::cout<<"setting up vis \n";
 	pcl::PointCloud<pcl::PointXYZ>::Ptr basic_cloud_ptr (new pcl::PointCloud<pcl::PointXYZ>);
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr point_cloud_ptr (new pcl::PointCloud<pcl::PointXYZRGB>);
+	map_ptr = (PointCloud::Ptr) new pcl::PointCloud<pcl::PointXYZRGB>;
+	//pcl::PointCloud<pcl::PointXYZRGB>::Ptr map_cloud_ptr (new pcl::PointCloud<pcl::PointXYZRGB>);
 	
 	std::cout << "Creating point cloud\n\n";
 
@@ -94,7 +97,10 @@ void PointCloudAnalyzer::setup_vis(){
 	point_cloud_ptr->height = 1;
 
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer0 (new pcl::visualization::PCLVisualizer ("3D Viewer"));
+	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer2 (new pcl::visualization::PCLVisualizer ("3D Map"));
+
 	viewer = viewer0;
+	viewer1 = viewer2;
 	viewer->setBackgroundColor (0, 0, 0);
 	viewer->addPointCloud<pcl::PointXYZRGB> (point_cloud_ptr, "cloud");
 	viewer->addPointCloud<pcl::PointXYZRGB> (point_cloud_ptr, "deformed");
@@ -115,14 +121,21 @@ void PointCloudAnalyzer::setup_vis(){
 
     std::vector<double> origin(3,0);
     viewer->addPlane (coeffs, origin[0],origin[1],origin[2], "plane");
-
-
-
 	viewer->addCoordinateSystem (0.1);
+
+	viewer1->setBackgroundColor (0, 0, 0);
+    viewer1->addPointCloud<pcl::PointXYZRGB> (map_ptr, "map");
+    viewer1->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE,2,"map");
+
+    
+    viewer1->addPlane (coeffs, origin[0], origin[1], origin[3], "baseplane");
+    viewer1->addCoordinateSystem(0.1);
+
+
 	//viewer->initCameraParameters ();
 	//viewer->removeCoordinateSystem();
 
-	std::cout << "Created point cloud\n";
+	//std::cout << "Created point cloud\n";
 }
 
 
@@ -151,7 +164,7 @@ PointCloud::Ptr PointCloudAnalyzer::Genfullmem(const PointCloud::ConstPtr& msg)
 				//float radius3d = sqrt(pow(msg->at(c, r).x - track_point.x, 2.0) + pow(msg->at(c, r).y - track_point.y, 2.0) + pow(msg->at(c, r).z - 0.09, 2.0));
                 
 				if (radius_2d_squared < radius2d_membrane) {
-
+                    
 					full_membrane->at(c, r).x = msg->at(c, r).x;
 					full_membrane->at(c, r).y = msg->at(c, r).y;
 					full_membrane->at(c, r).z = msg->at(c, r).z;	
@@ -186,7 +199,7 @@ PointCloud::Ptr PointCloudAnalyzer::Gendeformem(const PointCloud::Ptr& msg)
 					float radius3d = get3Ddistance(msg->at(c,r), calibrate_point);
 
 			         if (radius3d < radius3d_deform_limit) {
-                     
+                    //std::cout<<"deforme"<<"\n";
                     deformed_membrane->at(c, r).x = msg->at(c, r).x;
 					deformed_membrane->at(c, r).y = msg->at(c, r).y;
 					deformed_membrane->at(c, r).z = msg->at(c, r).z;
@@ -268,6 +281,18 @@ PointCloud::Ptr PointCloudAnalyzer::Gencontact(const PointCloud::Ptr& msg)
  	return contact_membrane;
 }
 
+void PointCloudAnalyzer::addcontact(const PointCloud::Ptr& msg)
+{
+	for (int c = 0 ; c < 224  ; c++) {
+		for (int r = 0; r < 171  ; r++) {
+			 if (pcl::isFinite(msg->at(c,r))){
+			 	     std::cout<<"if enter add"<<"\n";
+	                  map_ptr->push_back(msg->at(c,r));
+	                 std::cout<<"if add success"<<"\n";
+	              }
+	          }
+	      }
+}
 
 void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
 {
@@ -283,13 +308,18 @@ void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
     normals = Getnormal(full_membrane);
 
     contact_membrane = Gencontact(deformed_membrane);
+    
+    addcontact(contact_membrane);
+
 
     std::cout<<"contact_membrane frame_id "<<contact_membrane->header.frame_id<<"\n";
     
-    //viewer->updatePointCloud(full_membrane, "cloud");
-    //viewer->updatePointCloud(deformed_membrane, "deformed");
+    viewer->updatePointCloud(full_membrane, "cloud");
+    viewer->updatePointCloud(deformed_membrane, "deformed");
     viewer->updatePointCloud(contact_membrane, "contact");
     
+
+    //viewer1->updatePointCloud(contact_membrane, "map");
     /*
     sensor_msgs::PointCloud2 cloud2;
     pcl::toROSMsg(*contact_membrane, cloud2);
@@ -312,10 +342,11 @@ void PointCloudAnalyzer::start(){
 	//point_cloud_sub = nh.subscribe<sensor_msgs::PointCloud2>("/royale_camera_driver/point_cloud", 10, callback );
 	ros::Rate r(10); // 10 hz
 
-	while (!viewer->wasStopped ())
+	while (!viewer->wasStopped () && !viewer1->wasStopped())
 	{   
 		//pcl_conversions::toPCL(ros::Time::now(), contact_membrane->header.stamp);
 		viewer->spinOnce (100);
+		viewer1->spinOnce (100);
 		ros::spinOnce();
 		r.sleep(); // TODO might has a bug
 		//pub.publish (*contact_membrane);
