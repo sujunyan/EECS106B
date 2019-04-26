@@ -20,6 +20,12 @@ class PointCloudAnalyzer
 {
 private:
     /* data */
+    PointCloud::Ptr full_membrane;
+    PointCloud::Ptr deformed_membrane;
+    pcl::PointCloud<pcl::Normal>::Ptr normals;
+    pcl::PointXYZRGB center_point;
+    pcl::PointXYZRGB calibrate_point; 
+
 public:
     PointCloudAnalyzer(/* args */);
     ~PointCloudAnalyzer();
@@ -28,7 +34,7 @@ private:
     void setup_parameter();
     void setup_vis();
     void callback(const PointCloud::ConstPtr& msg);
-    PointCloud::Ptr Genfullmem(const PointCloud::ConstPtr& msg);
+
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer;
     
     ros::NodeHandle nh;
@@ -38,6 +44,10 @@ private:
 	ros::Publisher exposure_pub;
     
     ros::Subscriber point_cloud_sub;
+
+    PointCloud::Ptr Genfullmem(const PointCloud::ConstPtr& msg);
+    PointCloud::Ptr Gendeformem(const PointCloud::Ptr& msg);
+    pcl::PointCloud<pcl::Normal>::Ptr Getnormal(PointCloud::Ptr& msg);
 
     //color of area      green for deformation   white for membrane
     uint8_t r_green = 113;
@@ -55,8 +65,8 @@ private:
     uint8_t b_red = 113;
     uint32_t red = ((uint32_t) r_red << 16 | (uint32_t)g_red << 8 | (uint32_t)b_red);
     
-    PointCloud::Ptr full_membrane;
-    pcl::PointXYZRGB center_point;
+    
+    
     
     //pcl::PointXYZRGB track_point;
 };

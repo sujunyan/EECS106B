@@ -21,7 +21,6 @@ pcl::PointXYZRGB findCenter(const PointCloud::ConstPtr& msg)
 
 	pcl::PointXYZRGB track_point;
 
-  	
 	track_point.x = msg->at(col, row).x;
 	track_point.y = msg->at(col, row).y;
 	track_point.z = msg->at(col, row).z;
