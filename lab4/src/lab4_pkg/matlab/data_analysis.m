@@ -10,9 +10,6 @@ addpath( genpath( [cur, '/gen/' ] ));
 
 %% Load CSV
 
-% q0 = 0;
-% dq0 = 0;
-
 data = importdata('data/data_0.csv');
 t = data.time; u = data.right_pwm;
 q = flex2angle(data.right_flex);
@@ -31,14 +28,15 @@ x0 = [2020.799291556778, 778.459224920680, 3.077191660625, 0.034022577055]; % ne
 % [X, resnorm] = lsqnonlin(cost, x0,[],[],options)
 
 %% validation for other data sets
-fprintf("Data set \t cost \n");
-file_name = sprintf("data/calibration_data.csv");
-c = calculate_cost(file_name,x0);
-fprintf("%2d \t\t %.6f\n",0,norm(c,inf));
-for i = 1:19
+% fprintf("Data set \t cost \n");
+% file_name = sprintf("data/calibration_data.csv");
+% c = calculate_cost(file_name,x0);
+% fprintf("%2d \t\t %.6f\n",0,norm(c,inf));
+for i = 1:10
     file_name = sprintf("data/data_%d.csv",i);
     c = calculate_cost(file_name,x0);
     fprintf("%2d \t\t %.6f\n",i,norm(c,inf));
+    c_list(i) = norm(c,inf);
 end
 function c = calculate_cost(file_name,x0)
     data = importdata(file_name);
