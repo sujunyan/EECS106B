@@ -319,7 +319,7 @@ void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
     viewer->updatePointCloud(contact_membrane, "contact");
     
 
-    //viewer1->updatePointCloud(contact_membrane, "map");
+    viewer1->updatePointCloud(map_ptr, "map");
     /*
     sensor_msgs::PointCloud2 cloud2;
     pcl::toROSMsg(*contact_membrane, cloud2);
