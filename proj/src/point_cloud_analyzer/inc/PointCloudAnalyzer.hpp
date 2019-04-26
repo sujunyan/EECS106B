@@ -22,7 +22,9 @@ private:
     /* data */
     PointCloud::Ptr full_membrane;
     PointCloud::Ptr deformed_membrane;
+    PointCloud::Ptr contact_membrane;
     pcl::PointCloud<pcl::Normal>::Ptr normals;
+    
     pcl::PointXYZRGB center_point;
     pcl::PointXYZRGB calibrate_point; 
 
@@ -47,6 +49,7 @@ private:
 
     PointCloud::Ptr Genfullmem(const PointCloud::ConstPtr& msg);
     PointCloud::Ptr Gendeformem(const PointCloud::Ptr& msg);
+    PointCloud::Ptr Gencontact(const PointCloud::Ptr& msg);
     pcl::PointCloud<pcl::Normal>::Ptr Getnormal(PointCloud::Ptr& msg);
 
     //color of area      green for deformation   white for membrane

@@ -12,6 +12,7 @@
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/visualization/common/common.h>
 #include <pcl/features/integral_image_normal.h>
+#include <pcl/search/impl/search.hpp>
 
 //#include <pcl/filters/voxel_grid.h>
 pcl::PointXYZRGB findCenter(const PointCloud::ConstPtr& msg);
@@ -22,13 +23,15 @@ float radius3d_deform_limit = 0.028;
 
 PointCloud::Ptr full_membrane;
 PointCloud::Ptr deformed_membrane;
+PointCloud::Ptr contact_membrane;
 pcl::PointCloud<pcl::Normal>::Ptr normals;
 pcl::PointXYZRGB center_point;
 
-pcl::PointXYZRGB calibrate_point;    //these two used to find a point, when membrane move to this point,
+pcl::PointXYZRGB calibrate_point;    //used to find a point, when membrane move to this point,
                                      //adjust it deform
-float relative_z = 0.09;              
-
+float relative_z = 0.09;             // calibrate z 
+ 
+int k = 10;                          // the interval of point cloud to compute the concavity
 
 
 
@@ -90,13 +93,14 @@ void PointCloudAnalyzer::setup_vis(){
 	viewer->setBackgroundColor (0, 0, 0);
 	viewer->addPointCloud<pcl::PointXYZRGB> (point_cloud_ptr, "cloud");
 	viewer->addPointCloud<pcl::PointXYZRGB> (point_cloud_ptr, "deformed");
+	viewer->addPointCloud<pcl::PointXYZRGB> (point_cloud_ptr, "contact");
     //viewer->addPointCloudNormals<pcl::PointXYZRGB, pcl::Normal> (point_cloud_ptr, normals, 10, 0.02, "normals");
 
 	viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "cloud");
 	viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "deformed");
-    
+    viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "contact");
 	// viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_LUT, pcl::visualization::PCL_VISUALIZER_LUT_JET, "cloud");
-	viewer->addCoordinateSystem (1.0);
+	viewer->addCoordinateSystem (0.1);
 	viewer->initCameraParameters ();
 	viewer->removeCoordinateSystem();
 
@@ -105,7 +109,9 @@ void PointCloudAnalyzer::setup_vis(){
 
 
 PointCloud::Ptr PointCloudAnalyzer::Genfullmem(const PointCloud::ConstPtr& msg)
-{
+{    
+
+	
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr full_membrane (new pcl::PointCloud<pcl::PointXYZRGB>);
     full_membrane->width = msg->width;
 	full_membrane->height = msg->height;
@@ -139,6 +145,7 @@ PointCloud::Ptr PointCloudAnalyzer::Genfullmem(const PointCloud::ConstPtr& msg)
 	}  
 	
   }
+    std::cout << "generate fullmembrane" <<"\n";
     return full_membrane;
 }
 
@@ -147,7 +154,7 @@ PointCloud::Ptr PointCloudAnalyzer::Genfullmem(const PointCloud::ConstPtr& msg)
 
 PointCloud::Ptr PointCloudAnalyzer::Gendeformem(const PointCloud::Ptr& msg)
 {   
-
+    
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr deformed_membrane (new pcl::PointCloud<pcl::PointXYZRGB>);
     deformed_membrane->width = msg->width;
 	deformed_membrane->height = msg->height;
@@ -173,11 +180,13 @@ PointCloud::Ptr PointCloudAnalyzer::Gendeformem(const PointCloud::Ptr& msg)
 	             }
            }
      }
+    std::cout << "generate deformation" <<"\n";
     return deformed_membrane;
 }
 
 pcl::PointCloud<pcl::Normal>::Ptr PointCloudAnalyzer::Getnormal(PointCloud::Ptr& msg)
 {
+	std::cout << "generate normal" <<"\n";
 	pcl::PointCloud<pcl::Normal>::Ptr normals (new pcl::PointCloud<pcl::Normal>);
   	pcl::IntegralImageNormalEstimation<pcl::PointXYZRGB, pcl::Normal> ne;
   	ne.setNormalEstimationMethod(ne.AVERAGE_3D_GRADIENT);
@@ -191,6 +200,70 @@ pcl::PointCloud<pcl::Normal>::Ptr PointCloudAnalyzer::Getnormal(PointCloud::Ptr&
 }
 
 
+PointCloud::Ptr PointCloudAnalyzer::Gencontact(const PointCloud::Ptr& msg)
+{ 
+    
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr contact_membrane (new pcl::PointCloud<pcl::PointXYZRGB>);
+    contact_membrane->width = msg->width;
+	contact_membrane->height = msg->height;
+	contact_membrane->resize(msg->height*msg->width);
+
+    for (int c = k ; c < 224 - k ; c++) {
+		for (int r = k; r < 171 -k ; r++) {
+			// Let's do column wise first (horizontal neighbours). Check if horizontal neighbours exist
+			if (pcl::isFinite(msg->at(c,r)) && pcl::isFinite(normals->at(c,r))){
+
+			if (pcl::isFinite(msg->at(c-k, r)) && pcl::isFinite(msg->at(c+k, r)) 
+				&& pcl::isFinite(normals->at(c-k,r)) && pcl::isFinite(msg->at(c+k, r))) {
+				// Now check if vertical neighbours exist. Row-wise.
+				if (pcl::isFinite(msg->at(c, r-k)) && pcl::isFinite(msg->at(c, r+k))
+					 && pcl::isFinite(normals->at(c, r-k)) && pcl::isFinite(normals->at(c, r+k))) 
+				{
+
+					
+					//std::cout<<"test xyz"<<msg->at(c-k,r).x<<" "<<msg->at(c-k,r).y<<" "<<msg->at(c-k,r).z<<"\n";
+					//std::cout<<"test normal"<<normals->at(c-k,r).normal_x<<" "<<normals->at(c-k,r).normal_y<<" "<<normals->at(c-k,r).normal_z<<"\n";
+					float c_concavity = concavityOfPair(msg->at(c-k, r), msg->at(c+k, r), normals->at(c-k, r), normals->at(c+k, r));
+
+					float r_concavity = concavityOfPair(msg->at(c, r-k), msg->at(c, r+k), normals->at(c, r-k), normals->at(c, r+k));
+
+					std::cout<<"c_concavity"<<' '<<c_concavity<<' '<<"r_concavity"<<r_concavity<<"\n";
+                    //std::cout<<"pass calculation"<<"\n";
+					// Check in here if deformed
+					//float radius3d = sqrt(pow(msg->at(c, r).x - track_point.x, 2.0) + pow(msg->at(c, r).y - track_point.y, 2.0) + pow(msg->at(c, r).z - 0.09, 2.0));
+					//bool deformed_bool = false;
+					//if (radius3d < radius3d_deform_limit) {
+					//	float surface_area = surfaceElementArea(full_membrane->at(c, r), full_membrane->at(c-1, r), full_membrane->at(c+1, r), full_membrane->at(c, r-1), full_membrane->at(c, r+1));
+					//	total_deformed_surface += surface_area;
+					//	deformed_bool = true;
+					//}
+
+					// Also check if this remains within bounds of where obstacle really is
+					//float radius_2d_squared = pow(full_membrane->at(c, r).x, 2.0) + pow(full_membrane->at(c, r).y, 2.0);
+
+					// if ((c_concavity > 0 && r_concavity > 0) && radius_2d_squared <= 0.0002) {
+					//if (c_concavity > 0 && r_concavity > 0 && deformed_bool) {
+                    if (c_concavity > 0 && r_concavity > 0) {
+						// See what local surface area this point covers
+						//float surface_area = surfaceElementArea(full_membrane->at(c, r), full_membrane->at(c-1, r), full_membrane->at(c+1, r), full_membrane->at(c, r-1), full_membrane->at(c, r+1));
+						//total_concave_surface += surface_area;
+						std::cout<<"enter validation"<<"\n";
+						contact_membrane->at(c, r).x = msg->at(c, r).x;
+					    contact_membrane->at(c, r).y = msg->at(c, r).y;
+					    contact_membrane->at(c, r).z = msg->at(c, r).z;
+						contact_membrane->at(c, r).rgb = *reinterpret_cast<float*>(&red);
+					}
+				}
+			}
+		 } 
+
+
+ 		}
+ 	}
+ 	std::cout << "generate contact_membrane" <<"\n";
+ 	return contact_membrane;
+}
+
 
 void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
 {
@@ -200,17 +273,56 @@ void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
    
         
     full_membrane = Genfullmem(msg);
-    normals = Getnormal(full_membrane);
+    
     deformed_membrane = Gendeformem(full_membrane);
-   
+
+    normals = Getnormal(full_membrane);
+
+    contact_membrane = Gencontact(deformed_membrane);
+    /*
+    //
+    for (int c = k; c < 224 - k; c++) {
+		for (int r = k; r < 171 - k; r++) {
+			// Let's do column wise first (horizontal neighbours). Check if horizontal neighbours exist
+			if (pcl::isFinite(full_membrane->at(c-k, r)) && pcl::isFinite(full_membrane->at(c+k, r))) {
+				// Now check if vertical neighbours exist. Row-wise.
+				if (pcl::isFinite(full_membrane->at(c, r-k)) && pcl::isFinite(full_membrane->at(c, r+k))) {
+					float c_concavity = concavityOfPair(full_membrane->at(c-k, r), full_membrane->at(c+k, r), normals->at(c-k, r), normals->at(c+k, r));
+					float r_concavity = concavityOfPair(full_membrane->at(c, r-k), full_membrane->at(c, r+k), normals->at(c, r-k), normals->at(c, r+k));
+
+					// Check in here if deformed
+					float radius3d = sqrt(pow(msg->at(c, r).x - center_point.x, 2.0) + pow(msg->at(c, r).y - center_point.y, 2.0) + pow(msg->at(c, r).z - center_point.z, 2.0));
+					bool deformed_bool = false;
+					if (radius3d < radius3d_deform_limit) {
+						//float surface_area = surfaceElementArea(full_membrane->at(c, r), full_membrane->at(c-1, r), full_membrane->at(c+1, r), full_membrane->at(c, r-1), full_membrane->at(c, r+1));
+						//total_deformed_surface += surface_area;
+						deformed_bool = true;
+					}
+
+					// Also check if this remains within bounds of where obstacle really is
+					float radius_2d_squared = pow(full_membrane->at(c, r).x, 2.0) + pow(full_membrane->at(c, r).y, 2.0);
+
+					// if ((c_concavity > 0 && r_concavity > 0) && radius_2d_squared <= 0.0002) {
+					if (c_concavity > 0 && r_concavity > 0 && deformed_bool) {
+
+						// See what local surface area this point covers
+						//float surface_area = surfaceElementArea(full_membrane->at(c, r), full_membrane->at(c-1, r), full_membrane->at(c+1, r), full_membrane->at(c, r-1), full_membrane->at(c, r+1));
+						//total_concave_surface += surface_area;
+						full_membrane->at(c, r).rgb = *reinterpret_cast<float*>(&red);
+					}
+				}
+			} 
 
 
-   
+ 		}
+ 	}
+
+    */
     viewer->updatePointCloud(full_membrane, "cloud");
     viewer->updatePointCloud(deformed_membrane, "deformed");
-
-    viewer->removePointCloud("normals", 0);
-    viewer->addPointCloudNormals<pcl::PointXYZRGB, pcl::Normal> (full_membrane, normals, 10, 0.005, "normals");
+    viewer->updatePointCloud(contact_membrane, "contact");
+    //viewer->removePointCloud("normals", 0);
+    //viewer->addPointCloudNormals<pcl::PointXYZRGB, pcl::Normal> (full_membrane, normals, 10, 0.005, "normals");
 }
 
 void PointCloudAnalyzer::start(){
