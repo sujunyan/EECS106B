@@ -208,12 +208,15 @@ add_definitions(${PCL_DEFINITIONS})
 set(HEADERS
   "${CMAKE_CURRENT_SOURCE_DIR}/inc/PointCloudAnalyzer.hpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/inc/utils.hpp"
+#  "${CMAKE_CURRENT_SOURCE_DIR}/inc/PointCloudMap.hpp"
   )
 
 set(SRC 
   "${CMAKE_CURRENT_SOURCE_DIR}/src/PointCloudAnalyzer.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/utils.cpp"
+#  "${CMAKE_CURRENT_SOURCE_DIR}/src/PointCloudMap.cpp"
 )
+
 
 #add_executable(pcl_analyze src/pcl_analyze.cpp)
 #target_link_libraries(pcl_analyze ${catkin_LIBRARIES} ${PCL_LIBRARIES})
@@ -226,6 +229,14 @@ set(SRC
 #target_link_libraries(pcl_processing ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 #add_dependencies(pcl_processing point_cloud_analyzer_generate_messages_cpp)
 
+
+#add_executable(point_cloud_map src/PointCloudMap.cpp ${SRC} ${HEADER})
+#target_link_libraries(point_cloud_map ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+#add_dependencies(point_cloud_map point_cloud_map_generate_messages_cpp)
+#target_compile_options(point_cloud_map PRIVATE "-w")
+
+
+#add_executable(point_cloud_analyzer src/main.cpp ${SRC} ${HEADER})
 add_executable(point_cloud_analyzer src/main.cpp ${SRC} ${HEADER})
 target_link_libraries(point_cloud_analyzer ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 add_dependencies(point_cloud_analyzer point_cloud_analyzer_generate_messages_cpp)

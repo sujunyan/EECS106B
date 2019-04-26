@@ -16,46 +16,28 @@
 
 typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloud;
 
-class PointCloudAnalyzer
+class PointCloudMap
 {
 private:
-    /* data */
-    PointCloud::Ptr full_membrane;
-    PointCloud::Ptr deformed_membrane;
-    PointCloud::Ptr contact_membrane;
-    pcl::PointCloud<pcl::Normal>::Ptr normals;
-    
-    pcl::PointXYZRGB center_point;
-    pcl::PointXYZRGB calibrate_point; 
+    /* data */ 
     
 public:
-    PointCloudAnalyzer(/* args */);
-    ~PointCloudAnalyzer();
+    PointCloudMap(/* args */);
+    ~PointCloudMap();
     void start();
+    PointCloud::Ptr full_membrane;
+    //void start();
 private:
-    void setup_parameter();
+    //void setup_parameter();
     void setup_vis();
     void callback(const PointCloud::ConstPtr& msg);
-
-	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer;
-    
+    //void callback(const PointCloud::ConstPtr& msg);
     ros::NodeHandle nh;
-    ros::Publisher use_case_pub;
-	ros::Publisher max_filter_pub;
-	ros::Publisher min_filter_pub;
-	ros::Publisher exposure_pub;
-    
+	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer;
+
+
     ros::Subscriber point_cloud_sub;
-    ros::Publisher pub_contact;
-
-    ros::Rate loop_rate();
     
-    PointCloud::Ptr Genfullmem(const PointCloud::ConstPtr& msg);
-    PointCloud::Ptr Gendeformem(const PointCloud::Ptr& msg);
-    PointCloud::Ptr Gencontact(const PointCloud::Ptr& msg);
-    pcl::PointCloud<pcl::Normal>::Ptr Getnormal(PointCloud::Ptr& msg);
-
-    //color of area      green for deformation   white for membrane
     uint8_t r_green = 113;
     uint8_t g_green = 164;
     uint8_t b_green = 252;
@@ -70,9 +52,6 @@ private:
     uint8_t g_red = 196;
     uint8_t b_red = 113;
     uint32_t red = ((uint32_t) r_red << 16 | (uint32_t)g_red << 8 | (uint32_t)b_red);
-    
-    
-    
     
     
 };
