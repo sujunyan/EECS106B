@@ -26,7 +26,7 @@ q0 = q(1); dq0 = 0; tau0 = 0; dtau0 = 0;
 cost = @(x) cost_function(x(1), x(2), x(3), x(4), t, u, q, q0, dq0, tau0, dtau0);
 
 %% do your regression
-x0 = [952.024728577658, 277.064639386018, 1.437326837026, 0.058030553593]; % near-optimal solution
+x0 = [2020.799291556778, 778.459224920680, 3.077191660625, 0.034022577055]; % near-optimal solution
 % options = optimoptions(@lsqnonlin,'Display','iter-detailed','OptimalityTolerance',1e-6);
 % [X, resnorm] = lsqnonlin(cost, x0,[],[],options)
 
