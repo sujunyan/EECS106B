@@ -65,7 +65,7 @@ def get_trajectory(task, num_way, saved_file):
         return robot_traj
 
     if task == 'scan':
-        start_pos = np.array([0.474, - 0.4 , -0.04])
+        #start_pos = np.array([0.474, - 0.4 , -0.04])
         final_pos = np.array([0.82, - 0.6 , -0.04])
         path = ScanPath(limb,kin,total_time,ar_marker_num,\
                         start_pos,final_pos,delta_xyz = (0.05,0.05,0.02)) # ar_marker_num might be redundent
@@ -105,7 +105,20 @@ def args_parse():
         'use the saved trajectory'
     )
     return parser.parse_args()
-    
+
+start_pos = None
+arm = None
+def get_param():
+    global start_pos,arm
+    if not rospy.has_param("/hand_pub/start_pos"):
+        raise ValueError("start_pos not found on parameter server")    
+    start_pos = rospy.get_param("/hand_pub/start_pos")
+    if not rospy.has_param("/hand_pub/arm"):
+        raise ValueError("start_pos not found on parameter server")    
+    arm = rospy.get_param("/hand_pub/arm")
+
+
+
 if __name__ == "__main__":
     """
     Examples of how to run me:
@@ -114,6 +127,9 @@ if __name__ == "__main__":
     """
     args = args_parse()
     rospy.init_node('Unnamed_node')
+
+    args.arm = arm
+
     limb = baxter_interface.Limb(args.arm)
     kin = baxter_kinematics(args.arm)
     total_time = 5 # seconds
