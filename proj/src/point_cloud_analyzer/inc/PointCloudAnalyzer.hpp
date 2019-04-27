@@ -23,6 +23,7 @@ private:
     PointCloud::Ptr full_membrane;
     PointCloud::Ptr deformed_membrane;
     PointCloud::Ptr contact_membrane;
+    PointCloud::Ptr map_ptr;
     pcl::PointCloud<pcl::Normal>::Ptr normals;
     
     pcl::PointXYZRGB center_point;
@@ -36,9 +37,9 @@ private:
     void setup_parameter();
     void setup_vis();
     void callback(const PointCloud::ConstPtr& msg);
-
+    void addcontact(const PointCloud::Ptr& msg);
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer;
-    
+    boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer1;
     ros::NodeHandle nh;
     ros::Publisher use_case_pub;
 	ros::Publisher max_filter_pub;
@@ -54,7 +55,7 @@ private:
     PointCloud::Ptr Gendeformem(const PointCloud::Ptr& msg);
     PointCloud::Ptr Gencontact(const PointCloud::Ptr& msg);
     pcl::PointCloud<pcl::Normal>::Ptr Getnormal(PointCloud::Ptr& msg);
-
+    
     //color of area      green for deformation   white for membrane
     uint8_t r_green = 113;
     uint8_t g_green = 164;
