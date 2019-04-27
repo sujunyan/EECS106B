@@ -61,5 +61,5 @@ def get_param():
 if __name__ == '__main__':
     get_param()
     start_pos = np.array(start_pos)
-    print(start_pos,arm)
+    #print(start_pos,arm)
     hand_pos_pub()
