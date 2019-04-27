@@ -1,1 +1,0 @@
-/home/su/baxter_ws/baxter.sh
