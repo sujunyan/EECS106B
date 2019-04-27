@@ -14,6 +14,7 @@
 #include <pcl/features/integral_image_normal.h>
 #include <pcl/search/impl/search.hpp>
 #include <ros/ros.h>
+#include <pcl/common/transforms.h>
 #include "pcl_ros/point_cloud.h"
 
 
@@ -34,7 +35,7 @@ pcl::PointXYZRGB center_point;
 
 pcl::PointXYZRGB calibrate_point;    //used to find a point, when membrane move to this point,
                                      //adjust it deform
-float relative_z = 0.09;             // calibrate z 
+float relative_z = 0.09;             // calibrate point z 
  
 int k = 10;                          // the interval of point cloud to compute the concavity
 
@@ -87,6 +88,7 @@ void PointCloudAnalyzer::setup_vis(){
 	pcl::PointCloud<pcl::PointXYZ>::Ptr basic_cloud_ptr (new pcl::PointCloud<pcl::PointXYZ>);
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr point_cloud_ptr (new pcl::PointCloud<pcl::PointXYZRGB>);
 	map_ptr = (PointCloud::Ptr) new pcl::PointCloud<pcl::PointXYZRGB>;
+	transformed_memb_ptr = (PointCloud::Ptr) new pcl::PointCloud<pcl::PointXYZRGB>;
 	//pcl::PointCloud<pcl::PointXYZRGB>::Ptr map_cloud_ptr (new pcl::PointCloud<pcl::PointXYZRGB>);
 	
 	std::cout << "Creating point cloud\n\n";
@@ -176,7 +178,7 @@ PointCloud::Ptr PointCloudAnalyzer::Genfullmem(const PointCloud::ConstPtr& msg)
 	}  
 	
   }
-    std::cout << "generate fullmembrane" <<"\n";
+    //std::cout << "generate fullmembrane" <<"\n";
     return full_membrane;
 }
 
@@ -211,7 +213,7 @@ PointCloud::Ptr PointCloudAnalyzer::Gendeformem(const PointCloud::Ptr& msg)
 	             }
            }
      }
-    std::cout << "generate deformation" <<"\n";
+    //std::cout << "generate deformation" <<"\n";
     return deformed_membrane;
 }
 
@@ -277,7 +279,7 @@ PointCloud::Ptr PointCloudAnalyzer::Gencontact(const PointCloud::Ptr& msg)
 
  		}
  	}
- 	std::cout << "generate contact_membrane" <<"\n";
+ 	//std::cout << "generate contact_membrane" <<"\n";
  	return contact_membrane;
 }
 
@@ -286,17 +288,31 @@ void PointCloudAnalyzer::addcontact(const PointCloud::Ptr& msg)
 	for (int c = 0 ; c < 224  ; c++) {
 		for (int r = 0; r < 171  ; r++) {
 			 if (pcl::isFinite(msg->at(c,r))){
-			 	     std::cout<<"if enter add"<<"\n";
+			 	     //std::cout<<"if enter add"<<"\n";
 	                  map_ptr->push_back(msg->at(c,r));
-	                 std::cout<<"if add success"<<"\n";
+	                 //std::cout<<"if add success"<<"\n";
 	              }
 	          }
 	      }
 }
 
+PointCloud::Ptr PointCloudAnalyzer::transform(const PointCloud::Ptr& msg, float x, float y, float z)
+{   
+	//std::cout<<"transform start"<<"\n";
+
+	Eigen::Matrix4f transform_1 = Eigen::Matrix4f::Identity();
+	transform_1 (0,3) = x;
+	transform_1 (1,3) = y;
+	transform_1 (2,3) = z;
+	PointCloud::Ptr transform_cloud1 (new pcl::PointCloud<pcl::PointXYZRGB>);
+	pcl::transformPointCloud(*msg,*transform_cloud1,transform_1);
+    //std::cout<<"transform succees"<<"\n";
+    return transform_cloud1;
+}
+
 void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
 {
-	std::cout << "PointCloud message recieved\n";
+	//std::cout << "PointCloud message recieved\n";
 
     //printf ("Cloud: width = %d, height = %d\n", msg->width, msg->height);
    
@@ -308,11 +324,15 @@ void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
     normals = Getnormal(full_membrane);
 
     contact_membrane = Gencontact(deformed_membrane);
-    
-    addcontact(contact_membrane);
+
+    //std::cout<<"start transform_cloud1"<<"\n";
+    transformed_memb_ptr = transform(contact_membrane, transform_x ,transform_y, transform_z);
+    transform_x += 0.001;
+
+    addcontact(transformed_memb_ptr);
 
 
-    std::cout<<"contact_membrane frame_id "<<contact_membrane->header.frame_id<<"\n";
+    //std::cout<< "contact_membrane frame_id"<<contact_membrane->header.frame_id<<"\n";
     
     viewer->updatePointCloud(full_membrane, "cloud");
     viewer->updatePointCloud(deformed_membrane, "deformed");
@@ -335,7 +355,10 @@ void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
 }
 
 void PointCloudAnalyzer::start(){
-
+    
+    transform_x = 0.1;
+    transform_y = 0;
+    transform_z = 0;
 	//ros::Publisher pub_contact = nh.advertise<pcl::PointCloud<pcl::PointXYZRGB>> ("contact", 100);
     ros::Publisher pub_contact = nh.advertise<sensor_msgs::PointCloud2> ("contact", 1, false);
 	point_cloud_sub = nh.subscribe<pcl::PointCloud<pcl::PointXYZRGB>>("/royale_camera_driver/point_cloud", 1, &PointCloudAnalyzer::callback, this);
