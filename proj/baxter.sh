@@ -1,1 +1,1 @@
-/scratch/shared/baxter_ws/baxter.sh
+/home/su/baxter_ws/baxter.sh

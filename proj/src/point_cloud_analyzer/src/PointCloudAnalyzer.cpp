@@ -308,7 +308,7 @@ void PointCloudAnalyzer::start(){
 
 	//ros::Publisher pub_contact = nh.advertise<pcl::PointCloud<pcl::PointXYZRGB>> ("contact", 100);
     ros::Publisher pub_contact = nh.advertise<sensor_msgs::PointCloud2> ("contact", 1, false);
-	point_cloud_sub = nh.subscribe<pcl::PointCloud<pcl::PointXYZRGB>>("/royale_camera_driver/point_cloud", 1, &PointCloudAnalyzer::callback, this);
+	point_cloud_sub = nh.subscribe<pcl::PointCloud<pcl::PointXYZRGB>("/royale_camera_driver/point_cloud", 1, &PointCloudAnalyzer::callback, this);
 	//point_cloud_sub = nh.subscribe<sensor_msgs::PointCloud2>("/royale_camera_driver/point_cloud", 10, callback );
 	ros::Rate r(10); // 10 hz
 
