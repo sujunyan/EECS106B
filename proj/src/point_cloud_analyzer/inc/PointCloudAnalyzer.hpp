@@ -20,18 +20,24 @@ class PointCloudAnalyzer
 {
 private:
     /* data */
+    PointCloud::Ptr origin_membrane;
     PointCloud::Ptr full_membrane;
     PointCloud::Ptr deformed_membrane;
     PointCloud::Ptr contact_membrane;
     PointCloud::Ptr map_ptr;
-    PointCloud::Ptr transformed_memb_ptr ;
+    PointCloud::Ptr transformed_memb_ptr;
     pcl::PointCloud<pcl::Normal>::Ptr normals;
     
+
     pcl::PointXYZRGB center_point;
     pcl::PointXYZRGB calibrate_point; 
+    pcl::PointXYZRGB origin_center_point;
     float transform_x;
     float transform_y;
     float transform_z;
+    float center_z_depth;
+    bool Isfirst;
+    bool Iscontact;
     
 public:
     PointCloudAnalyzer(/* args */);
@@ -51,7 +57,8 @@ private:
 	ros::Publisher exposure_pub;
     
     ros::Subscriber point_cloud_sub;
-    ros::Publisher pub_contact;
+    ros::Subscriber arm_sub;
+    ros::Publisher pub_center_z;
 
     ros::Rate loop_rate();
     
