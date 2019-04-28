@@ -3,7 +3,7 @@
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/visualization/common/common.h>
 #include "sensor_msgs/PointCloud2.h"
-
+#include "geometry_msgs/Point.h"
 
 #include <pcl/point_types.h>
 #include <pcl_conversions/pcl_conversions.h>    
@@ -47,6 +47,7 @@ private:
     void setup_parameter();
     void setup_vis();
     void callback(const PointCloud::ConstPtr& msg);
+    void armpos_callback(const geometry_msgs::Point::ConstPtr& msg);
     void addcontact(const PointCloud::Ptr& msg);
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer;
     boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer1;

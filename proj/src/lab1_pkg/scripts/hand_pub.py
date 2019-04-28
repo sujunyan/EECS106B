@@ -10,8 +10,9 @@ import argparse
 import tf
 from geometry_msgs.msg import Point,PoseArray
     
-
-def hand_pos_pub(start_pos):
+start_pos = None
+arm = None
+def hand_pos_pub():
     """
     publish the hand position with respect to the start pos
 
@@ -33,7 +34,7 @@ def hand_pos_pub(start_pos):
     listener = tf.TransformListener()
     br = tf.TransformBroadcaster()
     from_frame = 'base'
-    to_frame = 'left_hand'
+    to_frame = '%s_hand'%(arm)
     pos, quat = None, None
     
     while not rospy.is_shutdown():
@@ -41,15 +42,24 @@ def hand_pos_pub(start_pos):
             t = listener.getLatestCommonTime(from_frame, to_frame)
             pos, quat = listener.lookupTransform(from_frame, to_frame, t)
             pos = np.array(pos) - start_pos
+            print("Relative hand position get (%f %f %f)"%tuple(pos))
             pub.publish(Point(pos))
         except:
-            print ('Could not hand position')
+            #print ('Could not hand position')
             continue
         r.sleep()
 
-if __name__ == '__main__':
+def get_param():
+    global start_pos,arm
     if not rospy.has_param("/hand_pub/start_pos"):
         raise ValueError("start_pos not found on parameter server")    
     start_pos = rospy.get_param("/hand_pub/start_pos")
+    if not rospy.has_param("/hand_pub/arm"):
+        raise ValueError("start_pos not found on parameter server")    
+    arm = rospy.get_param("/hand_pub/arm")
+
+if __name__ == '__main__':
+    get_param()
     start_pos = np.array(start_pos)
-    hand_pos_pub(start_pos)
+    #print(start_pos,arm)
+    hand_pos_pub()

@@ -4,6 +4,7 @@
 #include "std_msgs/Float32.h"
 #include "std_msgs/UInt32.h"
 #include "sensor_msgs/PointCloud2.h"
+#include "geometry_msgs/Point.h"
 
 #include <pcl/point_types.h>
 #include <pcl_conversions/pcl_conversions.h>	
@@ -149,7 +150,12 @@ void PointCloudAnalyzer::setup_vis(){
 }
 
 
-
+void PointCloudAnalyzer::armpos_callback(const geometry_msgs::Point::ConstPtr& msg)
+{
+	transform_x = msg->x;
+	transform_y = msg->y;
+	transform_z = msg->z;
+}
 
 
 
@@ -386,13 +392,13 @@ void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
 		
         }
       }
-        std::cout<<"end origin_membrane";
+       // std::cout<<"end origin_membrane";
         Isfirst = false;
         origin_center_point = findCenter(origin_membrane);
-        std::cout<<"center_point.z"<<center_point.z<<"\n";
+       // std::cout<<"center_point.z"<<center_point.z<<"\n";
     }
     
-    center_z_depth =origin_center_point.z - findCenter(msg).z;
+    center_z_depth = origin_center_point.z - findCenter(msg).z;
     std::cout<<"get the z_depth"<<center_z_depth<<"  "<<origin_center_point.z<<" "<<findCenter(msg).z<<"\n";
 
     deformed_membrane = Gendeformem(full_membrane);
@@ -405,7 +411,7 @@ void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
     //std::cout<<"start transform_cloud1"<<"\n";
 
     transformed_memb_ptr = transform(contact_membrane, transform_x ,transform_y, transform_z);
-    transform_x += 0.001;
+    
 
     addcontact(transformed_memb_ptr);
 
@@ -452,7 +458,10 @@ void PointCloudAnalyzer::start(){
     transform_z = 0;
 	//ros::Publisher pub_contact = nh.advertise<pcl::PointCloud<pcl::PointXYZRGB>> ("contact", 100);
     pub_center_z = nh.advertise<std_msgs::Float32>("center_z_deform", 1000);
+
 	point_cloud_sub = nh.subscribe<PointCloud>("/royale_camera_driver/point_cloud", 1, &PointCloudAnalyzer::callback, this);
+
+	arm_sub = nh.subscribe<geometry_msgs::Point>("/hand_pub", 1, &PointCloudAnalyzer::armpos_callback, this);
 	//point_cloud_sub = nh.subscribe<sensor_msgs::PointCloud2>("/royale_camera_driver/point_cloud", 10, callback );
 	ros::Rate r(10); // 10 hz
 
