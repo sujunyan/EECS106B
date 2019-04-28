@@ -40,12 +40,14 @@ def hand_pos_pub():
     while not rospy.is_shutdown():
         try:
             t = listener.getLatestCommonTime(from_frame, to_frame)
-            pos, quat = listener.lookupTransform(from_frame, to_frame, t)
-            pos = np.array(pos) - start_pos
-            print("Relative hand position get (%f %f %f)"%tuple(pos))
-            pub.publish(Point(pos))
-        except:
-            #print ('Could not hand position')
+            pos, quat = listener.lookupTransform(from_frame, to_frame, t)       
+            pos = [pos[i]-start_pos[i] for i in range(3)]
+            #print("Relative hand position get (%f %f %f)"%tuple(pos))
+            pub.publish(Point(pos[0],pos[1],pos[2]))
+        except Exception as e:
+            print ('Could not hand position from %s to %s'%(from_frame,to_frame))
+            #print(e)
+            pub.publish(Point(0, 0, 0))
             continue
         r.sleep()
 
@@ -54,12 +56,12 @@ def get_param():
     if not rospy.has_param("/hand_pub/start_pos"):
         raise ValueError("start_pos not found on parameter server")    
     start_pos = rospy.get_param("/hand_pub/start_pos")
+    start_pos = eval(start_pos)
     if not rospy.has_param("/hand_pub/arm"):
         raise ValueError("start_pos not found on parameter server")    
     arm = rospy.get_param("/hand_pub/arm")
 
 if __name__ == '__main__':
     get_param()
-    start_pos = np.array(start_pos)
     #print(start_pos,arm)
     hand_pos_pub()
