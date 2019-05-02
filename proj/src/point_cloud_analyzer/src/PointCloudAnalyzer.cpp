@@ -113,7 +113,7 @@ void PointCloudAnalyzer::setup_vis(){
 	origin_membrane = (PointCloud::Ptr) new pcl::PointCloud<pcl::PointXYZRGB>;
 	test_smooth = (PointCloud::Ptr)new pcl::PointCloud<pcl::PointXYZRGB>;
     test_stat = (PointCloud::Ptr)new pcl::PointCloud<pcl::PointXYZRGB>;
-    full_membrane = (PointCloud::Ptr)new pcl::PointCloud<pcl::PointXYZRGB>;
+    //full_membrane = (PointCloud::Ptr)new pcl::PointCloud<pcl::PointXYZRGB>;
 	//pcl::PointCloud<pcl::PointXYZRGB>::Ptr map_cloud_ptr (new pcl::PointCloud<pcl::PointXYZRGB>);
 	
 	std::cout << "Creating point cloud\n\n";
@@ -128,7 +128,7 @@ void PointCloudAnalyzer::setup_vis(){
 
 	viewer = viewer0;
 	viewer1 = viewer2;
-	viewer->setBackgroundColor (0, 0, 0);
+	viewer->setBackgroundColor (255, 255, 255);
 	viewer->addPointCloud<pcl::PointXYZRGB> (point_cloud_ptr, "cloud");
 	viewer->addPointCloud<pcl::PointXYZRGB> (point_cloud_ptr, "deformed");
 	viewer->addPointCloud<pcl::PointXYZRGB> (point_cloud_ptr, "contact");
@@ -492,26 +492,44 @@ void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
     
 
     
-   
+    //pcl::copyPointCloud(*msg, *full_membrane);
+    #if 0
+    full_membrane->width = msg->width;
+	full_membrane->height = msg->height;
+	full_membrane->resize(msg->height*msg->width);
+
+    for (int c = 0 ; c < 224  ; c++) {
+		for (int r = 0; r < 171  ; r++) {
+			if (pcl::isFinite(msg->at(c,r))){
+                 
+			    full_membrane->at(c, r).x = msg->at(c, r).x;
+			    full_membrane->at(c, r).y = msg->at(c, r).y;
+				full_membrane->at(c, r).z = msg->at(c, r).z;
+				full_membrane->at(c,r).rgb = *reinterpret_cast<float*>(&white);
+			}
+		}
+	}
+	#endif
     
-
-
-
-
-    
-
+    /*
     filtered = voxel_grid(msg);
     for (int i=0; i<filtered->points.size(); i++){
     	//std::cout<<filtered->points[i].x<<filtered->points[i].y<<filtered->points[i].z<<endl;
     	filtered->points[i].rgb = *reinterpret_cast<float*>(&white);
     }
-    
-
-    Median.setInputCloud(filtered);
+    */
+	PointCloud tmp_point_cloud = PointCloud (*msg);
+	PointCloud::Ptr tmp_ptr = tmp_point_cloud.makeShared();
+    Median.setInputCloud(tmp_ptr);
     Median.setMaxAllowedMovement(0.01);
     std::cout<<"start median"<<endl;
-    Median.applyFilter(*full_membrane);
+    Median.applyFilter(*tmp_ptr);
     std::cout<<"end median"<<endl;
+
+    for (int i=0; i<tmp_point_cloud.points.size(); i++){
+    	//std::cout<<filtered->points[i].x<<filtered->points[i].y<<filtered->points[i].z<<endl;
+    	tmp_point_cloud.points[i].rgb = *reinterpret_cast<float*>(&red);
+    }
 
    // full_membrane = Genfullmem(filtered);
     
@@ -548,7 +566,7 @@ void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
     addcontact(transformed_memb_ptr);
     */
 
-    viewer->updatePointCloud(full_membrane, "cloud");
+    viewer->updatePointCloud(tmp_ptr, "cloud");
     std::cout<<"update successful"<<endl;
     //viewer->updatePointCloud(full_membrane, "cloud");
     //viewer->updatePointCloud(full_membrane, "cloud");
