@@ -128,7 +128,7 @@ void PointCloudAnalyzer::setup_vis(){
 
 	viewer = viewer0;
 	viewer1 = viewer2;
-	viewer->setBackgroundColor (255, 255, 255);
+	viewer->setBackgroundColor (0, 0, 0);
 	viewer->addPointCloud<pcl::PointXYZRGB> (point_cloud_ptr, "cloud");
 	viewer->addPointCloud<pcl::PointXYZRGB> (point_cloud_ptr, "deformed");
 	viewer->addPointCloud<pcl::PointXYZRGB> (point_cloud_ptr, "contact");
@@ -517,19 +517,28 @@ void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
     	//std::cout<<filtered->points[i].x<<filtered->points[i].y<<filtered->points[i].z<<endl;
     	filtered->points[i].rgb = *reinterpret_cast<float*>(&white);
     }
+
     */
 	PointCloud tmp_point_cloud = PointCloud (*msg);
 	PointCloud::Ptr tmp_ptr = tmp_point_cloud.makeShared();
     Median.setInputCloud(tmp_ptr);
     Median.setMaxAllowedMovement(0.01);
-    std::cout<<"start median"<<endl;
+    //std::cout<<"start median"<<endl;
     Median.applyFilter(*tmp_ptr);
-    std::cout<<"end median"<<endl;
+    //std::cout<<"end median"<<endl;
 
-    for (int i=0; i<tmp_point_cloud.points.size(); i++){
+    for (int i=0; i<tmp_ptr->points.size(); i++){
     	//std::cout<<filtered->points[i].x<<filtered->points[i].y<<filtered->points[i].z<<endl;
-    	tmp_point_cloud.points[i].rgb = *reinterpret_cast<float*>(&red);
+    	//tmp_point_cloud.points[i].rgb = *reinterpret_cast<float*>(&red);
+    	tmp_ptr->points[i].rgb = *reinterpret_cast<float*>(&white);
+    	//std::cout<<"rgb"<<tmp_ptr->points[i].rgb<<"\n";
+    	//std::cout<<
     }
+
+    center_point = findCenter(tmp_ptr);
+    std::cout<<center_point.z;
+
+
 
    // full_membrane = Genfullmem(filtered);
     
