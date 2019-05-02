@@ -482,7 +482,7 @@ PointCloud::Ptr PointCloudAnalyzer::transform(const PointCloud::Ptr& msg, float 
 }
 
 
-
+//width = 224    height = 171
 
 void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
 {
@@ -490,26 +490,8 @@ void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
 
     //printf ("Cloud: width = %d, height = %d\n", msg->width, msg->height);
     
-
-    
-    //pcl::copyPointCloud(*msg, *full_membrane);
-    #if 0
-    full_membrane->width = msg->width;
-	full_membrane->height = msg->height;
-	full_membrane->resize(msg->height*msg->width);
-
-    for (int c = 0 ; c < 224  ; c++) {
-		for (int r = 0; r < 171  ; r++) {
-			if (pcl::isFinite(msg->at(c,r))){
-                 
-			    full_membrane->at(c, r).x = msg->at(c, r).x;
-			    full_membrane->at(c, r).y = msg->at(c, r).y;
-				full_membrane->at(c, r).z = msg->at(c, r).z;
-				full_membrane->at(c,r).rgb = *reinterpret_cast<float*>(&white);
-			}
-		}
-	}
-	#endif
+    center_point = findCenter(msg);
+    //std::cout<<" "<<center_point.x<<" "<<center_point.y<<" "<<center_point.z<<";"<<endl;
     
     /*
     filtered = voxel_grid(msg);
@@ -534,9 +516,35 @@ void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
     	//std::cout<<"rgb"<<tmp_ptr->points[i].rgb<<"\n";
     	//std::cout<<
     }
+     
+    //std::cout<<tmp_ptr->width<<tmp_ptr->height<<"\n";
+    
+    int scale = 3;
+    
 
-    center_point = findCenter(tmp_ptr);
-    std::cout<<center_point.z;
+    PointCloud::Ptr down_sampled_cloud_ptr (new pcl::PointCloud<pcl::PointXYZRGB>); 
+
+    pcl::PointCloud<pcl::PointXYZRGB> down_sampled_cloud; 
+
+    down_sampled_cloud.width = tmp_ptr->width / scale;
+    
+    down_sampled_cloud.height = tmp_ptr->height / scale;
+    
+    
+    for( int c = 0; c < tmp_ptr->width; c+=scale){
+    	for( int r = 0; r < tmp_ptr->height; r+=scale ){
+
+          down_sampled_cloud.push_back(tmp_ptr->at(c,r));
+    		
+      }
+    }
+
+    down_sampled_cloud_ptr = down_sampled_cloud.makeShared();     
+    
+
+
+    //center_point = findCenter(tmp_ptr);
+    //std::cout<<" "<<center_point.x<<" "<<center_point.y<<" "<<center_point.z<<";"<<endl;
 
 
 
@@ -575,8 +583,8 @@ void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
     addcontact(transformed_memb_ptr);
     */
 
-    viewer->updatePointCloud(tmp_ptr, "cloud");
-    std::cout<<"update successful"<<endl;
+    viewer->updatePointCloud(down_sampled_cloud_ptr, "cloud");
+    
     //viewer->updatePointCloud(full_membrane, "cloud");
     //viewer->updatePointCloud(full_membrane, "cloud");
     //viewer->updatePointCloud(deformed_membrane, "deformed");
