@@ -12,6 +12,7 @@
 #include <pcl/common/common_headers.h>
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/visualization/common/common.h>
+#include <queue>
 
 
 pcl::PointXYZRGB findCenter(const PointCloud::ConstPtr& msg)
@@ -24,14 +25,14 @@ pcl::PointXYZRGB findCenter(const PointCloud::ConstPtr& msg)
 	track_point.x = msg->at(col, row).x;
 	track_point.y = msg->at(col, row).y;
 	track_point.z = msg->at(col, row).z;
-	
+	//std::cout<<"track_point"<<track_point.x<<" "<<track_point.y<<" "<<track_point.z<<"\n";
     return track_point;
 }
 
 
 float get2Ddistance(const pcl::PointXYZRGB& a, const pcl::PointXYZRGB& b)
 {
-	return pow(a.x - b.x, 2) + pow(a.y - b.y, 2);
+	return sqrt(pow(a.x - b.x, 2) + pow(a.y - b.y, 2));
 }
 
 float get3Ddistance(const pcl::PointXYZRGB& a, const pcl::PointXYZRGB& b)
@@ -66,9 +67,12 @@ float surfaceElementArea(pcl::PointXYZRGB& o, pcl::PointXYZRGB& a1, pcl::PointXY
 	if (pcl::isFinite(a1) && pcl::isFinite(a2) && pcl::isFinite(b1) && pcl::isFinite(b2))  {
 		float width = 0.5 * (pDist(o, a1) + pDist(o, a2));
 		float height = 0.5 * (pDist(o, b1) + pDist(o, b2));
+		//std::cout<<"utils getsurface"<<"\n";
 		return width * height;
 	}  
 
 	return 0.0;
 
 }
+
+
