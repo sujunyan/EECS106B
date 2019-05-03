@@ -489,7 +489,7 @@ vector<double> PointCloudAnalyzer::depthCallback(const PointCloud::ConstPtr& msg
 	static PointCloud::Ptr origin_ptr;
 	static bool is_origian_stored = false;
 	static int cnt = 0;
-	const int wait_times = 100;
+	const int wait_times = 20;
 	vector <double> values (2,0); // create a vector with two values 0
 	cnt ++;
 	if(cnt < wait_times){ // wait for a sufficient time to get use msg
