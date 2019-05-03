@@ -554,8 +554,8 @@ vector<double> PointCloudAnalyzer::depthCallback(const PointCloud::ConstPtr& msg
 		double max_dis = 0;
 		double sum_dis = 0;
 		double tot_num = 0;
-		for (int c = 0; c < max_column; c++){
-			for (int r = 0; r < max_row; r++){
+		for (int c = 0; c < msg->width; c++){
+			for (int r = 0; r < msg->height; r++){
 				pcl::PointXYZRGB pa = msg->at(c,r);
 				pcl::PointXYZRGB pb = origin_ptr->at(c,r);
 				if(pcl::isFinite(pa) && pcl::isFinite(pb)){
