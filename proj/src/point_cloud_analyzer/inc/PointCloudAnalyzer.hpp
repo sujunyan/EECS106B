@@ -13,6 +13,8 @@
 #include <pcl/visualization/common/common.h>
 #include <pcl/filters/median_filter.h>
 #include <pcl/filters/voxel_grid.h>
+
+#include <pcl/octree/octree.h>
 #include <utils.hpp>
 #include <queue>
 #include <vector>
@@ -30,8 +32,8 @@ private:
     PointCloud::Ptr contact_membrane;
     PointCloud::Ptr map_ptr;
     PointCloud::Ptr transformed_memb_ptr;
-    PointCloud::Ptr test_smooth;
-    PointCloud::Ptr test_stat;
+    //PointCloud::Ptr test_smooth;
+    //PointCloud::Ptr test_stat;
     PointCloud::Ptr filtered;
     pcl::PointCloud<pcl::Normal>::Ptr normals;
     
@@ -67,8 +69,11 @@ private:
 
 
     pcl::MedianFilter<pcl::PointXYZRGB> Median;
-    pcl::VoxelGrid<pcl::PointXYZRGB> sor;
+    float median_maxallowed_move = 0.01;
+    //pcl::VoxelGrid<pcl::PointXYZRGB> sor;
+    float resolution = 0.01;        // 分辨率
 
+    
 
     ros::NodeHandle nh;
     ros::Publisher use_case_pub;
@@ -80,18 +85,23 @@ private:
     ros::Subscriber arm_sub;
     ros::Publisher pub_center_z;
 
-    ros::Rate loop_rate();
+    //ros::Rate loop_rate();
     
     //PointCloud::Ptr Genfullmem(const PointCloud::ConstPtr& msg);
 
-    PointCloud::Ptr Genfullmem(const PointCloud::Ptr& msg);
-    PointCloud::Ptr Gendeformem(const PointCloud::Ptr& msg);
-    PointCloud::Ptr Gencontact(const PointCloud::Ptr& msg);
+    PointCloud::Ptr genFullmem(const PointCloud::Ptr& msg);
+    PointCloud::Ptr genDeformem(const PointCloud::Ptr& msg);
+    PointCloud::Ptr genContact(const PointCloud::Ptr& msg);
     PointCloud::Ptr transform(const PointCloud::Ptr& msg, float x, float y, float z);
-    PointCloud::Ptr voxel_grid(const PointCloud::ConstPtr&msg);
+    PointCloud::Ptr medianFilter(const PointCloud::ConstPtr& msg);
+
+    //PointCloud::Ptr voxel_grid(const PointCloud::ConstPtr&msg);
     void Saveorigin(const PointCloud::Ptr& msg);
-    void mouseEventOccurred (const pcl::visualization::MouseEvent &event,
-                         void* viewer_void);
+    //void mouseEventOccurred (const pcl::visualization::MouseEvent &event,
+    //                     void* viewer_void);
+
+
+
     float getsurfacearea(const PointCloud::Ptr&msg);
     pcl::PointCloud<pcl::Normal>::Ptr Getnormal(PointCloud::Ptr& msg);
 
@@ -100,7 +110,10 @@ private:
     float radius2d_membrane = 0.065;
     float radius3d_deform_limit = 0.05;
 
-    unsigned int text_id = 0;
+    //unsigned int text_id = 0;
+
+
+
     //color of area      green for deformation   white for membrane
     uint8_t r_green = 113;
     uint8_t g_green = 164;
