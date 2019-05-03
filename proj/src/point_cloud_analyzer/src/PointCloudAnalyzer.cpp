@@ -57,18 +57,16 @@ bool Isfirst;
 
 int k = 10;                          // the interval of point cloud to compute the concavity
 
+const int max_column = 224;
+const int max_row = 171;
 
 
-
-
-PointCloudAnalyzer::PointCloudAnalyzer(/* args */)
-{
+PointCloudAnalyzer::PointCloudAnalyzer(/* args */){
 	setup_parameter();
 	setup_vis();
 }
 
-PointCloudAnalyzer::~PointCloudAnalyzer()
-{
+PointCloudAnalyzer::~PointCloudAnalyzer(){
 }
 
 void PointCloudAnalyzer::setup_parameter(){
@@ -483,6 +481,45 @@ PointCloud::Ptr PointCloudAnalyzer::transform(const PointCloud::Ptr& msg, float 
 
 
 
+vector<double> depthCallback(const PointCloud::ConstPtr& msg){
+	/*
+		store the orignal PointCloud and comapre it it the incoming 
+		data. Return the vector [max_relative_depth, mean_relative_depth]
+	*/
+	static PointCloud::Ptr origin_ptr = NULL;
+	static bool is_origian_stored = false;
+	static int cnt = 0;
+	const int wait_times = 100;
+	vector <double> values (2,0); // create a vector with two values 0
+	cnt ++;
+	if(cnt < wait_times){ // wait for a sufficient time to get use msg
+		printf("In depthCallback: Waiting to get the useful point could, cnt=%d\n",cnt);
+	}else if( cnt == wait_times){
+		origin_ptr = new PointCloud(*msg);
+		printf("In depthCallback: set the origin point cloud cnt=%d\n",cnt);
+	}else{
+		// calculate the relative depth
+		double max_dis = 0;
+		double sum_dis = 0;
+		double tot_num = 0;
+		for (c = 0; c < max_column; c++){
+			for (r = 0; r < max_row; r++){
+				auto pa = msg->at(c,r);
+				auto pb = origin_ptr->at(c,r);
+				if(pcl::isFinite(pa,pb)){
+					double dis = get3Ddistance(pa,pb);
+					max_dis = max(dis,max_dis);
+					sum_dis += dis;
+					tot_num ++; 
+				}
+		}
+		values[0] = max_dis;
+		values[1] = sum_dis/tot_num;
+		printf("In depthCallback: max_dis=%f mean_dis=%f\n",values[0],values[1]);
+		
+	}
+	return values;
+}
 
 void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
 {
@@ -519,6 +556,7 @@ void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
     }
 
     */
+	depthCallback(msg);
 	PointCloud tmp_point_cloud = PointCloud (*msg);
 	PointCloud::Ptr tmp_ptr = tmp_point_cloud.makeShared();
     Median.setInputCloud(tmp_ptr);

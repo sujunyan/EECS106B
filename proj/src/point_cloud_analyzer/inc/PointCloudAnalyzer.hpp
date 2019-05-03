@@ -15,6 +15,7 @@
 #include <pcl/filters/voxel_grid.h>
 #include <utils.hpp>
 #include <queue>
+#include <vector>
 
 
 typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloud;
@@ -57,6 +58,8 @@ private:
     void setup_parameter();
     void setup_vis();
     void callback(const PointCloud::ConstPtr& msg);
+    // a sub-routine to calculate the max/mean relative depth or more information
+    vector<double> depthCallback(const PointCloud::ConstPtr& msg); 
     void armpos_callback(const geometry_msgs::Point::ConstPtr& msg);
     void addcontact(const PointCloud::Ptr& msg);
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer;
@@ -113,11 +116,6 @@ private:
     uint8_t g_red = 196;
     uint8_t b_red = 113;
     uint32_t red = ((uint32_t) r_red << 16 | (uint32_t)g_red << 8 | (uint32_t)b_red);
-    
-    
-    
-    
-    
 };
 
 
