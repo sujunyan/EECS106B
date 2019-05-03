@@ -532,7 +532,7 @@ PointCloud::Ptr PointCloudAnalyzer::medianFilter(const PointCloud::ConstPtr& msg
     return filter_ptr;
 }
 
-<<<<<<< HEAD
+
 vector<double> PointCloudAnalyzer::depthCallback(const PointCloud::ConstPtr& msg){
 	/*
 		store the orignal PointCloud and comapre it it the incoming 
@@ -593,7 +593,7 @@ void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
 
     */
 
-	depthCallback(msg);
+	
 
     filtered = medianFilter(msg);
     
@@ -655,7 +655,7 @@ void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
     down_sampled_cloud_ptr = down_sampled_cloud.makeShared();     
     
 
-
+    depthCallback(down_sampled_cloud_ptr);
     //center_point = findCenter(filtered);
     //std::cout<<" "<<center_point.x<<" "<<center_point.y<<" "<<center_point.z<<";"<<endl;
     
