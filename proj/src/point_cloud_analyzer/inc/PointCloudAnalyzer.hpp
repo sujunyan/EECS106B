@@ -13,6 +13,8 @@
 #include <pcl/visualization/common/common.h>
 #include <pcl/filters/median_filter.h>
 #include <pcl/filters/voxel_grid.h>
+
+#include <pcl/octree/octree.h>
 #include <utils.hpp>
 #include <queue>
 
@@ -66,7 +68,9 @@ private:
     pcl::MedianFilter<pcl::PointXYZRGB> Median;
     float median_maxallowed_move = 0.01;
     //pcl::VoxelGrid<pcl::PointXYZRGB> sor;
+    float resolution = 0.01;        // 分辨率
 
+    
 
     ros::NodeHandle nh;
     ros::Publisher use_case_pub;
@@ -82,9 +86,9 @@ private:
     
     //PointCloud::Ptr Genfullmem(const PointCloud::ConstPtr& msg);
 
-    PointCloud::Ptr Genfullmem(const PointCloud::Ptr& msg);
-    PointCloud::Ptr Gendeformem(const PointCloud::Ptr& msg);
-    PointCloud::Ptr Gencontact(const PointCloud::Ptr& msg);
+    PointCloud::Ptr genFullmem(const PointCloud::Ptr& msg);
+    PointCloud::Ptr genDeformem(const PointCloud::Ptr& msg);
+    PointCloud::Ptr genContact(const PointCloud::Ptr& msg);
     PointCloud::Ptr transform(const PointCloud::Ptr& msg, float x, float y, float z);
     PointCloud::Ptr medianFilter(const PointCloud::ConstPtr& msg);
 
