@@ -19,7 +19,7 @@
 
 
 typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloud;
-
+using namespace std;
 class PointCloudAnalyzer
 {
 private:

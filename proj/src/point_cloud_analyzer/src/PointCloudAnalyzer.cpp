@@ -1,5 +1,5 @@
 #include "PointCloudAnalyzer.hpp"
-
+#include "utils.hpp"
 #include "std_msgs/String.h"
 #include "std_msgs/Float32.h"
 #include "std_msgs/UInt32.h"
@@ -481,12 +481,12 @@ PointCloud::Ptr PointCloudAnalyzer::transform(const PointCloud::Ptr& msg, float 
 
 
 
-vector<double> depthCallback(const PointCloud::ConstPtr& msg){
+vector<double> PointCloudAnalyzer::depthCallback(const PointCloud::ConstPtr& msg){
 	/*
 		store the orignal PointCloud and comapre it it the incoming 
 		data. Return the vector [max_relative_depth, mean_relative_depth]
 	*/
-	static PointCloud::Ptr origin_ptr = NULL;
+	static PointCloud::Ptr origin_ptr;
 	static bool is_origian_stored = false;
 	static int cnt = 0;
 	const int wait_times = 100;
@@ -495,23 +495,24 @@ vector<double> depthCallback(const PointCloud::ConstPtr& msg){
 	if(cnt < wait_times){ // wait for a sufficient time to get use msg
 		printf("In depthCallback: Waiting to get the useful point could, cnt=%d\n",cnt);
 	}else if( cnt == wait_times){
-		origin_ptr = new PointCloud(*msg);
+		origin_ptr = (new PointCloud(*msg))->makeShared();
 		printf("In depthCallback: set the origin point cloud cnt=%d\n",cnt);
 	}else{
 		// calculate the relative depth
 		double max_dis = 0;
 		double sum_dis = 0;
 		double tot_num = 0;
-		for (c = 0; c < max_column; c++){
-			for (r = 0; r < max_row; r++){
-				auto pa = msg->at(c,r);
-				auto pb = origin_ptr->at(c,r);
-				if(pcl::isFinite(pa,pb)){
+		for (int c = 0; c < max_column; c++){
+			for (int r = 0; r < max_row; r++){
+				pcl::PointXYZRGB pa = msg->at(c,r);
+				pcl::PointXYZRGB pb = origin_ptr->at(c,r);
+				if(pcl::isFinite(pa) && pcl::isFinite(pb)){
 					double dis = get3Ddistance(pa,pb);
 					max_dis = max(dis,max_dis);
 					sum_dis += dis;
 					tot_num ++; 
 				}
+			}
 		}
 		values[0] = max_dis;
 		values[1] = sum_dis/tot_num;

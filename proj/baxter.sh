@@ -1,1 +1,1 @@
-/home/liam/catkin_ws/EECS106B/baxter_ws/baxter.sh
+/home/su/baxter_ws/baxter.sh
