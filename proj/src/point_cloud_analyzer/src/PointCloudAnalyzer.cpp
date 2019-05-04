@@ -541,7 +541,7 @@ vector<double> PointCloudAnalyzer::depthCallback(const PointCloud::ConstPtr& msg
 	static PointCloud::Ptr origin_ptr;
 	static bool is_origian_stored = false;
 	static int cnt = 0;
-	const int wait_times = 20;
+	const int wait_times = 5;
 	vector <double> values (2,0); // create a vector with two values 0
 	cnt ++;
 	if(cnt < wait_times){ // wait for a sufficient time to get use msg
@@ -563,6 +563,12 @@ vector<double> PointCloudAnalyzer::depthCallback(const PointCloud::ConstPtr& msg
 					max_dis = max(dis,max_dis);
 					sum_dis += dis;
 					tot_num ++; 
+					//int index =  c * msg->width + r;
+					int index =  r * msg->width + c;
+					pcl::PointXYZRGB pc = msg->points[index];
+					double dis_try = get3Ddistance(pc,pa);
+					printf("In depthCallBack: try_dis %f\n",dis_try );
+
 				}
 			}
 		}
