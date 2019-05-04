@@ -19,7 +19,7 @@
 #include <queue>
 #include <vector>
 
-
+/*index =  r* msg->width + c  */
 typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloud;
 using namespace std;
 class PointCloudAnalyzer
@@ -46,8 +46,10 @@ private:
     float transform_z;
     float center_z_depth;
     float origin_membrane_area;
-    float full_membrane_area;
-    
+    float full_membrane_area = 0;
+    float contact_membrane_area = 0;
+    float rate = 0.5;
+    vector<int> detectedPoints;
 
     bool Isfirst;
     bool Iscontact;
@@ -72,8 +74,8 @@ private:
     float median_maxallowed_move = 0.01;
     //pcl::VoxelGrid<pcl::PointXYZRGB> sor;
     float resolution = 0.01;        // 分辨率
-
-    
+    int num_deform = 0;
+    int num_concave = 0;
 
     ros::NodeHandle nh;
     ros::Publisher use_case_pub;
@@ -108,7 +110,7 @@ private:
     //filter size
     float voxelgrid_size = 0.01;
     float radius2d_membrane = 0.065;
-    float radius3d_deform_limit = 0.05;
+    float radius3d_deform_limit = 0.006;
 
     //unsigned int text_id = 0;
 
