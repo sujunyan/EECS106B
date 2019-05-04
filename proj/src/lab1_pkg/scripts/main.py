@@ -128,7 +128,7 @@ if __name__ == "__main__":
     args = args_parse()
     rospy.init_node('Unnamed_node')
 
-    args.arm = arm
+    #args.arm = arm
 
     limb = baxter_interface.Limb(args.arm)
     kin = baxter_kinematics(args.arm)
