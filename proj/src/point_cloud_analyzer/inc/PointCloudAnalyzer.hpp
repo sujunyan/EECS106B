@@ -63,7 +63,7 @@ private:
     void setup_vis();
     void callback(const PointCloud::ConstPtr& msg);
     // a sub-routine to calculate the max/mean relative depth or more information
-    vector<double> depthCallback(const PointCloud::ConstPtr& msg); 
+    void depthCallback(const PointCloud::ConstPtr& msg); 
     void armpos_callback(const geometry_msgs::Point::ConstPtr& msg);
     void addcontact(const PointCloud::Ptr& msg);
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer;
@@ -76,6 +76,8 @@ private:
     float resolution = 0.01;        // 分辨率
     int num_deform = 0;
     int num_concave = 0;
+    double max_dis = 0;
+    double mean_dis = 0;
 
     ros::NodeHandle nh;
     ros::Publisher use_case_pub;

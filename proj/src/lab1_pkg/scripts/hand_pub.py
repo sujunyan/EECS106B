@@ -47,7 +47,7 @@ def hand_pos_pub():
         except Exception as e:
             print ('Could not hand position from %s to %s'%(from_frame,to_frame))
             #print(e)
-            pub.publish(Point(0, 0, 0))
+            #pub.publish(Point(0, 0, 0))
             continue
         r.sleep()
 

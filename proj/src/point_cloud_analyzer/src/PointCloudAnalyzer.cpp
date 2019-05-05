@@ -151,6 +151,7 @@ void PointCloudAnalyzer::setup_vis(){
     coeffs.values.push_back (0.0);
 
     std::vector<double> origin(3,0);
+    origin[2] = 5;
     viewer->addPlane (coeffs, origin[0],origin[1],origin[2], "plane");
 	viewer->addCoordinateSystem (0.1);
     
@@ -190,9 +191,10 @@ void PointCloudAnalyzer::mouseEventOccurred (const pcl::visualization::MouseEven
 
 void PointCloudAnalyzer::armpos_callback(const geometry_msgs::Point::ConstPtr& msg)
 {
+	static double offset = 0.2;
 	transform_x = msg->x;
 	transform_y = msg->y;
-	transform_z = msg->z;
+	transform_z = msg->z - offset;
 }
 
 
@@ -383,6 +385,7 @@ PointCloud::Ptr PointCloudAnalyzer::genContact(const PointCloud::Ptr& msg)
     
      //vector<int> col;
     //vector<int> row;
+    
     #if 0
     for (int i=0; i< detectedPoints.size(); i++){
         int r = detectedPoints[i] / msg->width;
@@ -401,7 +404,7 @@ PointCloud::Ptr PointCloudAnalyzer::genContact(const PointCloud::Ptr& msg)
 				float r_concavity = concavityOfPair(msg->at(c, r-k), msg->at(c, r+k), normals->at(c, r-k), normals->at(c, r+k));
                 
                 
-				if (c_concavity > 0 && r_concavity > 0) {
+				if (c_concavity >= 0 && r_concavity >= 0) {
 						// See what local surface area this point covers
 						//float surface_area = surfaceElementArea(full_membrane->at(c, r), full_membrane->at(c-1, r), full_membrane->at(c+1, r), full_membrane->at(c, r-1), full_membrane->at(c, r+1));
 						//total_concave_surface += surface_area;
@@ -411,23 +414,16 @@ PointCloud::Ptr PointCloudAnalyzer::genContact(const PointCloud::Ptr& msg)
 					    contact_membrane->at(c, r).y = msg->at(c, r).y;
 					    contact_membrane->at(c, r).z = msg->at(c, r).z;
 						contact_membrane->at(c, r).rgb = *reinterpret_cast<float*>(&red);
-						msg->at(c,r).x = Nan;
-						msg->at(c,r).y = Nan;
-						msg->at(c,r).z = Nan;
+						//msg->at(c,r).x = Nan;
+						//msg->at(c,r).y = Nan;
+						//msg->at(c,r).z = Nan;
   					//}
     			}
     		}
     	}
      }
     }
-    const float bad_point = std::numeric_limits<float>::quiet_NaN();
-    if (is_invalid_point){
-	  p.x = p.y = p.z = bad_point;
-    }
-    #endif
-    
-    //if (num_concave == 0){
-
+     #else
     pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients);
     pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
     // Create the segmentation object
@@ -437,7 +433,7 @@ PointCloud::Ptr PointCloudAnalyzer::genContact(const PointCloud::Ptr& msg)
      // Mandatory
      seg.setModelType (pcl::SACMODEL_PLANE);
      seg.setMethodType (pcl::SAC_RANSAC);
-     seg.setDistanceThreshold (0.01f);
+     seg.setDistanceThreshold (0.009f);
 
      seg.setInputCloud (msg);
      seg.segment (*inliers, *coefficients);
@@ -458,7 +454,18 @@ PointCloud::Ptr PointCloudAnalyzer::genContact(const PointCloud::Ptr& msg)
             }
      }
  	}
+    #endif 
+
+    #if 0
+    const float bad_point = std::numeric_limits<float>::quiet_NaN();
+    if (is_invalid_point){
+	  p.x = p.y = p.z = bad_point;
+    }
+    #endif
     
+    //if (num_concave == 0){
+    
+   
 
     //}
     
@@ -512,8 +519,27 @@ PointCloud::Ptr PointCloudAnalyzer::genContact(const PointCloud::Ptr& msg)
 
 void PointCloudAnalyzer::addcontact(const PointCloud::Ptr& msg)
 {
-	for (int c = 0 ; c < msg->width  ; c++) {
-		for (int r = 0; r < msg->height ; r++) {
+	static bool add_flag = false;
+	static bool once_flag = false;
+	const double limit = 0.025;
+	const double small_limit = 0.01;
+
+	if(max_dis > limit && once_flag){
+		add_flag = true;
+		once_flag = false;
+	}else{
+		add_flag = false;
+	}
+
+	if(max_dis < small_limit){
+		once_flag = true;
+	}
+
+	if (!add_flag)return;
+	int scale = 3;
+
+	for (int c = 0 ; c < msg->width  ; c+=scale) {
+		for (int r = 0; r < msg->height ; r+=scale) {
 			 if (pcl::isFinite(msg->at(c,r))){
 			 	     //std::cout<<"if enter add"<<"\n";
 	                  map_ptr->push_back(msg->at(c,r));
@@ -628,7 +654,7 @@ PointCloud::Ptr PointCloudAnalyzer::medianFilter(const PointCloud::ConstPtr& msg
 }
 
 
-vector<double> PointCloudAnalyzer::depthCallback(const PointCloud::ConstPtr& msg){
+void PointCloudAnalyzer::depthCallback(const PointCloud::ConstPtr& msg){
 	/*
 		store the orignal PointCloud and comapre it it the incoming 
 		data. Return the vector [max_relative_depth, mean_relative_depth]
@@ -646,8 +672,8 @@ vector<double> PointCloudAnalyzer::depthCallback(const PointCloud::ConstPtr& msg
 		printf("In depthCallback: set the origin point cloud cnt=%d\n",cnt);
 	}else{
 		// calculate the relative depth
-		double max_dis = 0;
-		double sum_dis = 0;
+		double max_dis0 = 0;
+		double sum_dis0 = 0;
 		double tot_num = 0;
 		for (int c = 0; c < msg->width; c++){
 			for (int r = 0; r < msg->height; r++){
@@ -655,24 +681,24 @@ vector<double> PointCloudAnalyzer::depthCallback(const PointCloud::ConstPtr& msg
 				pcl::PointXYZRGB pb = origin_ptr->at(c,r);
 				if(pcl::isFinite(pa) && pcl::isFinite(pb)){
 					double dis = get3Ddistance(pa,pb);
-					max_dis = max(dis,max_dis);
-					sum_dis += dis;
+					max_dis0 = max(dis,max_dis0);
+					sum_dis0 += dis;
 					tot_num ++; 
 					//int index =  c * msg->width + r;
 					int index =  r * msg->width + c;
-					pcl::PointXYZRGB pc = msg->points[index];
-					double dis_try = get3Ddistance(pc,pa);
-					printf("In depthCallBack: try_dis %f\n",dis_try );
+					//pcl::PointXYZRGB pc = msg->points[index];
+					//double dis_try = get3Ddistance(pc,pa);
+					//printf("In depthCallBack: try_dis %f\n",dis_try );
 
 				}
 			}
 		}
-		values[0] = (1-rate) * values[0] + rate * max_dis;
-		values[1] = (1-rate) * values[1] + rate * sum_dis/tot_num;
-		printf("In depthCallback: max_dis=%f mean_dis=%f\n",values[0],values[1]);
+		max_dis = (1-rate) * max_dis + rate * max_dis0;
+		mean_dis = (1-rate) * mean_dis + rate * sum_dis0/tot_num;
+		printf("In depthCallback: max_dis=%f mean_dis=%f\n",max_dis,mean_dis);
 		
 	}
-	return values;
+	
 }
 
 
@@ -874,13 +900,13 @@ void PointCloudAnalyzer::start(){
 
 	arm_sub = nh.subscribe<geometry_msgs::Point>("/hand_pub", 1, &PointCloudAnalyzer::armpos_callback, this);
 	//point_cloud_sub = nh.subscribe<sensor_msgs::PointCloud2>("/royale_camera_driver/point_cloud", 10, callback );
-	ros::Rate r(10); // 10 hz
+	ros::Rate r(20); // 20 hz
 
 	while (!viewer->wasStopped () && !viewer1->wasStopped())
 	{   
 		//pcl_conversions::toPCL(ros::Time::now(), contact_membrane->header.stamp);
-		viewer->spinOnce (100);
-		viewer1->spinOnce (100);
+		viewer->spinOnce (10);
+		viewer1->spinOnce (10);
 		ros::spinOnce();
 		r.sleep(); // TODO might has a bug
 		//pub.publish (*contact_membrane);
