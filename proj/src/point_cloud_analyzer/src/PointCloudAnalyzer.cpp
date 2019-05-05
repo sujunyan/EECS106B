@@ -411,7 +411,9 @@ PointCloud::Ptr PointCloudAnalyzer::genContact(const PointCloud::Ptr& msg)
 						//std::cout<<"enter validation"<<"\n";
 					    num_concave += 1;
 						contact_membrane->at(c, r).x = msg->at(c, r).x;
-					    contact_membrane->at(c, r).y = msg->at(c, r).y;
+					ndices.size ()5620
+generate contact_membrane
+contact_me    contact_membrane->at(c, r).y = msg->at(c, r).y;
 					    contact_membrane->at(c, r).z = msg->at(c, r).z;
 						contact_membrane->at(c, r).rgb = *reinterpret_cast<float*>(&red);
 						//msg->at(c,r).x = Nan;
@@ -536,7 +538,7 @@ void PointCloudAnalyzer::addcontact(const PointCloud::Ptr& msg)
 	}
 
 	if (!add_flag)return;
-	int scale = 3;
+	int scale = 2;
 
 	for (int c = 0 ; c < msg->width  ; c+=scale) {
 		for (int r = 0; r < msg->height ; r+=scale) {
