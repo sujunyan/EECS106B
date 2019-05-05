@@ -386,7 +386,7 @@ PointCloud::Ptr PointCloudAnalyzer::genContact(const PointCloud::Ptr& msg)
      //vector<int> col;
     //vector<int> row;
     
-    #if 0
+    #if 1
     for (int i=0; i< detectedPoints.size(); i++){
         int r = detectedPoints[i] / msg->width;
         int c = detectedPoints[i] % msg->width;
