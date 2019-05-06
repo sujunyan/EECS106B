@@ -368,7 +368,7 @@ pcl::PointCloud<pcl::Normal>::Ptr PointCloudAnalyzer::Getnormal(PointCloud::Ptr&
 
 
 PointCloud::Ptr PointCloudAnalyzer::genContact(const PointCloud::Ptr& msg)
- { 
+{ 
 
  	num_concave= 0;
     std::cout<<"start contact"<<endl;
@@ -411,9 +411,7 @@ PointCloud::Ptr PointCloudAnalyzer::genContact(const PointCloud::Ptr& msg)
 						//std::cout<<"enter validation"<<"\n";
 					    num_concave += 1;
 						contact_membrane->at(c, r).x = msg->at(c, r).x;
-					ndices.size ()5620
-generate contact_membrane
-contact_me    contact_membrane->at(c, r).y = msg->at(c, r).y;
+						contact_membrane->at(c, r).y = msg->at(c, r).y;
 					    contact_membrane->at(c, r).z = msg->at(c, r).z;
 						contact_membrane->at(c, r).rgb = *reinterpret_cast<float*>(&red);
 						//msg->at(c,r).x = Nan;
