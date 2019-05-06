@@ -65,10 +65,10 @@ def get_trajectory(task, num_way, saved_file):
         return robot_traj
 
     if task == 'scan':
-        #start_pos = np.array([0.474, - 0.4 , -0.04])
-        final_pos = np.array([0.82, - 0.6 , -0.04])
+        start_pos = np.array([0.474, - 0.4 , 0.1])
+        final_pos = np.array([0.82, - 0.6 , start_pos[2]])
         path = ScanPath(limb,kin,total_time,ar_marker_num,\
-                        start_pos,final_pos,delta_xyz = (0.05,0.05,0.02)) # ar_marker_num might be redundent
+                        start_pos,final_pos,delta_xyz = (0.05,0.05,0.09)) # ar_marker_num might be redundent
     else:
         raise ValueError('task {} not recognized'.format(task))
     return path.to_robot_trajectory(num_way, True)
@@ -113,6 +113,7 @@ def get_param():
     if not rospy.has_param("/hand_pub/start_pos"):
         raise ValueError("start_pos not found on parameter server")    
     start_pos = rospy.get_param("/hand_pub/start_pos")
+    start_pos = np.array([float(i) for i in eval(start_pos)])
     if not rospy.has_param("/hand_pub/arm"):
         raise ValueError("start_pos not found on parameter server")    
     arm = rospy.get_param("/hand_pub/arm")
@@ -126,6 +127,7 @@ if __name__ == "__main__":
 
     """
     args = args_parse()
+    get_param()
     rospy.init_node('Unnamed_node')
 
     #args.arm = arm
