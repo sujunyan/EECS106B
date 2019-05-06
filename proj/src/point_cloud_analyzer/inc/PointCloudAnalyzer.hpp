@@ -27,6 +27,7 @@ class PointCloudAnalyzer
 private:
     /* data */
     PointCloud::Ptr origin_membrane;
+    PointCloud::Ptr origin_ptr;
     PointCloud::Ptr full_membrane;
     PointCloud::Ptr deformed_membrane;
     PointCloud::Ptr contact_membrane;
@@ -48,9 +49,12 @@ private:
     float origin_membrane_area;
     float full_membrane_area = 0;
     float contact_membrane_area = 0;
-    float rate = 0.5;
+    double rate = 0.4;
     vector<int> detectedPoints;
-
+    double max_dis;
+    double mean_dis;
+    double common_z;
+    double min_z;
     bool Isfirst;
     bool Iscontact;
     
@@ -76,6 +80,7 @@ private:
     float resolution = 0.01;        // 分辨率
     int num_deform = 0;
     int num_concave = 0;
+    int num_plane = 0;
 
     ros::NodeHandle nh;
     ros::Publisher use_case_pub;
@@ -110,7 +115,7 @@ private:
     //filter size
     float voxelgrid_size = 0.01;
     float radius2d_membrane = 0.065;
-    float radius3d_deform_limit = 0.006;
+    float radius3d_deform_limit = 0.003;
 
     //unsigned int text_id = 0;
 
@@ -131,6 +136,11 @@ private:
     uint8_t g_red = 196;
     uint8_t b_red = 113;
     uint32_t red = ((uint32_t) r_red << 16 | (uint32_t)g_red << 8 | (uint32_t)b_red);
+
+    uint8_t r_plane =  0;
+    uint8_t g_plane = 255;
+    uint8_t b_plane = 0;
+    uint32_t plane = ((uint32_t) r_plane << 16 | (uint32_t)g_plane << 8 | (uint32_t)b_plane);
 };
 
 

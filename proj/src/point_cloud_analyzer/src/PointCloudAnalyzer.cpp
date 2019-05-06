@@ -28,7 +28,7 @@
 #include <pcl/features/normal_3d.h>
 #include <boost/thread/thread.hpp>
 #include <fstream>
-
+#include <pcl/filters/extract_indices.h>
 #include <iostream>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/filters/statistical_outlier_removal.h>
@@ -369,21 +369,17 @@ PointCloud::Ptr PointCloudAnalyzer::genContact(const PointCloud::Ptr& msg)
  { 
 
  	num_concave= 0;
+ 	num_plane = 0;
+
     std::cout<<"start contact"<<endl;
 
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr contact_membrane (new pcl::PointCloud<pcl::PointXYZRGB>);
-    
+    //pcl::PointCloud<pcl::PointXYZRGB>::Ptr contact_membrane (new pcl::PointCloud<pcl::PointXYZRGB>);
     contact_membrane->width = msg->width;
 	contact_membrane->height = msg->height;
 	contact_membrane->resize(msg->height*msg->width);
-     
-     
-     
-     
-    
      //vector<int> col;
     //vector<int> row;
-    #if 0
     for (int i=0; i< detectedPoints.size(); i++){
         int r = detectedPoints[i] / msg->width;
         int c = detectedPoints[i] % msg->width;
@@ -400,8 +396,11 @@ PointCloud::Ptr PointCloudAnalyzer::genContact(const PointCloud::Ptr& msg)
 
 				float r_concavity = concavityOfPair(msg->at(c, r-k), msg->at(c, r+k), normals->at(c, r-k), normals->at(c, r+k));
                 
+                //std::cout<<"c_concavity"<<c_concavity<<"r_concavity"<<r_concavity<<endl;
+  				//std::cout<<"abs( common_z - min_z)"<<abs(common_z - min_z)<<endl;
+                //std::cout<<"abs(msg->at(c,r).z - common_z)"<<abs(msg->at(c,r).z - common_z)<<endl;
                 
-				if (c_concavity > 0 && r_concavity > 0) {
+				if (c_concavity > 0 && r_concavity > 0 && get3Ddistance(msg->at(c,r),origin_ptr->at(c,r)) >= max_dis - 0.016) {
 						// See what local surface area this point covers
 						//float surface_area = surfaceElementArea(full_membrane->at(c, r), full_membrane->at(c-1, r), full_membrane->at(c+1, r), full_membrane->at(c, r-1), full_membrane->at(c, r+1));
 						//total_concave_surface += surface_area;
@@ -411,29 +410,35 @@ PointCloud::Ptr PointCloudAnalyzer::genContact(const PointCloud::Ptr& msg)
 					    contact_membrane->at(c, r).y = msg->at(c, r).y;
 					    contact_membrane->at(c, r).z = msg->at(c, r).z;
 						contact_membrane->at(c, r).rgb = *reinterpret_cast<float*>(&red);
-						msg->at(c,r).x = Nan;
-						msg->at(c,r).y = Nan;
-						msg->at(c,r).z = Nan;
-  					//}
+						//msg->at(c,r).x = Nan;
+						//msg->at(c,r).y = Nan;
+						//msg->at(c,r).z = Nan;
+  					}
+  			  
+                #if 0
+				else if( abs(c_concavity) <= 0.004&& abs(r_concavity) <= 0.004 && abs( common_z - min_z) <= 0.02 && abs(msg->at(c,r).z - common_z) <= 0.004){
+                        
+						num_plane += 1;
+					    contact_membrane->at(c, r).x = msg->at(c, r).x;
+					    contact_membrane->at(c, r).y = msg->at(c, r).y;
+					    contact_membrane->at(c, r).z = msg->at(c, r).z;
+						contact_membrane->at(c, r).rgb = *reinterpret_cast<float*>(&red);
+				}
+				#endif
+
     			}
     		}
     	}
      }
-    }
-    const float bad_point = std::numeric_limits<float>::quiet_NaN();
-    if (is_invalid_point){
-	  p.x = p.y = p.z = bad_point;
-    }
-    #endif
     
-    //if (num_concave == 0){
-
+     
+    
     pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients);
     pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
     // Create the segmentation object
     pcl::SACSegmentation<pcl::PointXYZRGB> seg;
     // Optional
-    seg.setOptimizeCoefficients (false);
+     seg.setOptimizeCoefficients (false);
      // Mandatory
      seg.setModelType (pcl::SACMODEL_PLANE);
      seg.setMethodType (pcl::SAC_RANSAC);
@@ -444,64 +449,35 @@ PointCloud::Ptr PointCloudAnalyzer::genContact(const PointCloud::Ptr& msg)
 
      std::cout<<"inliers->indices.size ()"<<inliers->indices.size ()<<"\n";
      
-     if (inliers->indices.size () != 0){
-		 for (size_t i = 0; i < inliers->indices.size (); i++){
 
-		 	if (std::find(detectedPoints.begin(),detectedPoints.end(),inliers->indices[i]) != detectedPoints.end())
-		 	{
+    if (inliers->indices.size () > 4540){
+     	if (abs( common_z - min_z) <= 0.025){
+       
+
+
+		 for (size_t i = 0; i < inliers->indices.size (); i++){
+    
+		  
+
 		 	  int r = inliers->indices[i] / msg->width;
               int c = inliers->indices[i] % msg->width;
+              //if(msg->at(c,r).z == common_z){
+
+            if(abs(msg->at(c,r).z - common_z) <= 0.006){
+              num_plane++;
               contact_membrane->at(c, r).x = msg->at(c, r).x;
 			  contact_membrane->at(c, r).y = msg->at(c, r).y;
 			  contact_membrane->at(c, r).z = msg->at(c, r).z;
 			  contact_membrane->at(c, r).rgb = *reinterpret_cast<float*>(&red);
-            }
+	       }
+    	 }
      }
- 	}
-    
+ }
+   
+ 	
 
-    //}
-    
-
-    
-     /*
-    for (int c = k ; c < contact_membrane->width - k ; c++) {
-		for (int r = k; r < contact_membrane->height -k ; r++) {
-			// Let's do column wise first (horizontal neighbours). Check if horizontal neighbours exist
-			if (pcl::isFinite(msg->at(c,r)) && pcl::isFinite(normals->at(c,r))){
-
-			if (pcl::isFinite(msg->at(c-k, r)) && pcl::isFinite(msg->at(c+k, r)) 
-				&& pcl::isFinite(normals->at(c-k,r)) && pcl::isFinite(msg->at(c+k, r))) {
-				// Now check if vertical neighbours exist. Row-wise.
-				if (pcl::isFinite(msg->at(c, r-k)) && pcl::isFinite(msg->at(c, r+k))
-					 && pcl::isFinite(normals->at(c, r-k)) && pcl::isFinite(normals->at(c, r+k))) 
-				{
-                     
-					//std::cout<<"test xyz"<<msg->at(c-k,r).x<<" "<<msg->at(c-k,r).y<<" "<<msg->at(c-k,r).z<<"\n";
-					//std::cout<<"test normal"<<normals->at(c-k,r).normal_x<<" "<<normals->at(c-k,r).normal_y<<" "<<normals->at(c-k,r).normal_z<<"\n";
-					float c_concavity = concavityOfPair(msg->at(c-k, r), msg->at(c+k, r), normals->at(c-k, r), normals->at(c+k, r));
-
-					float r_concavity = concavityOfPair(msg->at(c, r-k), msg->at(c, r+k), normals->at(c, r-k), normals->at(c, r+k));
-
-					//std::cout<<"c_concavity"<<' '<<c_concavity<<' '<<"r_concavity"<<r_concavity<<"\n";
-                   
-                     
-                    if (c_concavity > 0 && r_concavity > 0 ) {
-						// See what local surface area this point covers
-						//float surface_area = surfaceElementArea(full_membrane->at(c, r), full_membrane->at(c-1, r), full_membrane->at(c+1, r), full_membrane->at(c, r-1), full_membrane->at(c, r+1));
-						//total_concave_surface += surface_area;
-						//std::cout<<"enter validation"<<"\n";
-						contact_membrane->at(c, r).x = msg->at(c, r).x;
-					    contact_membrane->at(c, r).y = msg->at(c, r).y;
-					    contact_membrane->at(c, r).z = msg->at(c, r).z;
-						contact_membrane->at(c, r).rgb = *reinterpret_cast<float*>(&red);
-					}
-				}
-			}
-		 } 
- 		}
- 	}
- 	*/
+    std::cout<<"num_concave"<<num_concave<<"\n";
+ 	std::cout<<"num_plane"<<num_plane<<"\n";
     
  	std::cout << "generate contact_membrane" <<"\n";
  	return contact_membrane;
@@ -611,6 +587,9 @@ PointCloud::Ptr PointCloudAnalyzer::medianFilter(const PointCloud::ConstPtr& msg
     PointCloud filter_point_cloud = PointCloud (*msg);
 	PointCloud::Ptr filter_ptr = filter_point_cloud.makeShared();
     Median.setInputCloud(filter_ptr);
+    Median.setWindowSize(10);
+    //std::cout<<"filter size"<<" "<<Median.getWindowSize()<<"\n";
+
     Median.setMaxAllowedMovement(median_maxallowed_move);
     //std::cout<<"median_maxallowed_move"<<median_maxallowed_move<<endl;
     Median.applyFilter(*filter_ptr);
@@ -633,10 +612,14 @@ vector<double> PointCloudAnalyzer::depthCallback(const PointCloud::ConstPtr& msg
 		store the orignal PointCloud and comapre it it the incoming 
 		data. Return the vector [max_relative_depth, mean_relative_depth]
 	*/
-	static PointCloud::Ptr origin_ptr;
+
+	//static PointCloud::Ptr origin_ptr;
 	//static bool is_origian_stored = false;
+
 	static int cnt = 0;
-	const int wait_times = 5;
+	const int wait_times = 1;
+    std::map<double, int> zList;
+    
 	static vector <double> values (2,0); // create a vector with two values 0
 	cnt ++;
 	if(cnt < wait_times){ // wait for a sufficient time to get use msg
@@ -646,26 +629,65 @@ vector<double> PointCloudAnalyzer::depthCallback(const PointCloud::ConstPtr& msg
 		printf("In depthCallback: set the origin point cloud cnt=%d\n",cnt);
 	}else{
 		// calculate the relative depth
-		double max_dis = 0;
-		double sum_dis = 0;
+		double max_dis0 = 0;
+		double sum_dis0 = 0;
 		double tot_num = 0;
 		for (int c = 0; c < msg->width; c++){
 			for (int r = 0; r < msg->height; r++){
 				pcl::PointXYZRGB pa = msg->at(c,r);
 				pcl::PointXYZRGB pb = origin_ptr->at(c,r);
+
 				if(pcl::isFinite(pa) && pcl::isFinite(pb)){
 					double dis = get3Ddistance(pa,pb);
-					max_dis = max(dis,max_dis);
-					sum_dis += dis;
+					double z = msg->at(c,r).z;
+                    
+					   if (dis >= 0.009)
+					   {
+					   	zList[std::round(z*1000)/1000.0]++;
+					   }
+                    //std::cout<<"test"<<endl;
+					max_dis0 = max(dis,max_dis0);
+					sum_dis0 += dis;
 					tot_num ++; 
 				}
 			}
 		}
-		values[0] = (1-rate) * values[0] + rate * max_dis;
-		values[1] = (1-rate) * values[1] + rate * sum_dis/tot_num;
-		printf("In depthCallback: max_dis=%f mean_dis=%f\n",values[0],values[1]);
-		
+       
+       std::map<double, int>::iterator iter;
+       
+		int maxvalue = 100;
+		double maxkey = 2.0;
+		double key = -1;
+		double tmp1 = 0;
+		for(iter = zList.begin() ; iter!= zList.end(); ++iter)
+		{
+			//std::cout<<"key"<< iter->first << "value" <<iter->second<<endl;
+  			int tmp = 0;
+  			
+
+   		    tmp = iter->second;
+   		    tmp1 = iter->first;
+   			if(tmp >= maxvalue )
+  			{
+            	maxvalue = tmp;
+    			key = iter->first;
+   			}
+
+   			if(tmp1 < maxkey && tmp1 != 0)
+   			{ 
+   				maxkey = tmp1;
+   			}
+            
+		}
+
+        common_z = key;
+        min_z = maxkey;
+        
+		max_dis = (1-rate) * max_dis + rate * max_dis0;
+		mean_dis = (1-rate) * mean_dis + rate * sum_dis0/tot_num;
+		printf("In depthCallback: max_dis=%f mean_dis=%f common_z=%f min_z=%f\n",max_dis,mean_dis,common_z, min_z);
 	}
+
 	return values;
 }
 
@@ -775,6 +797,8 @@ void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
     depthCallback(down_sampled_cloud_ptr);
     
     
+    std::cout<<"end depthCallback"<<endl;
+
     pcl::octree::OctreePointCloudChangeDetector<pcl::PointXYZRGB> octree(0.01f);
     
     octree.setInputCloud(origin_membrane);
@@ -788,17 +812,29 @@ void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
     
     detectedPoints.clear();
     int numberOfNewPoints = octree.getPointIndicesFromNewVoxels(detectedPoints);
-    std::cout << numberOfNewPoints << " New Points Detected!" << std::endl;
+    //std::cout << numberOfNewPoints << " New Points Detected!" << std::endl;
     
 
     for (size_t i = 0; i < detectedPoints.size (); ++i)
     {
-    	full_membrane->points[detectedPoints[i]].rgb = *reinterpret_cast<float*>(&green);
+    	num_deform = 0;
+    	int r = detectedPoints[i] / msg->width;
+        int c = detectedPoints[i] % msg->width;
+        if(get3Ddistance(full_membrane->at(c,r),origin_membrane->at(c,r)) > radius3d_deform_limit)
+        {    
+        	 num_deform ++;
+    	     full_membrane->points[detectedPoints[i]].rgb = *reinterpret_cast<float*>(&green);
+        }
+        else
+        {
+        	detectedPoints.erase(detectedPoints.begin() + i);
+        }
     }
+      
     
-  
-    //deformed_membrane = genDeformem(full_membrane);
+   // deformed_membrane = genDeformem(full_membrane);
     std::cout<<"num_deform"<<num_deform<<"\n";
+
     normals = Getnormal(full_membrane);
     
     contact_membrane = genContact(full_membrane);
