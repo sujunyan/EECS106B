@@ -753,11 +753,16 @@ void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
 // use current max_dis and arm position to estimate
 void PointCloudAnalyzer::stiffnessCallback(){
 	const int filter_size = 5;
+	static double last_transform_z = 0;
 	static SimpleFilter stiffness_filter(filter_size);
 	if(!is_contact){
 		stiffness = stiffness_filter.filter(0);
+		last_transform_z = transform_z; // record the arm position before contact
 	}else{
-		
+		double delta_z = last_transform_z - transform_z;
+		double force = max_dis; // TODO force is a function of max_dis, let's assume now it is linear. 
+		stiffness_tmp = force / delta_z;
+		stiffness = stiffness_filter.filter(stiffness_tmp);
 	}
 }
 
