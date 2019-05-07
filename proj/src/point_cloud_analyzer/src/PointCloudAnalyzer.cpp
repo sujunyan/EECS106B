@@ -56,7 +56,6 @@ pcl::PointXYZRGB findCenter(const PointCloud::ConstPtr& msg);
                                      //adjust it deform
 float relative_z = 0.105;             // calibrate point z 
 float center_z_depth;
-bool Isfirst;
 
 int k = 10;                          // the interval of point cloud to compute the concavity
 
@@ -99,8 +98,6 @@ void PointCloudAnalyzer::setup_parameter(){
 
 	ros::spinOnce();
 
-	Isfirst = true;
-	//Iscontact = False;
 }
 
 
@@ -473,32 +470,6 @@ float PointCloudAnalyzer::getsurfacearea(const PointCloud::Ptr&msg)
 }
 
 
-/*
-void PointCloudAnalyzer::Saveorigin(const PointCloud::Ptr& msg)
-{
-	//std::cout<<"start origin_membrane";
-    	origin_membrane->width = msg->width;
-	    origin_membrane->height = msg->height;
-	    origin_membrane->resize(msg->height*msg->width);
-    	for (int c = 0 ; c < msg->width ; c++) {
-			for (int r = 0; r < msg->height; r++) {
-				if (pcl::isFinite(msg->at(c,r))){
-					origin_membrane->at(c, r).x = msg->at(c, r).x;
-			    	origin_membrane->at(c, r).y = msg->at(c, r).y;
-					origin_membrane->at(c, r).z = msg->at(c, r).z;
-				//std::cout<<" "<<c<<" "<<r<<origin_membrane->at(c, r).x<<origin_membrane->at(c, r).y<<origin_membrane->at(c, r).z<<"\n";
-			}
-		
-        }
-      }
-        
-        std::cout<<"end origin_membrane";
-        origin_center_point = findCenter(origin_membrane);
-        Isfirst = false;
-}
-*/
-
-
 PointCloud::Ptr PointCloudAnalyzer::transform(const PointCloud::Ptr& msg, float x, float y, float z)
 {   
 	//std::cout<<"transform start"<<"\n";
@@ -786,6 +757,18 @@ void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
     
 
 }
+void stiffnessCallback(); 
+// check if the membrane is contact to an object, will set the bool variable is_contact
+
+void checkContact(){
+	const double threshold = 0.01;
+	if(max_dis < threshold){
+		is_contact = true;
+	}else{
+		is_contact = false;
+	}
+
+}
 
 void PointCloudAnalyzer::start(){
     
@@ -793,15 +776,11 @@ void PointCloudAnalyzer::start(){
     transform_y = 0;
     transform_z = 0;
 	//ros::Publisher pub_contact = nh.advertise<pcl::PointCloud<pcl::PointXYZRGB>> ("contact", 100);
-
-
     pub_center_z = nh.advertise<std_msgs::Float32>("center_z_deform", 1000);   
     pub_contact_area = nh.advertise<std_msgs::Float32>("contact_area", 1000);
     pub_full_area = nh.advertise<std_msgs::Float32>("full_membrane_area", 1000);
     pub_maxdis = nh.advertise<std_msgs::Float32>("max_dis", 1000);
     pub_meandis = nh.advertise<std_msgs::Float32>("max_dis", 1000);
-
-
 
 	point_cloud_sub = nh.subscribe<PointCloud>("/royale_camera_driver/point_cloud", 1, &PointCloudAnalyzer::callback, this);
 
@@ -809,7 +788,6 @@ void PointCloudAnalyzer::start(){
 	//point_cloud_sub = nh.subscribe<sensor_msgs::PointCloud2>("/royale_camera_driver/point_cloud", 10, callback );
 
 	ros::Rate r(100); // 100 hz
-
 
 	while (!viewer->wasStopped () && !viewer1->wasStopped())
 	{   

@@ -42,19 +42,26 @@ private:
     pcl::PointXYZRGB center_point;
     pcl::PointXYZRGB calibrate_point; 
     pcl::PointXYZRGB origin_center_point;
-    float transform_x;
-    float transform_y;
-    float transform_z;
+    float transform_x,transform_y,transform_z;
     float center_z_depth;
     float origin_membrane_area;
     float full_membrane_area = 0;
     float contact_membrane_area = 0;
+    float median_maxallowed_move = 0.01;
+    int num_deform = 0;
+    int num_concave = 0;
+    int num_plane = 0;
     double rate = 0.4;
+    double max_dis = 0; // store the max relative depth in real time
+    double mean_dis = 0;
+    double resolution = 0.01;        // 分辨率
     vector<int> detectedPoints;
-    double common_z;
-    double min_z;
-    bool Isfirst;
-    bool Iscontact;
+    double common_z,min_z;
+    //filter size
+    const float radius2d_membrane = 0.065;
+    float radius3d_deform_limit = 0.003;
+
+    bool is_contact;
     
 public:
     PointCloudAnalyzer(/* args */);
@@ -66,24 +73,15 @@ private:
     void callback(const PointCloud::ConstPtr& msg);
     // a sub-routine to calculate the max/mean relative depth or more information
     void depthCallback(const PointCloud::ConstPtr& msg); 
+    // a sub-routine to estimate the stiffness 
+    void stiffnessCallback(); 
+    void checkContact(); // check if the membrane is contact to an object, will set the bool variable is_contact
     void armpos_callback(const geometry_msgs::Point::ConstPtr& msg);
     void addcontact(const PointCloud::Ptr& msg);
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer;
     boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer1;
-
-
     pcl::MedianFilter<pcl::PointXYZRGB> Median;
-    float median_maxallowed_move = 0.01;
-    //pcl::VoxelGrid<pcl::PointXYZRGB> sor;
-    float resolution = 0.01;        // 分辨率
-    int num_deform = 0;
-    int num_concave = 0;
-
-    double max_dis = 0;
-    double mean_dis = 0;
-
-    int num_plane = 0;
-
+    
 
     ros::NodeHandle nh;
     ros::Publisher use_case_pub;
@@ -98,40 +96,23 @@ private:
     ros::Publisher pub_maxdis;
     ros::Publisher pub_meandis;
 
-
-    
     ros::Subscriber point_cloud_sub;
     ros::Subscriber arm_sub;
     
-
-    //ros::Rate loop_rate();
-    
-    //PointCloud::Ptr Genfullmem(const PointCloud::ConstPtr& msg);
-
     PointCloud::Ptr genFullmem(const PointCloud::Ptr& msg);
     PointCloud::Ptr genDeformem(const PointCloud::Ptr& msg);
     PointCloud::Ptr genContact(const PointCloud::Ptr& msg);
     PointCloud::Ptr transform(const PointCloud::Ptr& msg, float x, float y, float z);
     PointCloud::Ptr medianFilter(const PointCloud::ConstPtr& msg);
 
-    //PointCloud::Ptr voxel_grid(const PointCloud::ConstPtr&msg);
-    void Saveorigin(const PointCloud::Ptr& msg);
-    //void mouseEventOccurred (const pcl::visualization::MouseEvent &event,
-    //                     void* viewer_void);
-
     float getsurfacearea(const PointCloud::Ptr&msg);
     pcl::PointCloud<pcl::Normal>::Ptr Getnormal(PointCloud::Ptr& msg);
 
-    //filter size
-    float voxelgrid_size = 0.01;
-    float radius2d_membrane = 0.065;
-    float radius3d_deform_limit = 0.003;
 
     //unsigned int text_id = 0;
 
-
-
     //color of area      green for deformation   white for membrane
+    #if 0
     uint8_t r_green = 113;
     uint8_t g_green = 164;
     uint8_t b_green = 252;
@@ -151,6 +132,7 @@ private:
     uint8_t g_plane = 255;
     uint8_t b_plane = 0;
     uint32_t plane = ((uint32_t) r_plane << 16 | (uint32_t)g_plane << 8 | (uint32_t)b_plane);
+    #endif
 };
 
 
