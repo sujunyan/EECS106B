@@ -66,9 +66,9 @@ def get_trajectory(task, num_way, saved_file):
 
     if task == 'scan':
         start_pos = np.array([0.474, - 0.4 , 0.1])
-        final_pos = np.array([0.82, - 0.6 , start_pos[2]])
+        final_pos = np.array([0.82, - 0.6 , 0.1])
         path = ScanPath(limb,kin,total_time,ar_marker_num,\
-                        start_pos,final_pos,delta_xyz = (0.05,0.05,0.09)) # ar_marker_num might be redundent
+                        start_pos,final_pos,delta_xyz = (0.04,0.04,0.095)) # ar_marker_num might be redundent
     else:
         raise ValueError('task {} not recognized'.format(task))
     return path.to_robot_trajectory(num_way, True)
@@ -93,8 +93,8 @@ def args_parse():
         """after how many seconds should the controller terminate if it hasn\'t already.
         Default: None"""
     )
-    parser.add_argument('-num_way', type=int, default=100, help=
-        'How many waypoints for the :obj:`moveit_msgs.msg.RobotTrajectory`.  Default: 300'
+    parser.add_argument('-num_way', type=int, default=30, help=
+        'How many waypoints for the :obj:`moveit_msgs.msg.RobotTrajectory`.  Default: 100'
     )
     parser.add_argument('--moveit', action='store_true', help=
         """If you set this flag, moveit will take the path you plan and execute it on

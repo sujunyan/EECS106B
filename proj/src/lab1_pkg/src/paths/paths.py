@@ -125,7 +125,7 @@ class MotionPath(object):
 
         plt.show()
 
-    def to_robot_trajectory(self, num_waypoints=300, jointspace=True):
+    def to_robot_trajectory(self, num_waypoints=50, jointspace=True):
         """
         Parameters
         ----------
@@ -350,9 +350,9 @@ class ScanPath(MotionPath):
         
         self.delta_x, self.delta_y, self.delta_z = delta_xyz
         self.cur_xy = np.array([0,0])
-        self.duration_up = 1 # the duration of one up motion
-        self.duration_down = 1 # the duration of one down motion
-        self.duration_xy = 0.8 # the duration of motion in xy plane
+        self.duration_up = 4 # the duration of one up motion
+        self.duration_down = 4 # the duration of one down motion
+        self.duration_xy = 1 # the duration of motion in xy plane
         self.duration = self.duration_down + self.duration_up + self.duration_xy
 
         delta_pos = final_pos - start_pos
@@ -428,5 +428,5 @@ class ScanPath(MotionPath):
             return np.array([x,y+1])
 
         
-    def to_robot_trajectory(self, num_waypoints =100, jointspace=True):
+    def to_robot_trajectory(self, num_waypoints =20, jointspace=True):
        return super(ScanPath,self).to_robot_trajectory(num_waypoints * self.num_x * self.num_y,jointspace)
