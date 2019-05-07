@@ -559,8 +559,8 @@ PointCloud::Ptr PointCloudAnalyzer::transform(const PointCloud::Ptr& msg, float 
 	#if 1
 	double sqrt2 = sqrt(1/2);
 	transform_1 (0,0) = 0;
-	transform_1 (0,1) = 1;
-	transform_1 (1,0) = 1;
+	transform_1 (0,1) = -1;
+	transform_1 (1,0) = -1;
 	transform_1 (1,1) = 0;
 	#endif
 	transform_1 (2,2) = -1;
