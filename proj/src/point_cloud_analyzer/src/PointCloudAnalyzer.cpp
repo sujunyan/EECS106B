@@ -38,6 +38,7 @@
 #include <pcl/segmentation/sac_segmentation.h>
 #include <sstream>
 #include <queue>
+#include <math.h>
 
 
 //#include <pcl/filters/voxel_grid.h>
@@ -108,16 +109,10 @@ void PointCloudAnalyzer::setup_vis(){
 	std::cout<<"setting up vis \n";
 	pcl::PointCloud<pcl::PointXYZ>::Ptr basic_cloud_ptr (new pcl::PointCloud<pcl::PointXYZ>);
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr point_cloud_ptr (new pcl::PointCloud<pcl::PointXYZRGB>);
-	map_ptr = (PointCloud::Ptr) new pcl::PointCloud<pcl::PointXYZRGB>;
 	transformed_memb_ptr = (PointCloud::Ptr) new pcl::PointCloud<pcl::PointXYZRGB>;
 	origin_membrane = (PointCloud::Ptr) new pcl::PointCloud<pcl::PointXYZRGB>;
-	//contact_membrane = (PointCloud::Ptr) new pcl::PointCloud<pcl::PointXYZRGB>;
-	//test_smooth = (PointCloud::Ptr)new pcl::PointCloud<pcl::PointXYZRGB>;
-    //test_stat = (PointCloud::Ptr)new pcl::PointCloud<pcl::PointXYZRGB>;
-    //full_membrane = (PointCloud::Ptr)new pcl::PointCloud<pcl::PointXYZRGB>;
-	//pcl::PointCloud<pcl::PointXYZRGB>::Ptr map_cloud_ptr (new pcl::PointCloud<pcl::PointXYZRGB>);
 	normals = (pcl::PointCloud<pcl::Normal>::Ptr) new pcl::PointCloud<pcl::Normal>;
-   
+	map_ptr = (PointCloud::Ptr) new pcl::PointCloud<pcl::PointXYZRGB>;
 
 	std::cout << "Creating point cloud\n\n";
 
@@ -126,11 +121,8 @@ void PointCloudAnalyzer::setup_vis(){
 	point_cloud_ptr->width = (int) basic_cloud_ptr->points.size ();
 	point_cloud_ptr->height = 1;
 
-	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer0 (new pcl::visualization::PCLVisualizer ("3D Viewer"));
-	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer2 (new pcl::visualization::PCLVisualizer ("3D Map"));
-
-	viewer = viewer0;
-	viewer1 = viewer2;
+	viewer = (boost::shared_ptr<pcl::visualization::PCLVisualizer>) (new pcl::visualization::PCLVisualizer ("3D Viewer"));
+	viewer1 = (boost::shared_ptr<pcl::visualization::PCLVisualizer>) (new pcl::visualization::PCLVisualizer ("3D Map"));
 
 	viewer->setBackgroundColor (0, 0, 0);
 	viewer->addPointCloud<pcl::PointXYZRGB> (point_cloud_ptr, "cloud");
@@ -151,17 +143,17 @@ void PointCloudAnalyzer::setup_vis(){
     coeffs.values.push_back (0.0);
 
     std::vector<double> origin(3,0);
+
+    origin[2] = 0;
+
     viewer->addPlane (coeffs, origin[0],origin[1],origin[2], "plane");
 	viewer->addCoordinateSystem (0.1);
     
 
-
 	viewer1->setBackgroundColor (0, 0, 0);
     viewer1->addPointCloud<pcl::PointXYZRGB> (map_ptr, "map");
-    viewer1->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE,2,"map");
-
-    
-    viewer1->addPlane (coeffs, origin[0], origin[1], origin[3], "baseplane");
+    viewer1->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3 ,"map");
+    viewer1->addPlane (coeffs, origin[0], origin[1], origin[2], "baseplane");
     viewer1->addCoordinateSystem(0.1);
 
 
@@ -190,54 +182,15 @@ void PointCloudAnalyzer::mouseEventOccurred (const pcl::visualization::MouseEven
 
 void PointCloudAnalyzer::armpos_callback(const geometry_msgs::Point::ConstPtr& msg)
 {
+
+	static double offset =  -0.23;
+
 	transform_x = msg->x;
 	transform_y = msg->y;
-	transform_z = msg->z;
+	transform_z = msg->z - offset;
 }
 
 
-/*
-PointCloud::Ptr PointCloudAnalyzer::Genfullmem(const PointCloud::ConstPtr& msg)
-{    
-
-	
-	pcl::PointCloud<pcl::PointXYZRGB>::Ptr full_membrane (new pcl::PointCloud<pcl::PointXYZRGB>);
-    full_membrane->width = msg->width;
-	full_membrane->height = msg->height;
-	full_membrane->resize(full_membrane->height*full_membrane->width);
-    
-    //std::cout << "test track_point"<< track_point.x <<" "<<track_point.y <<" "<<track_point.z<<"\n";
-    
-    pcl::copyPoint(calibrate_point, center_point);
-
-    calibrate_point.z = relative_z;
-
-    //std::cout<<"center_point"<<" "<<center_point.x<<" "<<center_point.y<<" "<<center_point.z<<"\n";
-
-    for (int c = 0; c < msg->width; c++) {
-		for (int r = 0; r < msg->height; r++) {
-			if (pcl::isFinite(full_membrane->at(c, r))) {
-				
-				float radius_2d_squared = get2Ddistance(msg->at(c,r), center_point);
-				//float radius3d = sqrt(pow(msg->at(c, r).x - track_point.x, 2.0) + pow(msg->at(c, r).y - track_point.y, 2.0) + pow(msg->at(c, r).z - 0.09, 2.0));
-                
-				if (radius_2d_squared < radius2d_membrane) {
-                    
-					full_membrane->at(c, r).x = msg->at(c, r).x;
-					full_membrane->at(c, r).y = msg->at(c, r).y;
-					full_membrane->at(c, r).z = msg->at(c, r).z;	
-					full_membrane->at(c, r).rgb = *reinterpret_cast<float*>(&white);
-
-					
-			}
-		}
-	}  
-	
-  }
-    //std::cout << "generate fullmembrane" <<"\n";
-    return full_membrane;
-}
-*/
 
 
 PointCloud::Ptr PointCloudAnalyzer::genFullmem(const PointCloud::Ptr& msg)
@@ -297,7 +250,7 @@ PointCloud::Ptr PointCloudAnalyzer::genFullmem(const PointCloud::Ptr& msg)
 	}
 					
   
-    //std::cout << "generate fullmembrane" <<"\n";
+   //std::cout << "generate fullmembrane" <<"\n";
     return full_membrane;
 
 
@@ -327,19 +280,16 @@ PointCloud::Ptr PointCloudAnalyzer::genDeformem(const PointCloud::Ptr& msg)
 
 			         if (radius3d > radius3d_deform_limit) {
                     //std::cout<<"deforme"<<"\n";
-			        num_deform += 1;
-                    deformed_membrane->at(c, r).x = msg->at(c, r).x;
-					deformed_membrane->at(c, r).y = msg->at(c, r).y;
-					deformed_membrane->at(c, r).z = msg->at(c, r).z;
-
-	                deformed_membrane->at(c, r).rgb = *reinterpret_cast<float*>(&green);
+				        num_deform += 1;
+	                    deformed_membrane->at(c, r).x = msg->at(c, r).x;
+						deformed_membrane->at(c, r).y = msg->at(c, r).y;
+						deformed_membrane->at(c, r).z = msg->at(c, r).z;
+		                deformed_membrane->at(c, r).rgb = *reinterpret_cast<float*>(&green);
 	                 }
 			
 	             }
            }
      }
-    //std::cout << "generate deformation" <<"\n";
-    
     return deformed_membrane;
 }
 */
@@ -464,42 +414,43 @@ PointCloud::Ptr PointCloudAnalyzer::genContact(const PointCloud::Ptr& msg)
 
 
 
-
-
 void PointCloudAnalyzer::addcontact(const PointCloud::Ptr& msg)
 {
-	for (int c = 0 ; c < msg->width  ; c++) {
-		for (int r = 0; r < msg->height ; r++) {
+	static bool add_flag = false;
+	static bool once_flag = false;
+	const double limit = 0.02;
+	const double small_limit = 0.01;
+
+	if(max_dis > limit && once_flag){
+		add_flag = true;
+		once_flag = false;
+	}else{
+		add_flag = false;
+	}
+
+	if(max_dis < small_limit){
+		once_flag = true;
+	}
+	//add_flag = true;
+	if (!add_flag)return;
+
+	int scale = 1;
+	//int cnt = 0;
+
+
+	for (int c = 0 ; c < msg->width  ; scale++) {
+		for (int r = 0; r < msg->height ; scale++) {
 			 if (pcl::isFinite(msg->at(c,r))){
-			 	     //std::cout<<"if enter add"<<"\n";
 	                  map_ptr->push_back(msg->at(c,r));
-	                 //std::cout<<"if add success"<<"\n";
 	              }
 	          }
 	      }
+	//printf("add contact points_num %d\n", cnt);
 }
 
 
 
 
-/*
-PointCloud::Ptr PointCloudAnalyzer::voxel_grid(const PointCloud::ConstPtr&msg)
-{
-    PointCloud::Ptr output (new PointCloud);
-
-	
-    sor.setInputCloud (msg);
-    sor.setLeafSize (voxelgrid_size, voxelgrid_size, voxelgrid_size);
-    std::cout<<"voxelgrid_size"<<voxelgrid_size<<"\n";
-    sor.filter (*output);
-
-    
-    std::cout<<"filter success"<<endl;
-    return output;
-    //std::cout<<"output size"<<test_smooth->points.size()<<"\n";
-
-}
-*/
 
 float PointCloudAnalyzer::getsurfacearea(const PointCloud::Ptr&msg)
 {
@@ -521,6 +472,7 @@ float PointCloudAnalyzer::getsurfacearea(const PointCloud::Ptr&msg)
        return tmp_surface_area;
 }
 
+
 /*
 void PointCloudAnalyzer::Saveorigin(const PointCloud::Ptr& msg)
 {
@@ -529,12 +481,11 @@ void PointCloudAnalyzer::Saveorigin(const PointCloud::Ptr& msg)
 	    origin_membrane->height = msg->height;
 	    origin_membrane->resize(msg->height*msg->width);
     	for (int c = 0 ; c < msg->width ; c++) {
-		for (int r = 0; r < msg->height; r++) {
-			if (pcl::isFinite(msg->at(c,r))){
-
-				origin_membrane->at(c, r).x = msg->at(c, r).x;
-			    origin_membrane->at(c, r).y = msg->at(c, r).y;
-				origin_membrane->at(c, r).z = msg->at(c, r).z;
+			for (int r = 0; r < msg->height; r++) {
+				if (pcl::isFinite(msg->at(c,r))){
+					origin_membrane->at(c, r).x = msg->at(c, r).x;
+			    	origin_membrane->at(c, r).y = msg->at(c, r).y;
+					origin_membrane->at(c, r).z = msg->at(c, r).z;
 				//std::cout<<" "<<c<<" "<<r<<origin_membrane->at(c, r).x<<origin_membrane->at(c, r).y<<origin_membrane->at(c, r).z<<"\n";
 			}
 		
@@ -640,7 +591,9 @@ void PointCloudAnalyzer::depthCallback(const PointCloud::ConstPtr& msg){
                     //std::cout<<"test"<<endl;
 					max_dis0 = max(dis,max_dis0);
 					sum_dis0 += dis;
+
 					tot_num ++; 
+
 				}
 			}
 		}
@@ -686,9 +639,11 @@ void PointCloudAnalyzer::depthCallback(const PointCloud::ConstPtr& msg){
 
 void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
 {
+
 	
     filtered = medianFilter(msg);
     
+
 
 
     int scale = 2;         // scale is related to complementary factor 
@@ -723,29 +678,16 @@ void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
 
     down_sampled_cloud_ptr = down_sampled_cloud.makeShared();     
     
-
-    
-
     full_membrane = genFullmem(down_sampled_cloud_ptr);
     
      
  
-    /*
-    if(Isfirst && findCenter(full_membrane).z!=0)
-    {
-    std::cout<<"start save"<<"\n";
-    //std::cout<<"findCenter(msg).z"<<findCenter(full_membrane).z<<"\n";
-    Saveorigin(full_membrane);
-    //origin_membrane_area = getsurfacearea(origin_membrane);
-    //std::cout<<"origin_membrane_area"<<origin_membrane_area<<'\n';
-    }
-    */
 
     depthCallback(down_sampled_cloud_ptr);
     
     center_z_depth = findCenter(origin_ptr).z - findCenter(full_membrane).z;
     
-    std::cout<<"end depthCallback"<<endl;
+
 
 
 
@@ -792,19 +734,10 @@ void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
     contact_membrane_area = (1-rate)* contact_membrane_area + rate * getsurfacearea(contact_membrane); 
 
     std::cout<<"contact_membrane_area"<<contact_membrane_area<<endl;
-    
-
 
     full_membrane_area = (1-rate) * full_membrane_area + rate *getsurfacearea(full_membrane);
 
     std::cout<<"full_membrane_area"<<full_membrane_area<<'\n';
-
-
-    
-    
-
-    
-    
     
     
     transformed_memb_ptr = transform(contact_membrane, transform_x ,transform_y, transform_z);
@@ -852,7 +785,6 @@ void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
     //ros::spinOnce();
     
 
-    
 }
 
 void PointCloudAnalyzer::start(){
@@ -875,7 +807,9 @@ void PointCloudAnalyzer::start(){
 
 	arm_sub = nh.subscribe<geometry_msgs::Point>("/hand_pub", 1, &PointCloudAnalyzer::armpos_callback, this);
 	//point_cloud_sub = nh.subscribe<sensor_msgs::PointCloud2>("/royale_camera_driver/point_cloud", 10, callback );
-	ros::Rate r(10); // 10 hz
+
+	ros::Rate r(100); // 100 hz
+
 
 	while (!viewer->wasStopped () && !viewer1->wasStopped())
 	{   

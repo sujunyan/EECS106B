@@ -2,10 +2,11 @@
 
  
   <node name="trajectory_controller" pkg="lab1_pkg" type="start_joint_trajectory_action_server.py" />
-   <include file="$(find baxter_moveit_config)/launch/baxter_grippers.launch"/> 
+  <include file="$(find baxter_moveit_config)/launch/baxter_grippers.launch"/> 
 
   
-	<arg name="start_pos" default="[0.474, - 0.4 , 0.03]"/>
+	<arg name="start_pos" default="[0.474, - 0.4 , 0.1]"/>
+  <arg name="final_pos" default="[0.82, - 0.6 , 0.1]"/>
   <arg name="arm" default="right"/>
 
 	<node name="hand_pub"
@@ -15,6 +16,7 @@
 
     <param name="start_pos" value="$(arg start_pos)" />
     <param name="arm" value="$(arg arm)" /> 
+    <param name="final_pos" value="$(arg final_pos)"/>
   </node> 
 <!-- 
  

@@ -119,8 +119,6 @@ private:
     //void mouseEventOccurred (const pcl::visualization::MouseEvent &event,
     //                     void* viewer_void);
 
-
-
     float getsurfacearea(const PointCloud::Ptr&msg);
     pcl::PointCloud<pcl::Normal>::Ptr Getnormal(PointCloud::Ptr& msg);
 
