@@ -531,6 +531,10 @@ void PointCloudAnalyzer::depthCallback(const PointCloud::ConstPtr& msg){
 
 	static int cnt = 0;
 	const int wait_times = 1;
+	const int filter_size = 5;
+	static SimpleFilter max_dis_filter(filter_size);
+	static SimpleFilter mean_dis_filter(filter_size);
+    
     std::map<double, int> zList;
     
 	static vector <double> values (2,0); // create a vector with two values 0
@@ -579,8 +583,6 @@ void PointCloudAnalyzer::depthCallback(const PointCloud::ConstPtr& msg){
 		{
 			//std::cout<<"key"<< iter->first << "value" <<iter->second<<endl;
   			int tmp = 0;
-  			
-
    		    tmp = iter->second;
    		    tmp1 = iter->first;
    			if(tmp >= maxvalue )
@@ -595,12 +597,13 @@ void PointCloudAnalyzer::depthCallback(const PointCloud::ConstPtr& msg){
    			}
             
 		}
-
         common_z = key;
         min_z = maxkey;
-        
-		max_dis = (1-rate) * max_dis + rate * max_dis0;
-		mean_dis = (1-rate) * mean_dis + rate * sum_dis0/tot_num;
+
+		//max_dis = (1-rate) * max_dis + rate * max_dis0;
+		//mean_dis = (1-rate) * mean_dis + rate * sum_dis0/tot_num;
+		max_dis = max_dis_filter.filter(max_dis0);
+		mean_dis = mean_dis_filter.filter(sum_dis0/tot_num);
 		printf("In depthCallback: max_dis=%f mean_dis=%f common_z=%f min_z=%f\n",max_dis,mean_dis,common_z, min_z);
 	}
 
@@ -610,15 +613,10 @@ void PointCloudAnalyzer::depthCallback(const PointCloud::ConstPtr& msg){
 
 void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
 {
-
 	
     filtered = medianFilter(msg);
-    
-
-
 
     int scale = 2;         // scale is related to complementary factor 
-    
 
     PointCloud::Ptr down_sampled_cloud_ptr (new pcl::PointCloud<pcl::PointXYZRGB>); 
 
@@ -650,18 +648,12 @@ void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
     down_sampled_cloud_ptr = down_sampled_cloud.makeShared();     
     
     full_membrane = genFullmem(down_sampled_cloud_ptr);
-    
-     
- 
 
     depthCallback(down_sampled_cloud_ptr);
+	checkContact();
     
     center_z_depth = findCenter(origin_ptr).z - findCenter(full_membrane).z;
     
-
-
-
-
     pcl::octree::OctreePointCloudChangeDetector<pcl::PointXYZRGB> octree(0.01f);
     
     octree.setInputCloud(origin_membrane);
@@ -752,17 +744,27 @@ void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
   	pub_maxdis.publish(max_dist);
   	pub_meandis.publish(mean_dist);
     
-
     //ros::spinOnce();
     
 
 }
-void stiffnessCallback(); 
-// check if the membrane is contact to an object, will set the bool variable is_contact
 
-void checkContact(){
+// function to estimate the stiffness at current time
+// use current max_dis and arm position to estimate
+void PointCloudAnalyzer::stiffnessCallback(){
+	const int filter_size = 5;
+	static SimpleFilter stiffness_filter(filter_size);
+	if(!is_contact){
+		stiffness = stiffness_filter.filter(0);
+	}else{
+		
+	}
+}
+
+// check if the membrane is contact to an object, will set the bool variable is_contact
+void PointCloudAnalyzer::checkContact(){
 	const double threshold = 0.01;
-	if(max_dis < threshold){
+	if(max_dis > threshold){
 		is_contact = true;
 	}else{
 		is_contact = false;
@@ -804,3 +806,24 @@ void PointCloudAnalyzer::start(){
 
 
 
+/********************** Implementation for the SimpleFilter ******************/
+// give the data of current time, output the filtered data.
+double SimpleFilter::filter(const double & data){
+	assert(size >= datas.size());
+	if(datas.size() < size){
+		datas.push_back(data);
+	}else if(datas.size() == size){
+		datas.pop_front();
+		datas.push_back(data);
+	}
+	return averageValue()
+}
+// return the average value of current datas
+
+double SimpleFilter::averageValue(){
+	double value = 0;
+	for(auto it = datas.begin(); it!=datas.end(); it++){
+		value += *it;
+	}
+	return value/(double)datas.size();
+} 

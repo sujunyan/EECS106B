@@ -32,23 +32,6 @@ bool SAVE_TO_PCD = false;
 bool LOAD_FROM_PCD = false;
 bool SET_PARAMS = true;
 
-// predefined colors
-const uint8_t r_green = 113;
-const uint8_t g_green = 164;
-const uint8_t b_green = 252;
-const uint32_t green = ((uint32_t) r_green << 16 | (uint32_t)g_green << 8 | (uint32_t)b_green);
-
-const uint8_t r_white = 206;
-const uint8_t g_white = 206;
-const uint8_t b_white = 206;
-const uint32_t white = ((uint32_t) r_white << 16 | (uint32_t)g_white << 8 | (uint32_t)b_white);
-
-const uint8_t r_red =  252;
-const uint8_t g_red = 196;
-const uint8_t b_red = 113;
-const uint32_t red = ((uint32_t) r_red << 16 | (uint32_t)g_red << 8 | (uint32_t)b_red);
-
-
 boost::shared_ptr<pcl::visualization::PCLVisualizer> simpleVis (pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud)
 {
   // --------------------------------------------
@@ -121,7 +104,20 @@ void callback(const PointCloud::ConstPtr& msg)
 	full_membrane->resize(full_membrane->height*full_membrane->width);
 
 
+	uint8_t r_green = 113;
+	uint8_t g_green = 164;
+	uint8_t b_green = 252;
+	uint32_t green = ((uint32_t) r_green << 16 | (uint32_t)g_green << 8 | (uint32_t)b_green);
 
+	uint8_t r_white = 206;
+	uint8_t g_white = 206;
+	uint8_t b_white = 206;
+	uint32_t white = ((uint32_t) r_white << 16 | (uint32_t)g_white << 8 | (uint32_t)b_white);
+
+	uint8_t r_red =  252;
+	uint8_t g_red = 196;
+	uint8_t b_red = 113;
+	uint32_t red = ((uint32_t) r_red << 16 | (uint32_t)g_red << 8 | (uint32_t)b_red);
 
   // ------------------------
   // -----Get center dot-----
