@@ -12,3 +12,4 @@ modules
 .catkin_workspace
 .vscode
 baxter.sh
+baxter_ws/*
