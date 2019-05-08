@@ -23,8 +23,9 @@ int main(int argc, char **argv)
 	ros::NodeHandle n;
 
 	ofstream outputFile;
-	outputFile.open("/home/isabella/catkin_ws/logs/small_sphere_log.txt", std::ios_base::app);
-	outputFile << "===" << endl;
+	outputFile.open("/home/liam/catkin_ws/EECS106B/proj/datalog/camera.csv", std::ios_base::app);
+	outputFile << "sphere 0.4 ===" << endl;
+	outputFile << "force" <<",  "<< "full_membrane_msg" << ", " << "contact_area_msg" << ", " << "mean_dis_msg" <<", " << "max_dis_msg"<< endl;
 	// Subscribe to relevant nodes
 
 	// message_filters::Subscriber<std_msgs::Float32> force_sub(nh, "/forcesensor", 1);
@@ -38,20 +39,28 @@ int main(int argc, char **argv)
 
 
 	while (true) {
-		std_msgs::Float32 dist_msg;
-		std_msgs::Float32 force_msg;
-		std_msgs::Float32 deflection_msg;
+		std_msgs::Float32 max_dis_msg;
+		//std_msgs::Float32 force_msg;
+		//std_msgs::Float32 deflection_msg;
 		std_msgs::Float32 contact_area_msg;
-		std_msgs::Float32 deformed_area_msg;
+		std_msgs::Float32 full_membrane_msg;
+		std_msgs::Float32 mean_dis_msg;
+		std_msgs::Float32 force;
+		//std_msgs::Float32 center_dis_msg;
+
 
 		// dist_msg = *(ros::topic::waitForMessage<std_msgs::Float32>("/dist", n));
 		// for (int i = 0; i < 5; i ++) {
-		force_msg = *(ros::topic::waitForMessage<std_msgs::Float32>("/forcesensor", n));
-		deflection_msg = *(ros::topic::waitForMessage<std_msgs::Float32>("/deflection", n));
+		full_membrane_msg = *(ros::topic::waitForMessage<std_msgs::Float32>("/full_membrane_area", n));
 		contact_area_msg = *(ros::topic::waitForMessage<std_msgs::Float32>("/contact_area", n));
-		deformed_area_msg = *(ros::topic::waitForMessage<std_msgs::Float32>("/deformed_area", n));
+		mean_dis_msg = *(ros::topic::waitForMessage<std_msgs::Float32>("/mean_dis", n));
+		//center_dis_msg = *(ros::topic::waitForMessage<std_msgs::Float32>("/center_z_deform", n));
+		max_dis_msg = *(ros::topic::waitForMessage<std_msgs::Float32>("/max_dis", n));
 
-		outputFile << "Sept13" << ", " << force_msg.data << ", " << deflection_msg.data << ", " << contact_area_msg.data << ", " << deformed_area_msg.data << endl;
+        force = *(ros::topic::waitForMessage<std_msgs::Float32>("/force", n));
+
+
+		outputFile << force.data << " ,   "<<full_membrane_msg.data << ",          " << contact_area_msg.data << ",           " << mean_dis_msg.data <<",          " << max_dis_msg.data<< endl;
 		// }
 
 		ros::spinOnce();

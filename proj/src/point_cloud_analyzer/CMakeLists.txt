@@ -222,8 +222,8 @@ set(SRC
 #target_link_libraries(pcl_analyze ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 #add_dependencies(pcl_analyze point_cloud_analyzer_generate_messages_cpp)
 #
-#add_executable(auto_log src/auto_log.cpp)
-#target_link_libraries(auto_log ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+add_executable(auto_log src/auto_log.cpp)
+target_link_libraries(auto_log ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 #
 #add_executable(pcl_processing src/pcl_processing.cpp)
 #target_link_libraries(pcl_processing ${catkin_LIBRARIES} ${PCL_LIBRARIES})

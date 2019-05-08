@@ -88,9 +88,11 @@ private:
 	ros::Publisher max_filter_pub;
 	ros::Publisher min_filter_pub;
 	ros::Publisher exposure_pub;
+    
+    ros::Subscriber point_cloud_sub;
+    ros::Subscriber arm_sub;
+    //ros::Publisher pub_center_z;
 
-
-    ros::Publisher pub_center_z;
     ros::Publisher pub_contact_area;
     ros::Publisher pub_full_area;
     ros::Publisher pub_maxdis;
