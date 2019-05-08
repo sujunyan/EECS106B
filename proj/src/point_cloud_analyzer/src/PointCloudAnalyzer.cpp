@@ -761,7 +761,7 @@ void PointCloudAnalyzer::stiffnessCallback(){
 	}else{
 		double delta_z = last_transform_z - transform_z;
 		double force = max_dis; // TODO force is a function of max_dis, let's assume now it is linear. 
-		stiffness_tmp = force / delta_z;
+		double stiffness_tmp = force / delta_z;
 		stiffness = stiffness_filter.filter(stiffness_tmp);
 	}
 }
@@ -818,10 +818,10 @@ double SimpleFilter::filter(const double & data){
 	if(datas.size() < size){
 		datas.push_back(data);
 	}else if(datas.size() == size){
-		datas.pop_front();
+		datas.erase(datas.begin());
 		datas.push_back(data);
 	}
-	return averageValue()
+	return averageValue();
 }
 // return the average value of current datas
 

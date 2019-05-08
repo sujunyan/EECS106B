@@ -109,25 +109,22 @@ private:
     pcl::PointCloud<pcl::Normal>::Ptr Getnormal(PointCloud::Ptr& msg);
 
     //predefeind colors of area      green for deformation   white for membrane
-    const uint8_t r_green = 113;
-    const uint8_t g_green = 164;
-    const uint8_t b_green = 252;
-    const uint32_t green = ((uint32_t) r_green << 16 | (uint32_t)g_green << 8 | (uint32_t)b_green);
-
-    const uint8_t r_white = 206;
-    const uint8_t g_white = 206;
-    const uint8_t b_white = 206;
-    const uint32_t white = ((uint32_t) r_white << 16 | (uint32_t)g_white << 8 | (uint32_t)b_white);
-
-    const uint8_t r_red =  252;
-    const uint8_t g_red = 196;
-    const uint8_t b_red = 113;
-    const uint32_t red = ((uint32_t) r_red << 16 | (uint32_t)g_red << 8 | (uint32_t)b_red);
-
-    const uint8_t r_plane =  0;
-    const uint8_t g_plane = 255;
-    const uint8_t b_plane = 0;
-    const uint32_t plane = ((uint32_t) r_plane << 16 | (uint32_t)g_plane << 8 | (uint32_t)b_plane);
+    uint8_t r_green = 113;
+    uint8_t g_green = 164;
+    uint8_t b_green = 252;
+    uint32_t green = ((uint32_t) r_green << 16 | (uint32_t)g_green << 8 | (uint32_t)b_green);
+    uint8_t r_white = 206;
+    uint8_t g_white = 206;
+    uint8_t b_white = 206;
+    uint32_t white = ((uint32_t) r_white << 16 | (uint32_t)g_white << 8 | (uint32_t)b_white);
+    uint8_t r_red =  252;
+    uint8_t g_red = 196;
+    uint8_t b_red = 113;
+    uint32_t red = ((uint32_t) r_red << 16 | (uint32_t)g_red << 8 | (uint32_t)b_red);
+    uint8_t r_plane =  0;
+    uint8_t g_plane = 255;
+    uint8_t b_plane = 0;
+    uint32_t plane = ((uint32_t) r_plane << 16 | (uint32_t)g_plane << 8 | (uint32_t)b_plane);
 };
 
 
@@ -138,6 +135,6 @@ public:
     double filter(const double &); // give the data of current time, output the filtered data.
 private:
     int size; // the size of the filter
-    queue<double> datas; // a vector to store the input datas.
+    vector<double> datas; // a vector to store the input datas.
     double averageValue(); // return the average value of current datas
-}
+};
