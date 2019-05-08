@@ -519,6 +519,7 @@ float PointCloudAnalyzer::getsurfacearea(const PointCloud::Ptr&msg)
        return tmp_surface_area;
 }
 
+#if 0
 void PointCloudAnalyzer::Saveorigin(const PointCloud::Ptr& msg)
 {
 	//std::cout<<"start origin_membrane";
@@ -541,6 +542,7 @@ void PointCloudAnalyzer::Saveorigin(const PointCloud::Ptr& msg)
         origin_center_point = findCenter(origin_membrane);
         Isfirst = false;
 }
+#endif
 
 
 
