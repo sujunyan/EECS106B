@@ -51,7 +51,7 @@ void loop() {
   Serial.println();
 
   unsigned long currentMillis = millis();
-  if (currentMillis-range_timer >= 100) //publish every 50 milliseconds
+  if (currentMillis-range_timer >= 20) //publish every 50 milliseconds
   {
     range_timer = currentMillis+50;
     range_msg.data = newtons;
