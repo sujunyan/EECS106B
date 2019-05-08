@@ -24,7 +24,7 @@ int main(int argc, char **argv)
 
 	ofstream outputFile;
 	outputFile.open("/home/liam/catkin_ws/EECS106B/proj/datalog/camera.csv", std::ios_base::app);
-	outputFile << "===" << endl;
+	outputFile << "sphere 0.4 ===" << endl;
 	outputFile << "force" <<",  "<< "full_membrane_msg" << ", " << "contact_area_msg" << ", " << "mean_dis_msg" <<", " << "max_dis_msg"<< endl;
 	// Subscribe to relevant nodes
 
