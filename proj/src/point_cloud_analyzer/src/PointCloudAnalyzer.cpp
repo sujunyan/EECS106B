@@ -418,7 +418,13 @@ PointCloud::Ptr PointCloudAnalyzer::genContact(const PointCloud::Ptr& msg)
      seg.segment (*inliers, *coefficients);
 
      std::cout<<"inliers->indices.size ()"<<inliers->indices.size ()<<"\n";
-     
+     float force_slope = 336.8828;
+
+                    
+     uint8_t r_green = 113;   //113
+     uint8_t g_green = (int) 12 * max_dis * force_slope;   //164
+     uint8_t b_green = 252;
+     uint32_t change = ((uint32_t) r_green << 16 | (uint32_t)g_green << 8 | (uint32_t)b_green);
 
     if (inliers->indices.size () > 4540){
      	if (abs( common_z - min_z) <= 0.025){
@@ -752,7 +758,15 @@ void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
         if(get3Ddistance(full_membrane->at(c,r),origin_membrane->at(c,r)) > radius3d_deform_limit)
         {    
         	 num_deform ++;
-    	     full_membrane->points[detectedPoints[i]].rgb = *reinterpret_cast<float*>(&green);
+        	 float force_slope = 336.8828;
+
+                    
+        	 uint8_t r_green = 113;   //113
+             uint8_t g_green = (int) 12 * max_dis * force_slope;   //164
+             uint8_t b_green = 252;
+             uint32_t change = ((uint32_t) r_green << 16 | (uint32_t)g_green << 8 | (uint32_t)b_green);
+
+    	     full_membrane->points[detectedPoints[i]].rgb = *reinterpret_cast<float*>(&change);
         }
         else
         {
