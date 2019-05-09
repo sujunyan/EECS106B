@@ -71,7 +71,7 @@ def get_trajectory(task, num_way, saved_file):
         path = ScanPath(limb,kin,total_time,ar_marker_num,\
                         start_pos,final_pos,delta_xyz = (0.05,0.05,0.087)) # ar_marker_num might be redundent
     elif task == 'updown':
-        start_pos = np.array([0.697, - 0.334 , 0.1])
+        start_pos = np.array([0.766, - 0.342 , 0.1])
         final_pos = np.array([0.72, - 0.6 , 0.1])
         total_time = 5
         path = UpDownPath(limb,kin,total_time,ar_marker_num,\
