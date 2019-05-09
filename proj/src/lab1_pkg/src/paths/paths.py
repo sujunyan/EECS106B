@@ -430,3 +430,40 @@ class ScanPath(MotionPath):
         
     def to_robot_trajectory(self, num_waypoints =20, jointspace=True):
        return super(ScanPath,self).to_robot_trajectory(num_waypoints * self.num_x * self.num_y,jointspace)
+
+
+
+class UpDownPath(MotionPath):
+    def __init__(self, limb, kin, total_time, ar_marker_num,
+                start_pos,final_pos, dz = 0.01):
+        """
+        Parameters
+        ----------
+        limb : :obj:`baxter_interface.Limb` or :obj:`intera_interface.Limb`
+        kin : :obj:`baxter_pykdl.baxter_kinematics` or :obj:`sawyer_pykdl.sawyer_kinematics`
+            must be the same arm as limb
+        total_time : float
+            number of seconds you wish the trajectory to run for
+        start_pos : 3x1 np.array
+        final_pos : 3x1 np.array
+        """
+        super(UpDownPath,self).__init__(limb,kin,total_time,ar_marker_num)
+        self.start_pos = start_pos
+        self.final_pos = final_pos
+        self.dz = dz
+        self.total_time = total_time
+
+    def target_position(self,time):
+        """
+        """
+        total_time = self.total_time
+        dz = self.dz
+        start_pos = self.start_pos
+        half_total_time = total_time/2
+        if(time < half_total_time):
+            tar_z = self.start_pos[2] + time/half_total_time * dz
+            return np.array([start_pos[0],start_pos[1],tar_z])
+        elif(time > half_total_time):
+            ratio = (time-half_total_time)/(half_total_time)
+            tar_z = self.start_pos[2] + (1-ratio) * dz
+            return np.array([start_pos[0],start_pos[1],tar_z])

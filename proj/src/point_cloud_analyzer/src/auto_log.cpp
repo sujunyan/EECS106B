@@ -3,7 +3,7 @@
 #include "std_msgs/Float32.h"
 #include "std_msgs/String.h"
 #include <unistd.h>
-
+#include "geometry_msgs/Point.h"
 #include <sstream>
 #include <iostream>
 #include <fstream>
@@ -23,9 +23,11 @@ int main(int argc, char **argv)
 	ros::NodeHandle n;
 
 	ofstream outputFile;
-	outputFile.open("/home/liam/catkin_ws/EECS106B/proj/datalog/camera.csv", std::ios_base::app);
+	//outputFile.open("/home/liam/catkin_ws/EECS106B/proj/datalog/camera.csv", std::ios_base::app);
+	outputFile.open("/home/cc/ee106b/sp19/class/ee106b-abb/EECS106B/proj/datalog/stiffness.csv", std::ios_base::app);
 	outputFile << "sphere 0.4 ===" << endl;
-	outputFile << "force" <<",  "<< "full_membrane_msg" << ", " << "contact_area_msg" << ", " << "mean_dis_msg" <<", " << "max_dis_msg"<< endl;
+	outputFile << "force" <<",  "<< "full_membrane_msg" << ", " << "contact_area_msg" 
+				<< ", " << "mean_dis_msg" <<", " << "max_dis_msg"<< endl;
 	// Subscribe to relevant nodes
 
 	// message_filters::Subscriber<std_msgs::Float32> force_sub(nh, "/forcesensor", 1);
@@ -37,7 +39,7 @@ int main(int argc, char **argv)
 
 	// ros::spin();
 
-
+	printf("File handler created\n");
 	while (true) {
 		std_msgs::Float32 max_dis_msg;
 		//std_msgs::Float32 force_msg;
@@ -46,6 +48,7 @@ int main(int argc, char **argv)
 		std_msgs::Float32 full_membrane_msg;
 		std_msgs::Float32 mean_dis_msg;
 		std_msgs::Float32 force;
+		geometry_msgs::Point point;
 		//std_msgs::Float32 center_dis_msg;
 
 
@@ -57,12 +60,13 @@ int main(int argc, char **argv)
 		//center_dis_msg = *(ros::topic::waitForMessage<std_msgs::Float32>("/center_z_deform", n));
 		max_dis_msg = *(ros::topic::waitForMessage<std_msgs::Float32>("/max_dis", n));
 
-        force = *(ros::topic::waitForMessage<std_msgs::Float32>("/force", n));
+        //force = *(ros::topic::waitForMessage<std_msgs::Float32>("/force", n));
+        
+        point = *(ros::topic::waitForMessage<geometry_msgs::Point>("/hand_pub", n));
 
-
-		outputFile << force.data << " ,   "<<full_membrane_msg.data << ",          " << contact_area_msg.data << ",           " << mean_dis_msg.data <<",          " << max_dis_msg.data<< endl;
-		// }
-
+		//outputFile << force.data << " ,   "<<full_membrane_msg.data << ",          " << contact_area_msg.data << ",           " << mean_dis_msg.data <<",          " << max_dis_msg.data<< endl;
+		outputFile << max_dis_msg.data <<", "<<point.z<<endl;
+		printf("Got data once point.z %f\n",point.z);
 		ros::spinOnce();
 		// ros::Duration(0.05).sleep();
 

@@ -10,7 +10,7 @@ import time
 import numpy as np
 import signal
 import time
-from paths.paths import ScanPath
+from paths.paths import ScanPath,UpDownPath
 from utils.utils import *
 from path_planner import PathPlanner
 import json
@@ -70,6 +70,12 @@ def get_trajectory(task, num_way, saved_file):
         final_pos = np.array([0.72, - 0.6 , 0.1])
         path = ScanPath(limb,kin,total_time,ar_marker_num,\
                         start_pos,final_pos,delta_xyz = (0.05,0.05,0.087)) # ar_marker_num might be redundent
+    elif task == 'updown':
+        start_pos = np.array([0.697, - 0.334 , 0.1])
+        final_pos = np.array([0.72, - 0.6 , 0.1])
+        total_time = 5
+        path = UpDownPath(limb,kin,total_time,ar_marker_num,\
+                        start_pos,final_pos,dz = -0.07 ) 
     else:
         raise ValueError('task {} not recognized'.format(task))
     return path.to_robot_trajectory(num_way, True)
@@ -78,7 +84,7 @@ def get_trajectory(task, num_way, saved_file):
 def args_parse():
     parser = argparse.ArgumentParser()
     parser.add_argument('-task', '-t', type=str, default='scan', help=
-        'Options: scan,  Default: scan'
+        'Options: scan, updown  Default: scan'
     )
 
     parser.add_argument('-arm', '-a', type=str, default='right', help=
@@ -170,4 +176,13 @@ if __name__ == "__main__":
     # uses MoveIt! to execute the trajectory.  make sure to view it in RViz before running this.
     # the lines above will display the trajectory in RViz
     planner.execute_plan(robot_trajectory)
+
+    if args.task == 'updown':
+        while True:
+            try:
+                raw_input('Press <Enter> to try again')
+            except KeyboardInterrupt:
+                break;
+                sys.exit()
+            planner.execute_plan(robot_trajectory)
     

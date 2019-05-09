@@ -41,6 +41,7 @@
 #include <math.h>
 
 
+const bool print_flag = true;
 //#include <pcl/filters/voxel_grid.h>
 pcl::PointXYZRGB findCenter(const PointCloud::ConstPtr& msg);
 //float get2Ddistance(const pcl::PointXYZRGB& a, const pcl::PointXYZRGB& b);
@@ -777,7 +778,8 @@ void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
 
     depthCallback(down_sampled_cloud_ptr);
 	checkContact();
-    
+    stiffnessCallback();
+
     center_z_depth = findCenter(origin_ptr).z - findCenter(full_membrane).z;
     
     pcl::octree::OctreePointCloudChangeDetector<pcl::PointXYZRGB> octree(0.01f);
@@ -899,17 +901,19 @@ void PointCloudAnalyzer::stiffnessCallback(){
 	if(!is_contact){
 		stiffness = stiffness_filter.filter(0);
 		last_transform_z = transform_z; // record the arm position before contact
+		printf("\nNot contact now Estimated stiffness %f\n", stiffness);
 	}else{
 		double delta_z = last_transform_z - transform_z;
 		double force = max_dis; // TODO force is a function of max_dis, let's assume now it is linear. 
 		double stiffness_tmp = force / delta_z;
 		stiffness = stiffness_filter.filter(stiffness_tmp);
+		printf("\nEstimated stiffness %f\n", stiffness);
 	}
 }
 
 // check if the membrane is contact to an object, will set the bool variable is_contact
 void PointCloudAnalyzer::checkContact(){
-	const double threshold = 0.01;
+	const double threshold = 0.016;
 	if(max_dis > threshold){
 		is_contact = true;
 	}else{
