@@ -65,6 +65,7 @@ def get_trajectory(task, num_way, saved_file):
         return robot_traj
 
     if task == 'scan':
+        total_time = 5
         start_pos = np.array([0.474, - 0.4 , 0.1])
         #final_pos = np.array([0.82, - 0.6 , 0.1])
         final_pos = np.array([0.72, - 0.6 , 0.1])
@@ -177,12 +178,13 @@ if __name__ == "__main__":
     # the lines above will display the trajectory in RViz
     planner.execute_plan(robot_trajectory)
 
-    if args.task == 'updown':
-        while True:
-            try:
-                raw_input('Press <Enter> to try again')
-            except KeyboardInterrupt:
-                break;
-                sys.exit()
-            planner.execute_plan(robot_trajectory)
+    while True:
+        plan = planner.plan_to_joint_pos(robot_trajectory.joint_trajectory.points[0].positions)
+        planner.execute_plan(plan)
+        try:
+            raw_input('Press <Enter> to try again')
+        except KeyboardInterrupt:
+            break;
+            sys.exit()
+        planner.execute_plan(robot_trajectory)
     
