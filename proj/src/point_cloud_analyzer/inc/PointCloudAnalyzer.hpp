@@ -77,7 +77,9 @@ private:
     void stiffnessCallback(); 
     void checkContact(); // check if the membrane is contact to an object, will set the bool variable is_contact
     void armpos_callback(const geometry_msgs::Point::ConstPtr& msg);
-    void addcontact(const PointCloud::Ptr& msg);
+    void addcontact(const PointCloud::Ptr& msg, bool);
+    bool addFlag();
+    void publishAll();
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer;
     boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer1;
     pcl::MedianFilter<pcl::PointXYZRGB> Median;

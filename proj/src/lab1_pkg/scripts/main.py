@@ -144,7 +144,6 @@ if __name__ == "__main__":
     kin = baxter_kinematics(args.arm)
     total_time = 5 # seconds
 
-
     planner = PathPlanner('{}_arm'.format(args.arm))
 
     robot_trajectory = get_trajectory(args.task, args.num_way, args.saved)

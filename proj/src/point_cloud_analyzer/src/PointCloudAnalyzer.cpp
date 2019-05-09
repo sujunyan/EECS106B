@@ -39,6 +39,7 @@
 #include <sstream>
 #include <queue>
 #include <math.h>
+#include <chrono>
 
 
 const bool print_flag = true;
@@ -183,7 +184,7 @@ void PointCloudAnalyzer::armpos_callback(const geometry_msgs::Point::ConstPtr& m
 	static bool first_flag = false; 
 	static double first_x,first_y;
 	static double offset =  -0.15;
-
+	//printf("x %f\n",msg->x );
 	if (first_flag){
 		transform_x = msg->x - first_x;
 		transform_y = msg->y - first_y;
@@ -483,10 +484,7 @@ PointCloud::Ptr PointCloudAnalyzer::genContact(const PointCloud::Ptr& msg)
  	return contact_membrane;
 
 }
-
-
-void PointCloudAnalyzer::addcontact(const PointCloud::Ptr& msg)
-{
+bool PointCloudAnalyzer::addFlag(){
 	static bool add_flag = false;
 	static bool once_flag = false;
 	const double limit = 0.025;
@@ -498,14 +496,16 @@ void PointCloudAnalyzer::addcontact(const PointCloud::Ptr& msg)
 	}else{
 		add_flag = false;
 	}
-
 	if(max_dis < small_limit){
 		once_flag = true;
 	}
+	return add_flag;
+}
+
+void PointCloudAnalyzer::addcontact(const PointCloud::Ptr& msg, bool add_flag){
 	//add_flag = true;
 	if (!add_flag)return;
 	int scale = 1;
-	//int cnt = 0;
 
 	const auto center_point = pcl::PointXYZRGB(0,0,0);
 	const double max_dis_allowed = 0.05;
@@ -731,9 +731,17 @@ void PointCloudAnalyzer::depthCallback(const PointCloud::ConstPtr& msg){
 
 }
 
+void print_used_time( std::chrono::time_point<std::chrono::steady_clock> start){
+	auto end = chrono::steady_clock::now();
+    cout << "printed by print_used_time used" 
+			<< chrono::duration_cast<chrono::milliseconds>(end - start).count()
+			<< " ms" << endl;
+}
 
 void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
 {
+	auto start = chrono::steady_clock::now();
+	printf("\n\nStarting callback\n");
 	static int cnt = 0;
 	const int wait_times = 10;
 	if (cnt++ < wait_times){
@@ -741,43 +749,40 @@ void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
 		return;
 	}
 
-    filtered = medianFilter(msg);
-
+	print_used_time(start);
     int scale = 2;         // scale is related to complementary factor 
 
     PointCloud::Ptr down_sampled_cloud_ptr (new pcl::PointCloud<pcl::PointXYZRGB>); 
 
     pcl::PointCloud<pcl::PointXYZRGB> down_sampled_cloud; 
 
-    down_sampled_cloud.width = filtered->width /scale  ;     
-    down_sampled_cloud.height = filtered->height /scale + 1;
+    down_sampled_cloud.width = msg->width /scale  ;     
+    down_sampled_cloud.height = msg->height /scale + 1;
     down_sampled_cloud.resize(down_sampled_cloud.width*down_sampled_cloud.height);
 
-    //std::cout<<"down_sampled_cloud"<<down_sampled_cloud.width<<" "<<down_sampled_cloud.height<<endl;
-    //std::cout<<"filtered->width"<<filtered->width<<"filtered->height"<<filtered->height<<endl;
-    //for( int c = 0; c < filtered->width; c+= scale){
-    //	for( int r = 0; r < filtered->height; r+= scale){
-      for( int c = 0; c < filtered->width; c+= scale){
-    	for( int r = 0; r < filtered->height; r+= scale){    
+    for( int c = 0; c < msg->width; c+= scale){
+    	for( int r = 0; r < msg->height; r+= scale){    
              int a = (int) c/ scale;
-             int b = (int) r/ scale;
-          //down_sampled_cloud.push_back(filtered->at(c,r));   
-            down_sampled_cloud.at(a,b).x = filtered->at(c,r).x;
-            down_sampled_cloud.at(a,b).y = filtered->at(c,r).y;
-            down_sampled_cloud.at(a,b).z = filtered->at(c,r).z;
+             int b = (int) r/ scale;  
+            down_sampled_cloud.at(a,b).x = msg->at(c,r).x;
+            down_sampled_cloud.at(a,b).y = msg->at(c,r).y;
+            down_sampled_cloud.at(a,b).z = msg->at(c,r).z;
             down_sampled_cloud.at(a,b).rgb = *reinterpret_cast<float*>(&white);
 
       }
     }
-           
-    
 
     down_sampled_cloud_ptr = down_sampled_cloud.makeShared();     
     
-    full_membrane = genFullmem(down_sampled_cloud_ptr);
+    down_sampled_cloud_ptr = medianFilter(down_sampled_cloud_ptr);
 
+    full_membrane = genFullmem(down_sampled_cloud_ptr);
+    print_used_time(start);
     depthCallback(down_sampled_cloud_ptr);
 	checkContact();
+	if (!is_contact){
+		//return;
+	}
     stiffnessCallback();
 
     center_z_depth = findCenter(origin_ptr).z - findCenter(full_membrane).z;
@@ -796,7 +801,8 @@ void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
     detectedPoints.clear();
     int numberOfNewPoints = octree.getPointIndicesFromNewVoxels(detectedPoints);
     //std::cout << numberOfNewPoints << " New Points Detected!" << std::endl;
-    
+    print_used_time(start);
+
 	deformed_membrane->width = msg->width;
 	deformed_membrane->height = msg->height;
 	deformed_membrane->resize(full_membrane->height*full_membrane->width);
@@ -805,19 +811,21 @@ void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
     	num_deform = 0;
     	int r = detectedPoints[i] / msg->width;
         int c = detectedPoints[i] % msg->width;
-        if(get3Ddistance(full_membrane->at(c,r),origin_membrane->at(c,r)) > radius3d_deform_limit)
-        {    
+        if(get3Ddistance(full_membrane->at(c,r),origin_membrane->at(c,r)) > radius3d_deform_limit){    
         	 num_deform ++;
     	     full_membrane->points[detectedPoints[i]].rgb = *reinterpret_cast<float*>(&green);
     	     deformed_membrane->points.push_back(full_membrane->points[detectedPoints[i]]);
         }
-        else
-        {
+        else{
         	detectedPoints.erase(detectedPoints.begin() + i);
         }
     }
-      
-    
+   bool add_flag = addFlag();
+   viewer->updatePointCloud(full_membrane, "cloud");
+   publishAll();
+   if (!add_flag){ // no need to process the following codes
+   		//return;
+   }
    // deformed_membrane = genDeformem(full_membrane);
     std::cout<<"num_deform"<<num_deform<<"\n";
 
@@ -841,10 +849,10 @@ void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
     //transformed_memb_ptr = transform(deformed_membrane, transform_x ,transform_y, transform_z);
     auto transformed_memb_ptr1 = transform(contact_membrane, transform_x ,transform_y, transform_z);
 
-    addcontact(transformed_memb_ptr1);
+    addcontact(transformed_memb_ptr1, add_flag);
     
 
-    viewer->updatePointCloud(full_membrane, "cloud");
+    
     
     //viewer->updatePointCloud(full_membrane, "cloud");
     //viewer->updatePointCloud(full_membrane, "cloud");
@@ -852,29 +860,16 @@ void PointCloudAnalyzer::callback(const PointCloud::ConstPtr& msg)
     viewer->updatePointCloud(contact_membrane, "contact");
 
     viewer1->updatePointCloud(map_ptr, "map");
-
-	//addcontact(transformed_memb_ptr);
-    
-	//viewer1->updatePointCloud(map_ptr, "map");
-
-   
-
-    //viewer->removePointCloud("normals", 0);
-	//viewer->addPointCloudNormals<pcl::PointXYZRGB, pcl::Normal> (full_membrane, normals, 10, 0.02, "normals");
-    //viewer->removePointCloud("normals", 0);
-	//viewer->addPointCloudNormals<pcl::PointXYZRGB, pcl::Normal> (full_membrane, normals, 500, 0.02, "normals");
+	auto end = chrono::steady_clock::now();
+    cout << "Callback used" 
+			<< chrono::duration_cast<chrono::milliseconds>(end - start).count()
+			<< " ms" << endl;
 	
-    //viewer1->addPointCloudNormals<pcl::PointXYZRGB, pcl::Normal> (full_membrane, normals, 10, 0.02, "normals");
-    
-    //viewer1->removePointCloud("normals", 0);
+   
+}
 
-
-    //std_msgs::Float32 depth;
-    //depth.data = center_z_depth;
-    //pub_center_z.publish(depth);
-
-    //ros::spinOnce();
-    std_msgs::Float32 max_dist;
+void PointCloudAnalyzer::publishAll(){
+	std_msgs::Float32 max_dist;
     std_msgs::Float32 mean_dist;
     std_msgs::Float32 contact_area;
     std_msgs::Float32 full_area;
@@ -901,13 +896,13 @@ void PointCloudAnalyzer::stiffnessCallback(){
 	if(!is_contact){
 		stiffness = stiffness_filter.filter(0);
 		last_transform_z = transform_z; // record the arm position before contact
-		printf("\nNot contact now Estimated stiffness %f\n", stiffness);
+		printf("Not contact now Estimated stiffness %f\n", stiffness);
 	}else{
 		double delta_z = last_transform_z - transform_z;
 		double force = max_dis; // TODO force is a function of max_dis, let's assume now it is linear. 
 		double stiffness_tmp = force / delta_z;
 		stiffness = stiffness_filter.filter(stiffness_tmp);
-		printf("\nEstimated stiffness %f\n", stiffness);
+		printf("Estimated stiffness %f\n", stiffness);
 	}
 }
 
@@ -927,6 +922,8 @@ void PointCloudAnalyzer::start(){
     transform_x = 0;
     transform_y = 0;
     transform_z = 0;
+    auto start = chrono::steady_clock::now();
+    auto last_start = start;;
 	//ros::Publisher pub_contact = nh.advertise<pcl::PointCloud<pcl::PointXYZRGB>> ("contact", 100);
     //pub_center_z = nh.advertise<std_msgs::Float32>("center_z_deform", 1000);
 
@@ -941,18 +938,22 @@ void PointCloudAnalyzer::start(){
 
 	arm_sub = nh.subscribe<geometry_msgs::Point>("/hand_pub", 1, &PointCloudAnalyzer::armpos_callback, this);
 	//point_cloud_sub = nh.subscribe<sensor_msgs::PointCloud2>("/royale_camera_driver/point_cloud", 10, callback );
-	ros::Rate r(100); // 100 hz
+	ros::Rate r(20); // 100 hz
 
 	while (!viewer->wasStopped () && !viewer1->wasStopped())
 	{   
+		start = chrono::steady_clock::now();
+		#if 0
+		cout << "Elapsed time in milliseconds : " 
+			<< chrono::duration_cast<chrono::milliseconds>(start - last_start).count()
+			<< " ms" << endl;
+		last_start = start;
+		#endif
 		//pcl_conversions::toPCL(ros::Time::now(), contact_membrane->header.stamp);
 		viewer->spinOnce (10);
 		viewer1->spinOnce (10);
 		ros::spinOnce();
 		r.sleep(); // TODO might has a bug
-		//pub.publish (*contact_membrane);
-		//ros::spinOnce();
-		//loop_rate.sleep ();
 	}
 }
 
