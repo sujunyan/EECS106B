@@ -66,9 +66,10 @@ def get_trajectory(task, num_way, saved_file):
 
     if task == 'scan':
         start_pos = np.array([0.474, - 0.4 , 0.1])
-        final_pos = np.array([0.82, - 0.6 , 0.1])
+        #final_pos = np.array([0.82, - 0.6 , 0.1])
+        final_pos = np.array([0.72, - 0.6 , 0.1])
         path = ScanPath(limb,kin,total_time,ar_marker_num,\
-                        start_pos,final_pos,delta_xyz = (0.05,0.05,0.095)) # ar_marker_num might be redundent
+                        start_pos,final_pos,delta_xyz = (0.05,0.05,0.087)) # ar_marker_num might be redundent
     else:
         raise ValueError('task {} not recognized'.format(task))
     return path.to_robot_trajectory(num_way, True)

@@ -59,8 +59,7 @@ private:
     vector<int> detectedPoints;
     double common_z,min_z;
     //filter size
-    const float radius2d_membrane = 0.065;
-    float radius3d_deform_limit = 0.003;
+
 
     bool is_contact;
     

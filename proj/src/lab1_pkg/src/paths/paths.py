@@ -350,7 +350,7 @@ class ScanPath(MotionPath):
         
         self.delta_x, self.delta_y, self.delta_z = delta_xyz
         self.cur_xy = np.array([0,0])
-        self.duration_up = 2 # the duration of one up motion
+        self.duration_up = 1 # the duration of one up motion
         self.duration_down = 4 # the duration of one down motion
         self.duration_xy = 1 # the duration of motion in xy plane
         self.duration = self.duration_down + self.duration_up + self.duration_xy
