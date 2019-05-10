@@ -435,7 +435,7 @@ class ScanPath(MotionPath):
 
 class UpDownPath(MotionPath):
     def __init__(self, limb, kin, total_time, ar_marker_num,
-                start_pos,final_pos, dz = 0.01):
+                start_pos,final_pos, dz = 0.01, sleep_time = 5):
         """
         Parameters
         ----------
@@ -451,7 +451,8 @@ class UpDownPath(MotionPath):
         self.start_pos = start_pos
         self.final_pos = final_pos
         self.dz = dz
-        self.total_time = total_time
+        self.total_time = total_time + sleep_time
+        self.sleep_time = sleep_time
 
     def target_position(self,time):
         """
@@ -459,11 +460,15 @@ class UpDownPath(MotionPath):
         total_time = self.total_time
         dz = self.dz
         start_pos = self.start_pos
-        half_total_time = total_time/2
+        sleep_time = self.sleep_time
+        half_total_time = (total_time - sleep_time)/2
         if(time < half_total_time):
             tar_z = self.start_pos[2] + time/half_total_time * dz
             return np.array([start_pos[0],start_pos[1],tar_z])
-        elif(time > half_total_time):
-            ratio = (time-half_total_time)/(half_total_time)
+        elif(time < half_total_time + sleep_time):
+            tar_z = self.start_pos[2] +  dz
+            return np.array([start_pos[0],start_pos[1],tar_z])
+        elif(time > half_total_time + sleep_time):
+            ratio = (time-half_total_time-sleep_time)/(half_total_time)
             tar_z = self.start_pos[2] + (1-ratio) * dz
             return np.array([start_pos[0],start_pos[1],tar_z])
